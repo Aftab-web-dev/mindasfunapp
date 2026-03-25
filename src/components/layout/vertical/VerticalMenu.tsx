@@ -1,0 +1,115 @@
+// MUI Imports
+import { useTheme } from '@mui/material/styles'
+
+// Third-party Imports
+import PerfectScrollbar from 'react-perfect-scrollbar'
+
+// Type Imports
+import { Typography } from '@mui/material'
+
+import type { VerticalMenuContextProps } from '@menu/components/vertical-menu/Menu'
+
+// Component Imports
+import { Menu, MenuItem, SubMenu } from '@menu/vertical-menu'
+
+// Hook Imports
+import useVerticalNav from '@menu/hooks/useVerticalNav'
+
+// Styled Component Imports
+import StyledVerticalNavExpandIcon from '@menu/styles/vertical/StyledVerticalNavExpandIcon'
+
+// Style Imports
+import menuItemStyles from '@core/styles/vertical/menuItemStyles'
+import menuSectionStyles from '@core/styles/vertical/menuSectionStyles'
+
+type RenderExpandIconProps = {
+  open?: boolean
+  transitionDuration?: VerticalMenuContextProps['transitionDuration']
+}
+
+type Props = {
+  scrollMenu: (container: any, isPerfectScrollbar: boolean) => void
+}
+
+const RenderExpandIcon = ({ open, transitionDuration }: RenderExpandIconProps) => (
+  <StyledVerticalNavExpandIcon open={open} transitionDuration={transitionDuration}>
+    <i className='tabler-chevron-right' />
+  </StyledVerticalNavExpandIcon>
+)
+
+const VerticalMenu = ({ scrollMenu }: Props) => {
+  // Hooks
+  const theme = useTheme()
+  const verticalNavOptions = useVerticalNav()
+
+  // Vars
+  const { isBreakpointReached, transitionDuration } = verticalNavOptions
+
+  const ScrollWrapper = isBreakpointReached ? 'div' : PerfectScrollbar
+
+  return (
+    // eslint-disable-next-line lines-around-comment
+    /* Custom scrollbar instead of browser scroll, remove if you want browser scroll only */
+    <div className='bg-[#523F99] text-white h-[90%] rounded-r-4xl pt-[0.875rem]'>
+      <ScrollWrapper
+        {...(isBreakpointReached
+          ? {
+              className: 'bs-full overflow-y-auto overflow-x-hidden',
+              onScroll: container => scrollMenu(container, false)
+            }
+          : {
+              options: { wheelPropagation: false, suppressScrollX: true },
+              onScrollY: container => scrollMenu(container, true)
+            })}
+      >
+        {/* Incase you also want to scroll NavHeader to scroll with Vertical Menu, remove NavHeader from above and paste it below this comment */}
+        {/* Vertical Menu */}
+        <Menu
+          popoutMenuOffset={{ mainAxis: 23 }}
+          menuItemStyles={menuItemStyles(verticalNavOptions, theme)}
+          renderExpandIcon={({ open }) => <RenderExpandIcon open={open} transitionDuration={transitionDuration} />}
+          renderExpandedMenuItemIcon={{
+            icon: <i className='tabler-circle text-xs' />
+          }}
+          menuSectionStyles={menuSectionStyles(verticalNavOptions, theme)}
+        >
+          <SubMenu label='Dashboard' icon={<i className='tabler-smart-home' />}>
+            <MenuItem href='/admin/home/management'>Management</MenuItem>
+            
+            {/* <MenuItem href='/admin/home/operations-and-tech'>Operations & Tech</MenuItem> */}
+            {/* <MenuItem href='/admin/home/stores'>Stores</MenuItem> */}
+          </SubMenu>
+
+          <Typography className='py-[0.875rem] text-[#EDEDED66]'>Manage</Typography>
+
+          <MenuItem href='/admin/recharge-and-balance' icon={<i className='tabler-recharging' />}>
+            Recharge & Balance
+          </MenuItem>
+          <SubMenu label='Events' icon={<i className='tabler-calendar-event' />}>
+            <MenuItem href='/admin/events/add-event'>Add an Event</MenuItem>
+            <MenuItem href='/admin/events/req-event'>Request Events</MenuItem>
+            <MenuItem href='/admin/events'>View Events</MenuItem>
+          </SubMenu>
+          <SubMenu label='Customers' icon={<i className='tabler-users' />}>
+            <MenuItem href='/admin/customers/add-customer'>Add a Customer</MenuItem>
+            <MenuItem href='/admin/customers'>View Customers</MenuItem>
+            {/* <MenuItem href='/admin/recharge-and-balance'>Recharge</MenuItem> */}
+            {/* <MenuItem href='#'>View Events</MenuItem> */}
+          </SubMenu>
+          <SubMenu label='Waiver' icon={<i className='tabler-file-check' />}>
+            <MenuItem href='/admin/waiver-template/add'>Register Waiver Template</MenuItem>
+            <MenuItem href='/admin/waiver-template'>Waiver Template</MenuItem>
+            <MenuItem href='/admin/view-signed-waivers'>View Signed Waivers</MenuItem>
+            <MenuItem href='/admin/check-in-history'>Check-in History</MenuItem>
+            <MenuItem href='/admin/export-waiver-data'>Export Data</MenuItem>
+          </SubMenu>
+          <SubMenu label='Reports' icon={<i className='tabler-file-text' />}>
+            <MenuItem href='/admin/reports'>List</MenuItem>
+          </SubMenu>
+        </Menu>
+      </ScrollWrapper>
+    </div>
+  )
+}
+
+export default VerticalMenu
