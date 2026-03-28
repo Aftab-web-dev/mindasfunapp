@@ -1,8 +1,16 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
+  reactStrictMode: true,
+  poweredByHeader: false,
+  output: 'standalone',
   images: {
-    unoptimized: true,
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'api.midasfun.com',
+      },
+    ],
   },
   redirects: async () => {
     return [
@@ -10,10 +18,10 @@ const nextConfig: NextConfig = {
         source: '/',
         destination: '/admin/home/management',
         permanent: true,
-        locale: false
-      }
+        locale: false,
+      },
     ]
-  }
+  },
 }
 
 export default nextConfig

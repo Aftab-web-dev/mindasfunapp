@@ -17,6 +17,7 @@ import Navbar from '@components/layout/vertical/Navbar'
 import VerticalFooter from '@components/layout/vertical/Footer'
 import HorizontalFooter from '@components/layout/horizontal/Footer'
 import ScrollToTop from '@core/components/scroll-to-top'
+import MobileBottomNav from '@components/layout/vertical/MobileBottomNav'
 
 // Util Imports
 import { getMode } from '@core/utils/serverHelpers'
@@ -42,7 +43,8 @@ const Layout = async (props: ChildrenType) => {
           </HorizontalLayout>
         }
       />
-      <ScrollToTop className='mui-fixed'>
+      <MobileBottomNav />
+      <ScrollToTop className='mui-fixed hidden md:block'>
         <Button variant='contained' className='is-10 bs-10 rounded-full p-0 min-is-0 flex items-center justify-center'>
           <i className='tabler-arrow-up' />
         </Button>

@@ -67,14 +67,14 @@ const Logo = () => {
 
   return (
     <div className='flex items-center'>
-      <MidasLogo className='text-2xl text-primary' />
+      <MidasLogo className='text-2xl' style={{ filter: 'brightness(0) invert(1)' }} />
       <LogoText
         ref={logoTextRef}
         isHovered={isHovered}
         isCollapsed={layout === 'collapsed'}
         transitionDuration={transitionDuration}
       >
-        <MidasLogoText width={120} height={16}/>
+        <MidasLogoText width={120} height={16} style={{ filter: 'brightness(0) invert(1)' }} />
       </LogoText>
     </div>
   )

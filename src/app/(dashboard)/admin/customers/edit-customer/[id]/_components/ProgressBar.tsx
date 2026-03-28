@@ -2,66 +2,57 @@
 
 import React from 'react'
 
-// import { CheckCircle } from 'lucide-react'
-
 const steps = [
-  { title: 'First Step', description: 'Personal Details.', icon: 'user' },
-  { title: 'Second Step', description: 'Address.', icon: 'home-link' },
-  { title: 'Final Step', description: 'Submit Your Edit', icon: 'progress-check' }
+  { title: 'Personal Details', description: 'Name, phone & DOB', icon: 'user' },
+  { title: 'Address', description: 'Location & contact', icon: 'home-link' },
+  { title: 'Verification', description: 'Proof & submit', icon: 'progress-check' }
 ]
 
-export default function CustomStepper({ currentStep }: { currentStep: any }) {
+export default function CustomStepper({ currentStep }: { currentStep: number }) {
   return (
-    <div className='sm:px-10 md:py-5 rounded-xl '>
-      <div className='flex justify-around items-center relative '>
-        {steps.map((step, index) => (
-          <React.Fragment key={index}>
+    <div className='relative flex items-center justify-between'>
+      <div className='absolute top-5 left-[40px] right-[40px] h-[2px] bg-[#E2E8F0] z-0 hidden sm:block' />
+      <div
+        className='absolute top-5 left-[40px] h-[2px] bg-[#523F99] z-[1] transition-all duration-500 hidden sm:block'
+        style={{
+          width: currentStep === 0
+            ? '0%'
+            : `calc(${(currentStep / (steps.length - 1)) * 100}% - 80px)`
+        }}
+      />
+
+      {steps.map((step, index) => {
+        const isCompleted = index < currentStep
+        const isActive = index === currentStep
+
+        return (
+          <div key={index} className='flex flex-col items-center relative z-[2] flex-1'>
             <div
-              key={index}
-              className='flex sm:flex-col md:flex-row items-center text-center w-full h-full relative gap-3 justify-center'
+              className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 border-2
+                ${isCompleted
+                  ? 'bg-[#523F99] border-[#523F99] text-white shadow-md shadow-[#523F99]/25'
+                  : isActive
+                    ? 'bg-white border-[#523F99] text-[#523F99] shadow-md shadow-[#523F99]/15'
+                    : 'bg-[#F8FAFC] border-[#E2E8F0] text-[#94A3B8]'
+                }`}
             >
-              <div
-                className={`size-[1.5rem] md:size-[2rem] flex items-center justify-center rounded-sm transition-all duration-300
-                  ${index < currentStep ? 'bg-[#7367f0] text-white border-[#7367f0] shadow-sm border-2' : ''}
-                  ${index === currentStep ? 'border-[#7367f0] bg-white text-[#7367f0] shadow-sm border-2' : ''}
-                  ${index > currentStep ? 'border-gray-300 text-gray-400 bg-gray-50 ' : ''}`}
-              >
-                {index < currentStep ? (
-
-                  // <CheckCircle className='w-4 h-4' />
-                  <i className={`tabler-${step.icon} size-5 max-md:size-4`} />
-                ) : (
-                  <i className={`tabler-${step.icon} size-5 max-md:size-4`} />
-
-                  // <span className='text-sm font-bold'>{index + 1}</span>
-                )}
-              </div>
-              <div className='text-start leading-0 '>
-                <p
-                  className={`text-[0.7rem] font-semibold max-sm:hidden ${index <= currentStep ? 'text-black' : 'text-gray-400'}`}
-                >
-                  {step.title}
-                </p>
-                <p
-                  className={`text-[0.7rem] font-semibold max-lg:hidden ${index <= currentStep ? 'text-gray-500' : 'text-gray-300'}`}
-                >
-                  {step.description}
-                </p>
-              </div>
-              <div className={`${index === 2 && 'hidden'} pl-7  max-md:hidden`}>
-                <i
-                  className={`tabler-border-corner-square rotate-[135deg] size-[0.6rem] ${index <= currentStep ? 'text-gray-500' : 'text-gray-300'}`}
-                />
-              </div>
+              {isCompleted ? (
+                <i className='tabler-check text-base' />
+              ) : (
+                <i className={`tabler-${step.icon} text-lg`} />
+              )}
             </div>
-            <div className={`${index === 2 && 'hidden'} sm:pb-7 max-sm:pr-2 max-[430px]: md:hidden`}>
-              <i
-                className={`tabler-border-corner-square rotate-[135deg] size-[0.6rem] ${index <= currentStep ? 'text-gray-500' : 'text-gray-300'}`}
-              />
+            <div className='mt-2.5 text-center hidden sm:block'>
+              <p className={`text-xs font-semibold leading-tight ${isActive ? 'text-[#1E293B]' : isCompleted ? 'text-[#523F99]' : 'text-[#94A3B8]'}`}>
+                {step.title}
+              </p>
+              <p className={`text-[10px] mt-0.5 ${isActive || isCompleted ? 'text-[#64748B]' : 'text-[#CBD5E1]'}`}>
+                {step.description}
+              </p>
             </div>
-          </React.Fragment>
-        ))}
-      </div>
+          </div>
+        )
+      })}
     </div>
   )
 }

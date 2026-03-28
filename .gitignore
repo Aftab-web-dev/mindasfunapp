@@ -134,3 +134,18 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# Yuva AI - generated native configs (regenerate with: yuva init)
+# Source of truth: AGENTS.md + .aiautomations/
+CLAUDE.md
+.claude/
+GEMINI.md
+.cursor/rules/yuva-*.mdc
+.windsurfrules
+.github/copilot-instructions.md
+.kilo/
+.sourcegraph/
+.amazonq/
+.continue/
+.aider.conf.yml
+OLLAMA_INSTRUCTIONS.md

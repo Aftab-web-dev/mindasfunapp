@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
+import dynamic from 'next/dynamic'
 import Image from 'next/image'
 
 import { z } from 'zod'
@@ -8,8 +9,9 @@ import { useForm, Controller } from 'react-hook-form'
 import type { FieldError } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Box, Button, Modal, TextField, Typography } from '@mui/material'
-import { SignatureCanvas } from 'react-signature-canvas'
 import toast from 'react-hot-toast'
+
+const SignatureCanvas = dynamic(() => import('react-signature-canvas'), { ssr: false })
 
 import AppReactDatepicker from '@/libs/styles/AppReactDatepicker'
 import CheckingFileUpload from '@/components/custom-fields/CheckingFileUpload'

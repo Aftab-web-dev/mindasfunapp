@@ -1,3 +1,6 @@
+// Next Imports
+import type { Metadata, Viewport } from 'next'
+
 // MUI Imports
 import InitColorSchemeScript from '@mui/material/InitColorSchemeScript'
 
@@ -20,8 +23,21 @@ import '@assets/iconify-icons/generated-icons.css'
 import ProgressProvider from '@/components/ProgressBar'
 import RegisterSW from './register-sw';
 
-export const metadata = {
-  title: 'Midas Fun'
+export const metadata: Metadata = {
+  title: {
+    default: 'Midas Fun',
+    template: '%s | Midas Fun',
+  },
+  description: 'Midas Fun - Entertainment management dashboard for events, customers, and operations.',
+  icons: {
+    icon: '/favicon.ico',
+  },
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  themeColor: '#523F99',
 }
 
 const RootLayout = async (props: ChildrenType) => {

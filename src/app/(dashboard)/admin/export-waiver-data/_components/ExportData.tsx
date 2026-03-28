@@ -2,131 +2,131 @@
 
 import React, { useState } from 'react'
 
-import { DateRange } from 'react-date-range'
-import { format } from 'date-fns'
-import 'react-date-range/dist/styles.css'
-import 'react-date-range/dist/theme/default.css'
-import { Button, MenuItem, TextField } from '@mui/material'
+import { Button, MenuItem, TextField, Typography, Box } from '@mui/material'
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
+import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers'
 
 const ExportData = () => {
-  const [showDateRange, setShowDateRange] = useState(false)
-
-  const [dateRange, setDateRange] = useState<any>(null)
-
+  const [startDate, setStartDate] = useState<Date | null>(null)
+  const [endDate, setEndDate] = useState<Date | null>(null)
   const [selectedWaiver, setSelectedWaiver] = useState('Test')
 
   const handleDownload = () => {
     console.log('Downloading...', {
-      start: dateRange?.startDate,
-      end: dateRange?.endDate,
+      start: startDate,
+      end: endDate,
       waiver: selectedWaiver
     })
   }
 
-  return (
-    <div className='p-6 bg-[#ffffff] rounded-lg shadow-md'>
-      <h2 className='text-lg font-semibold mb-4'>Export Data</h2>
+  const fieldSx = {
+    '& .MuiOutlinedInput-root': {
+      borderRadius: '10px',
+      backgroundColor: '#F8FAFC',
+      '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(82,63,153,0.3)' },
+      '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#523F99' }
+    }
+  }
 
-      <div className='bg-[#f6fafd] p-6 rounded-xl'>
-        {/* Date Picker */}
-        <div className='mb-4'>
-          <label className='block font-medium mb-1'>Date</label>
-          <div
-            className={`flex items-center space-x-2 rounded-md border px-4 py-2 max-w-md ${!dateRange ? 'justify-evenly cursor-pointer' : ''}`}
-            onClick={() => {
-              if (!dateRange) setShowDateRange(!showDateRange)
-            }}
-          >
-            {dateRange ? (
-              <>
-                <span
-                  className='underline underline-offset-4 cursor-pointer'
-                  onClick={() => setShowDateRange(!showDateRange)}
-                >
-                  {format(dateRange.startDate, 'PPP p')}
-                </span>
-                <span>to</span>
-                <span
-                  className='underline underline-offset-4 cursor-pointer'
-                  onClick={() => setShowDateRange(!showDateRange)}
-                >
-                  {format(dateRange.endDate, 'PPP p')}
-                </span>
-                <i
-                  className='tabler-square-rounded-x size-[0.875rem] cursor-pointer'
-                  onClick={e => {
-                    e.stopPropagation()
-                    setDateRange(null)
+  return (
+    <LocalizationProvider dateAdapter={AdapterDateFns}>
+      <div className='max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-6'>
+        {/* Page Header */}
+        <div className='mb-5 sm:mb-8 px-1'>
+          <h1 className='text-xl sm:text-2xl font-bold text-[#1E293B]'>Export Data</h1>
+          <p className='text-sm text-[#94A3B8] font-medium mt-1'>Download waiver data as a file</p>
+        </div>
+
+        <div className='rounded-2xl border border-[rgba(0,0,0,0.06)] bg-white'>
+          {/* Section Header */}
+          <Box sx={{ px: { xs: 3, sm: 4, md: 5 }, pt: { xs: 3, sm: 3, md: 4 }, pb: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
+              <Box sx={{ width: 36, height: 36, borderRadius: '10px', backgroundColor: '#F0ECFA', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <i className='tabler-download' style={{ fontSize: '1.125rem', color: '#523F99' }} />
+              </Box>
+              <Box>
+                <Typography sx={{ fontSize: '0.9375rem', fontWeight: 700, color: '#1E293B' }}>Export Settings</Typography>
+                <Typography sx={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 500 }}>Choose date range and waiver template to export</Typography>
+              </Box>
+            </Box>
+          </Box>
+
+          <Box sx={{ px: { xs: 3, sm: 4, md: 5 }, pb: { xs: 3, md: 4 } }}>
+            {/* Date Range - Two DatePickers side by side */}
+            <Box sx={{ mb: 3 }}>
+              <Typography sx={{ fontSize: '0.8125rem', fontWeight: 600, color: '#475569', mb: 1 }}>Date Range</Typography>
+              <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' }, maxWidth: 520 }}>
+                <DatePicker
+                  label='Start Date'
+                  value={startDate}
+                  onChange={val => setStartDate(val)}
+                  slotProps={{
+                    textField: {
+                      size: 'small',
+                      fullWidth: true,
+                      sx: { flex: 1, ...fieldSx }
+                    }
                   }}
                 />
-              </>
-            ) : (
-              <>
-                <span>Start Date</span>
-                <span>to</span>
-                <span>End Date</span>
-              </>
-            )}
-          </div>
-          {showDateRange && (
-            <div className='mt-2'>
-              <DateRange
-                ranges={[
-                  dateRange ?? {
-                    startDate: new Date(),
-                    endDate: new Date(),
-                    key: 'selection'
-                  }
-                ]}
-                onChange={(item: any) => {
-                  setDateRange(item.selection)
-                }}
-                showTimeSelect
-              />
-            </div>
-          )}
-        </div>
+                <DatePicker
+                  label='End Date'
+                  value={endDate}
+                  onChange={val => setEndDate(val)}
+                  slotProps={{
+                    textField: {
+                      size: 'small',
+                      fullWidth: true,
+                      sx: { flex: 1, ...fieldSx }
+                    }
+                  }}
+                />
+              </Box>
+            </Box>
 
-        {/* Select Waiver */}
-        <div className='mb-4 max-w-md'>
-          <label className='block font-medium mb-1'>Select Waiver:</label>
-          <TextField
-            select
-            fullWidth
-            variant='outlined'
-            value={selectedWaiver}
-            onChange={e => setSelectedWaiver(e.target.value)}
-            className='w-full border rounded-md '
-          >
-            <MenuItem value='Test'>Test</MenuItem>
-            <MenuItem value='Test 2'>Test 2</MenuItem>
-            <MenuItem value='Test 3'>Test 3</MenuItem>
-          </TextField>
-        </div>
+            {/* Select Waiver */}
+            <Box sx={{ mb: 4, maxWidth: { xs: '100%', sm: 520 } }}>
+              <Typography sx={{ fontSize: '0.8125rem', fontWeight: 600, color: '#475569', mb: 1 }}>Select Waiver</Typography>
+              <TextField
+                select
+                fullWidth
+                variant='outlined'
+                size='small'
+                value={selectedWaiver}
+                onChange={e => setSelectedWaiver(e.target.value)}
+                sx={fieldSx}
+              >
+                <MenuItem value='Test'>Test</MenuItem>
+                <MenuItem value='Test 2'>Test 2</MenuItem>
+                <MenuItem value='Test 3'>Test 3</MenuItem>
+              </TextField>
+            </Box>
 
-        {/* Download Button */}
-        <Button
-          onClick={handleDownload}
-          className='bg-violet-500 hover:bg-violet-700 text-white px-5 py-2 rounded-md flex items-center'
-        >
-          <svg
-            xmlns='http://www.w3.org/2000/svg'
-            className='h-5 w-5 mr-2'
-            fill='none'
-            viewBox='0 0 24 24'
-            stroke='currentColor'
-          >
-            <path
-              strokeLinecap='round'
-              strokeLinejoin='round'
-              strokeWidth={2}
-              d='M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4'
-            />
-          </svg>
-          Download
-        </Button>
+            {/* Download Button */}
+            <Button
+              onClick={handleDownload}
+              variant='contained'
+              disableElevation
+              fullWidth
+              startIcon={<i className='tabler-download' style={{ fontSize: '1rem' }} />}
+              sx={{
+                borderRadius: '10px',
+                textTransform: 'none',
+                fontWeight: 600,
+                fontSize: '0.875rem',
+                backgroundColor: '#523F99',
+                color: '#FFFFFF',
+                height: 44,
+                px: 3.5,
+                maxWidth: { sm: 200 },
+                '&:hover': { backgroundColor: '#6B52C4' }
+              }}
+            >
+              Download Export
+            </Button>
+          </Box>
+        </div>
       </div>
-    </div>
+    </LocalizationProvider>
   )
 }
 

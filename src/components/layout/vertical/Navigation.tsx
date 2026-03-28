@@ -1,13 +1,15 @@
 'use client'
 
 // React Imports
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 
 // Next Imports
 import Link from 'next/link'
 
 // MUI Imports
-import { styled, useColorScheme, useTheme } from '@mui/material/styles'
+import { useColorScheme, useTheme } from '@mui/material/styles'
+import Box from '@mui/material/Box'
+import Typography from '@mui/material/Typography'
 
 // Type Imports
 import type { Mode } from '@core/types'
@@ -20,34 +22,18 @@ import Logo from '@components/layout/shared/Logo'
 // Hook Imports
 import useVerticalNav from '@menu/hooks/useVerticalNav'
 import { useSettings } from '@core/hooks/useSettings'
+import { useAuth } from '@/hooks/useAuth'
 
 // Style Imports
 import navigationCustomStyles from '@core/styles/vertical/navigationCustomStyles'
+
+const BRAND = '#523F99'
 
 type Props = {
   mode: Mode
 }
 
-const StyledBoxForShadow = styled('div')(({ theme }) => ({
-  top: 60,
-  left: -8,
-  zIndex: 2,
-  opacity: 0,
-  position: 'absolute',
-  pointerEvents: 'none',
-  width: 'calc(100% + 15px)',
-  height: theme.mixins.toolbar.minHeight,
-  transition: 'opacity .15s ease-in-out',
-  background: `linear-gradient(var(--mui-palette-background-paper) ${
-    theme.direction === 'rtl' ? '95%' : '5%'
-  }, rgb(var(--mui-palette-background-paperChannel) / 0.85) 30%, rgb(var(--mui-palette-background-paperChannel) / 0.5) 65%, rgb(var(--mui-palette-background-paperChannel) / 0.3) 75%, transparent)`,
-  '&.scrolled': {
-    opacity: 1
-  }
-}))
-
 const Navigation = (props: Props) => {
-  // Props
   const { mode } = props
 
   // Hooks
@@ -55,32 +41,31 @@ const Navigation = (props: Props) => {
   const { updateSettings, settings } = useSettings()
   const { mode: muiMode, systemMode: muiSystemMode } = useColorScheme()
   const theme = useTheme()
+  const { userName, userRole, handleLogout } = useAuth()
 
   // Refs
-  const shadowRef = useRef(null)
+  const shadowRef = useRef<HTMLDivElement>(null)
 
   // Vars
   const { isCollapsed, isHovered, collapseVerticalNav, isBreakpointReached } = verticalNavOptions
   const isSemiDark = settings.semiDark
-
   const currentMode = muiMode === 'system' ? muiSystemMode : muiMode || mode
-
   const isDark = currentMode === 'dark'
+  const collapsedNotHovered = isCollapsed && !isHovered
 
-  const scrollMenu = (container: any, isPerfectScrollbar: boolean) => {
-    container = isBreakpointReached || !isPerfectScrollbar ? container.target : container
+  const scrollMenu = useCallback((container: HTMLElement | Event, isPerfectScrollbar: boolean) => {
+    const scrollTarget = isBreakpointReached || !isPerfectScrollbar
+      ? (container as Event).target as HTMLElement
+      : container as HTMLElement
 
-    if (shadowRef && container.scrollTop > 0) {
-      // @ts-ignore
+    if (shadowRef.current && scrollTarget.scrollTop > 0) {
       if (!shadowRef.current.classList.contains('scrolled')) {
-        // @ts-ignore
         shadowRef.current.classList.add('scrolled')
       }
     } else {
-      // @ts-ignore
-      shadowRef.current.classList.remove('scrolled')
+      shadowRef.current?.classList.remove('scrolled')
     }
-  }
+  }, [isBreakpointReached])
 
   useEffect(() => {
     if (settings.layout === 'collapsed') {
@@ -92,36 +77,132 @@ const Navigation = (props: Props) => {
   }, [settings.layout])
 
   return (
-    // eslint-disable-next-line lines-around-comment
-    // Sidebar Vertical Menu
     <VerticalNav
       customStyles={navigationCustomStyles(verticalNavOptions, theme)}
-      collapsedWidth={71}
-      backgroundColor='#F8F7FA'
-      // eslint-disable-next-line lines-around-comment
-      // The following condition adds the data-dark attribute to the VerticalNav component
-      // when semiDark is enabled and the mode or systemMode is light
+      collapsedWidth={72}
+      backgroundColor={BRAND}
       {...(isSemiDark &&
         !isDark && {
           'data-dark': ''
         })}
     >
-      {/* Nav Header including Logo & nav toggle icons  */}
+      {/* Nav Header */}
       <NavHeader>
         <Link href='#'>
           <Logo />
         </Link>
-        {!(isCollapsed && !isHovered) && (
+        {!collapsedNotHovered && (
           <NavCollapseIcons
-            lockedIcon={<i className='tabler-circle-dot text-xl' />}
-            unlockedIcon={<i className='tabler-circle text-xl' />}
-            closeIcon={<i className='tabler-x text-xl' />}
+            lockedIcon={
+              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.15)' }}>
+                <i className='tabler-chevron-left' style={{ fontSize: '0.875rem', color: '#fff' }} />
+              </span>
+            }
+            unlockedIcon={
+              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.15)' }}>
+                <i className='tabler-chevron-right' style={{ fontSize: '0.875rem', color: '#fff' }} />
+              </span>
+            }
+            closeIcon={
+              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.15)' }}>
+                <i className='tabler-x' style={{ fontSize: '0.875rem', color: '#fff' }} />
+              </span>
+            }
             onClick={() => updateSettings({ layout: !isCollapsed ? 'collapsed' : 'vertical' })}
           />
         )}
       </NavHeader>
-      <StyledBoxForShadow ref={shadowRef} />
+
+      {/* Main Menu */}
       <VerticalMenu scrollMenu={scrollMenu} />
+
+      {/* Bottom: Profile + Logout */}
+      <Box
+        sx={{
+          mt: 'auto',
+          borderTop: '1px solid rgba(255,255,255,0.1)',
+          px: collapsedNotHovered ? 0 : 2.5,
+          py: 2,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: collapsedNotHovered ? 'center' : 'stretch',
+          gap: 1,
+        }}
+      >
+        {/* Profile */}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5,
+            px: 1,
+            py: 0.75,
+            borderRadius: '10px',
+            justifyContent: collapsedNotHovered ? 'center' : 'flex-start',
+          }}
+        >
+          <Box
+            sx={{
+              width: 34,
+              height: 34,
+              borderRadius: '10px',
+              backgroundColor: 'rgba(255,255,255,0.15)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            <i className='tabler-user' style={{ fontSize: '1.125rem', color: '#fff' }} />
+          </Box>
+          {!collapsedNotHovered && (
+            <Box sx={{ overflow: 'hidden' }}>
+              <Typography
+                noWrap
+                sx={{ fontSize: '0.8125rem', fontWeight: 600, color: '#fff', lineHeight: 1.3 }}
+              >
+                {userName || 'User'}
+              </Typography>
+              <Typography
+                noWrap
+                sx={{ fontSize: '0.6875rem', fontWeight: 500, color: 'rgba(255,255,255,0.5)', lineHeight: 1.3 }}
+              >
+                {userRole || 'Admin'}
+              </Typography>
+            </Box>
+          )}
+        </Box>
+
+        {/* Logout */}
+        <Box
+          role='button'
+          tabIndex={0}
+          aria-label='Logout'
+          onClick={handleLogout}
+          onKeyDown={(e) => e.key === 'Enter' && handleLogout()}
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5,
+            px: 1.5,
+            py: 0.75,
+            borderRadius: '10px',
+            cursor: 'pointer',
+            transition: 'background-color 150ms ease',
+            justifyContent: collapsedNotHovered ? 'center' : 'flex-start',
+            '&:hover': {
+              backgroundColor: 'rgba(255,255,255,0.1)',
+            },
+          }}
+        >
+          <i className='tabler-logout' style={{ fontSize: '1.125rem', color: 'rgba(255,255,255,0.7)' }} />
+          {!collapsedNotHovered && (
+            <Typography sx={{ fontSize: '0.8125rem', fontWeight: 500, color: 'rgba(255,255,255,0.7)' }}>
+              Logout
+            </Typography>
+          )}
+        </Box>
+      </Box>
     </VerticalNav>
   )
 }

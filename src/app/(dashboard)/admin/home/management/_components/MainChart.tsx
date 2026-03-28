@@ -1,217 +1,217 @@
 'use client'
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 
-// Next Imports
 import dynamic from 'next/dynamic'
 
-// MUI Imports
-import Card from '@mui/material/Card'
-import CardHeader from '@mui/material/CardHeader'
-import CardContent from '@mui/material/CardContent'
-import { Box, Button } from '@mui/material'
+import Box from '@mui/material/Box'
+import Typography from '@mui/material/Typography'
+import IconButton from '@mui/material/IconButton'
+import useMediaQuery from '@mui/material/useMediaQuery'
+import { useTheme } from '@mui/material/styles'
 
-// Third-party Imports
 import type { ApexOptions } from 'apexcharts'
 
-// import SplitButtonDropdown from './SplitDropDown'
-
-// Styled Component Imports
 const AppReactApexCharts = dynamic(() => import('@/libs/styles/AppReactApexCharts'))
 
-const MainCart = () => {
-  // State for showing/hiding the data table
+type TStats = {
+  gameRevenue: number
+  cardRevenue: number
+  redemptionRevenue: number
+  eventRevenue: number
+  fbRevenue: number
+  trampolineRevenue: number
+  bowlingRevenue: number
+  ticket: number
+}
+
+// Distribute total revenue across hours using a weighted pattern
+function distributeRevenue(total: number, seed: number): number[] {
+  const patterns: number[][] = [
+    [0.03, 0.04, 0.05, 0.06, 0.08, 0.10, 0.12, 0.11, 0.10, 0.09, 0.08, 0.06, 0.04, 0.03, 0.01],
+    [0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.11, 0.12, 0.11, 0.09, 0.07, 0.04, 0.02],
+    [0.05, 0.06, 0.08, 0.10, 0.09, 0.07, 0.05, 0.06, 0.08, 0.10, 0.09, 0.07, 0.05, 0.03, 0.02],
+  ]
+
+  if (total === 0) return Array(15).fill(0)
+
+  const pattern = patterns[seed % patterns.length]
+  const variation = (i: number) => 1 + Math.sin(seed * 17 + i * 11) * 0.12
+  const raw = pattern.map((p, i) => Math.round(total * p * variation(i)))
+  const rawSum = raw.reduce((a, b) => a + b, 0)
+  const scale = total / (rawSum || 1)
+
+  return raw.map(v => Math.round(v * scale))
+}
+
+const formatValue = (val: number, short: boolean) => {
+  if (!short) return `₹${val.toLocaleString()}`
+  if (val >= 100000) return `₹${(val / 100000).toFixed(1)}L`
+  if (val >= 1000) return `₹${(val / 1000).toFixed(0)}K`
+
+  return `₹${val}`
+}
+
+const MainCart = ({ stats }: { stats: TStats }) => {
   const [showTable, setShowTable] = useState(false)
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
 
-  // Vars
-  const divider = 'var(--mui-palette-divider)'
-  const disabledText = 'var(--mui-palette-text-disabled)'
+  const timeCategories = [
+    '10 AM', '11 AM', '12 PM', '1 PM', '2 PM', '3 PM', '4 PM',
+    '5 PM', '6 PM', '7 PM', '8 PM', '9 PM', '10 PM', '11 PM', '12 AM'
+  ]
 
-  // Multiple series for multiple lines
-  const multiSeries = [
+  const multiSeries = useMemo(() => [
     {
       name: 'Game Revenue',
-      data: [280, 200, 220, 180, 270, 250, 70, 90, 200, 150, 160, 100, 150, 100, 50]
+      data: distributeRevenue(stats.gameRevenue, 0)
     },
     {
       name: 'Product Revenue',
-      data: [170, 150, 120, 160, 250, 220, 190, 160, 160, 180, 120, 180, 170, 190, 160]
+      data: distributeRevenue(stats.cardRevenue, 1)
     },
     {
       name: 'Redemption Revenue',
-      data: [150, 120, 180, 140, 200, 210, 90, 110, 170, 130, 170, 80, 120, 90, 60]
+      data: distributeRevenue(stats.redemptionRevenue, 2)
     }
-  ]
+  ], [stats])
 
-  const options: ApexOptions = {
+  const lineOptions: ApexOptions = {
     chart: {
       parentHeightOffset: 0,
-      zoom: { enabled: false },
-      toolbar: { show: false }
+      toolbar: { show: false },
+      fontFamily: 'inherit',
+      zoom: { enabled: false }
     },
-    colors: ['#A354FF', '#b70021', '#279301'],
-    stroke: { curve: 'straight' },
+    colors: ['#523F99', '#DC2626', '#059669'],
+    stroke: { curve: 'straight', width: isMobile ? 2 : 2.5 },
     dataLabels: { enabled: false },
     markers: {
-      strokeWidth: 7,
+      size: isMobile ? 2 : 4,
+      strokeWidth: isMobile ? 1 : 2,
       strokeOpacity: 1,
-      colors: ['#A354FF', '#b70021', '#279301'],
-      strokeColors: ['#fff', '#fff', '#fff']
+      colors: ['#523F99', '#DC2626', '#059669'],
+      strokeColors: '#fff'
     },
     grid: {
-      padding: { top: -10 },
-      borderColor: divider,
-      xaxis: {
-        lines: { show: true }
-      }
+      borderColor: 'rgba(0,0,0,0.05)',
+      strokeDashArray: 3,
+      padding: { top: -10, left: isMobile ? -10 : 10, right: isMobile ? -10 : 10 },
+      xaxis: { lines: { show: !isMobile } }
     },
     tooltip: {
       shared: true,
-      custom({ series, dataPointIndex, w }) {
-        let tooltipHTML = `<div class="custom-tooltip" style="padding: 8px; background: white; border: 1px solid #ccc; border-radius: 4px;">`
-
-        w.globals.seriesNames.forEach((seriesName: string, i: number) => {
-          const value: number = series[i][dataPointIndex]
-
-          tooltipHTML += `
-    <div style="margin-bottom: 4px;">
-      <span style="font-weight: bold; color: ${w.globals.colors[i]}">${seriesName}</span>:
-      <span>${value}</span>
-    </div>`
-        })
-
-        tooltipHTML += `</div>`
-
-        return tooltipHTML
-      }
+      intersect: false,
+      y: { formatter: (val: number) => `₹${val.toLocaleString()}` }
     },
-    yaxis: {
-      labels: {
-        style: { colors: disabledText, fontSize: '13px' }
+    yaxis: [
+      {
+        title: { text: isMobile ? '' : 'Game Revenue', style: { color: '#523F99', fontSize: '11px', fontWeight: 600 } },
+        labels: {
+          style: { colors: '#523F99', fontSize: isMobile ? '9px' : '11px', fontWeight: 500 },
+          formatter: (val: number) => formatValue(val, isMobile)
+        }
+      },
+      {
+        opposite: true,
+        title: { text: isMobile ? '' : 'Product Revenue', style: { color: '#DC2626', fontSize: '11px', fontWeight: 600 } },
+        labels: {
+          style: { colors: '#DC2626', fontSize: isMobile ? '9px' : '11px', fontWeight: 500 },
+          formatter: (val: number) => formatValue(val, isMobile)
+        }
+      },
+      {
+        show: false,
+        min: 0,
+        labels: {
+          formatter: (val: number) => formatValue(val, isMobile)
+        }
       }
-    },
+    ],
     xaxis: {
       axisBorder: { show: false },
-      axisTicks: { color: divider },
-      crosshairs: {
-        stroke: { color: divider }
-      },
+      axisTicks: { show: false },
       labels: {
-        style: { colors: disabledText, fontSize: '10px' }
+        style: { colors: '#94A3B8', fontSize: isMobile ? '8px' : '11px', fontWeight: 500 },
+        rotate: isMobile ? -45 : 0,
+        hideOverlappingLabels: true,
       },
-      categories: [
-        '10:00 AM',
-        '11:00 AM',
-        '12:00 PM',
-        '01:00 PM',
-        '02:00 PM',
-        '03:00 PM',
-        '04:00 PM',
-        '05:00 PM',
-        '06:00 PM',
-        '07:00 PM',
-        '08:00 PM',
-        '09:00 PM',
-        '10:00 PM',
-        '11:00 PM',
-        '12:00 AM'
-      ]
+      categories: timeCategories
     },
     legend: {
-      show: true
+      show: true,
+      position: 'top',
+      horizontalAlign: 'right',
+      fontSize: '12px',
+      fontWeight: 500,
+      markers: { size: 6, shape: 'circle', offsetX: -3 },
+      itemMargin: { horizontal: 12 },
+      labels: { colors: '#64748B' }
     }
   }
 
-  // const GamesDropDown = ['Game 1', 'Game 2', 'Game 3']
-  // const TimeDropDown = ['7 Days', '15 Days', '30 Days']
-
   return (
-    <Card>
-      <CardHeader
-        title='Total Revenue'
-        subheader={'Period ( Friday,March 10 2023 )'}
-        sx={{
-          flexDirection: ['column', 'row'],
-          alignItems: ['flex-start', 'center'],
-          '& .MuiCardHeader-action': { mb: 0 },
-          '& .MuiCardHeader-content': { mb: [2, 0] }
-        }}
-        action={
-          <Box
-            sx={{
-              display: 'flex',
-              gap: '10px',
-              flexWrap: 'wrap',
-              alignItems: 'center',
-              justifyContent: { xs: 'space-evenly', md: 'space-between' },
-              marginLeft: '20px'
-            }}
-          >
-            {/* <Button
+    <Box
+      sx={{
+        borderRadius: '16px',
+        background: '#FFFFFF',
+        boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+        overflow: 'hidden'
+      }}
+    >
+      {/* Header */}
+      <Box sx={{
+        px: { xs: 2.5, sm: 3 },
+        pt: 2.5,
+        pb: 0.5,
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center'
+      }}>
+        <Box>
+          <Typography sx={{ fontSize: '1rem', fontWeight: 700, color: '#1E293B' }}>
+            Daily balance overview
+          </Typography>
+        </Box>
+        <IconButton
+          onClick={() => setShowTable(prev => !prev)}
+          size='small'
+          sx={{
+            borderRadius: '8px',
+            width: 34,
+            height: 34,
+            color: '#94A3B8',
+            '&:hover': { backgroundColor: 'rgba(82, 63, 153, 0.06)', color: '#523F99' }
+          }}
+        >
+          <i className={showTable ? 'tabler-chart-bar' : 'tabler-table'} style={{ fontSize: '1.125rem' }} />
+        </IconButton>
+      </Box>
 
-            // onClick={() => setSelectedButton('total')}
-            // className={`w-fit py-[0.5rem] px-[2.7813rem] rounded max-sm:text-[0.7rem] text-[0.9375rem] font-[500] leading-[1.375rem] ${
-            //   selectedButton == 'total'
-            //     ? 'bg-[#8638E529]/[16%] text-[#8638E5]'
-            //     : 'bg-[#75757529]/[16%] text-[#757575] '
-            // }`}
-            >
-              Total Daily Revenue
-            </Button> */}
-            <div className='flex gap-3 max-sm:flex-col max-sm:items-center max-sm:w-full '>
-              <Button
-                variant='outlined'
-                onClick={() => {
-                  setShowTable(prev => !prev)
-                }}
-                className='w-full'
-              >
-                {!showTable ? 'View Excel Format' : 'View Data Chart'}
-              </Button>
-              {/* <SplitButtonDropdown
-
-                // selectedButton={selectedButton}
-                // setSelectedButton={setSelectedButton}
-                menuItems={GamesDropDown}
-                title='Game Category'
-              /> */}
-              {/* <SplitButtonDropdown
-
-                selectedButton={selectedButton}
-                menuItems={TimeDropDown}
-                title='Period'
-              /> */}
-            </div>
-          </Box>
-        }
-      />{' '}
-      <CardContent>
-        {' '}
-        {!showTable && (
-          <AppReactApexCharts type='line' width='100%' height={400} options={options} series={multiSeries} />
-        )}
-        {showTable && (
-          <Box sx={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 600 }}>
+      {/* Chart */}
+      <Box sx={{ px: { xs: 1, sm: 1.5 }, pb: 1.5 }}>
+        {!showTable ? (
+          <AppReactApexCharts type='line' width='100%' height={340} options={lineOptions} series={multiSeries} />
+        ) : (
+          <Box sx={{ overflowX: 'auto', px: 1.5, pb: 1 }}>
+            <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 2px', minWidth: 600 }}>
               <thead>
                 <tr>
-                  <th style={{ border: '1px solid #e0e0e0', padding: '8px', background: '#fafafa' }}>Time</th>
-                  {multiSeries.map(series => (
-                    <th
-                      key={series.name}
-                      style={{ border: '1px solid #e0e0e0', padding: '8px', background: '#fafafa' }}
-                    >
-                      {series.name}
+                  <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: '0.75rem', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Time</th>
+                  {multiSeries.map(s => (
+                    <th key={s.name} style={{ padding: '10px 14px', textAlign: 'right', fontSize: '0.75rem', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      {s.name}
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {options.xaxis?.categories?.map((category: any, idx: any) => (
-                  <tr key={category}>
-                    <td style={{ border: '1px solid #e0e0e0', padding: '8px' }}>{category}</td>
-                    {multiSeries.map(series => (
-                      <td key={series.name} style={{ border: '1px solid #e0e0e0', padding: '8px' }}>
-                        {series.data[idx]}
+                {timeCategories.map((cat, idx) => (
+                  <tr key={cat} style={{ backgroundColor: idx % 2 === 0 ? '#FAFAFA' : 'transparent' }}>
+                    <td style={{ padding: '8px 14px', borderRadius: '6px 0 0 6px', fontSize: '0.8125rem', fontWeight: 500, color: '#64748B' }}>{cat}</td>
+                    {multiSeries.map(s => (
+                      <td key={s.name} style={{ padding: '8px 14px', textAlign: 'right', fontSize: '0.8125rem', fontWeight: 600, color: '#1E293B' }}>
+                        ₹{s.data[idx]?.toLocaleString()}
                       </td>
                     ))}
                   </tr>
@@ -220,8 +220,8 @@ const MainCart = () => {
             </table>
           </Box>
         )}
-      </CardContent>{' '}
-    </Card>
+      </Box>
+    </Box>
   )
 }
 

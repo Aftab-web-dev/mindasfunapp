@@ -217,61 +217,136 @@ const EventTable = () => {
   ]
 
   return (
-    <>
-      <>
-        <Card>
-          <CardHeader
-            title='Event List'
-            action={
-              <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                <TextField size='small' placeholder='Search...' value={''} onChange={() => {}} />
-                <Button
-                  size='medium'
-                  variant='contained'
-                  component={Link}
-                  href={`/admin/events/add-event`}
-                  style={{ color: '#ffffff' }}
-                >
-                  Book Event
-                </Button>
-              </Box>
-            }
+    <div className='max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-6 min-h-[calc(100vh-64px)]'>
+      <div className='rounded-2xl border border-[rgba(0,0,0,0.06)] bg-white overflow-hidden min-h-[calc(100vh-120px)] flex flex-col'>
+        {/* Header inside card */}
+        <Box sx={{ px: { xs: 3, sm: 4, md: 5 }, pt: { xs: 3, sm: 3, md: 4 }, pb: 2.5 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2.5 }}>
+            <Box>
+              <Typography sx={{ fontSize: '1.125rem', fontWeight: 700, color: '#1E293B' }}>Events</Typography>
+              <Typography sx={{ fontSize: '0.8125rem', color: '#94A3B8', fontWeight: 500, mt: 0.25 }}>View and manage all booked events</Typography>
+            </Box>
+          </Box>
+          <TextField
+            fullWidth
+            size='small'
+            placeholder='Search by event name, customer, date...'
+            InputProps={{
+              startAdornment: (
+                <Box sx={{ mr: 1.5, display: 'flex', color: '#94A3B8' }}>
+                  <i className='tabler-search' style={{ fontSize: '1rem' }} />
+                </Box>
+              )
+            }}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                borderRadius: '12px',
+                backgroundColor: '#F8FAFC',
+                height: 44,
+                '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(82,63,153,0.3)' },
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#523F99', borderWidth: 2 }
+              },
+              '& .MuiOutlinedInput-input': { fontSize: '0.875rem' }
+            }}
           />
+        </Box>
+
+        {/* Table */}
+        {rows.length > 0 ? (
           <DataGrid
             autoHeight
-            rows={rows || []}
+            rows={rows}
             columns={columns}
             getRowId={row => row.id}
             pagination
             sortingMode='server'
-            slotProps={
-              {
-                baseButton: {
-                  size: 'medium',
-                  variant: 'tonal'
-                },
-                toolbar: {
-                  csvOptions: { disableToolbarButton: true },
-                  printOptions: { disableToolbarButton: true },
-                  showQuickFilter: true,
-                  quickFilterProps: { debounceMs: 1000 }
-                }
-              } as any
-            }
+            sx={{
+              border: 'none',
+              '& .MuiDataGrid-columnHeaders': {
+                backgroundColor: '#F8FAFC',
+                borderTop: '1px solid rgba(0,0,0,0.06)',
+                borderBottom: '1px solid rgba(0,0,0,0.06)'
+              },
+              '& .MuiDataGrid-columnHeaderTitle': {
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                color: '#64748B',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px'
+              },
+              '& .MuiDataGrid-cell': {
+                borderBottom: '1px solid rgba(0,0,0,0.04)',
+                fontSize: '0.8125rem'
+              },
+              '& .MuiDataGrid-row:hover': {
+                backgroundColor: 'rgba(82,63,153,0.02)'
+              }
+            }}
+            slotProps={{
+              baseButton: { size: 'medium', variant: 'tonal' },
+              toolbar: {
+                csvOptions: { disableToolbarButton: true },
+                printOptions: { disableToolbarButton: true },
+                showQuickFilter: true,
+                quickFilterProps: { debounceMs: 1000 }
+              }
+            } as any}
           />
-        </Card>
-        {openDeleteDialog && (
-          <DeleteConfirmationDialog
-            id={dialogId}
-            buttonRef={buttonRef}
-            name={dialogName}
-            open={true}
-            setOpen={setOpenDeleteDialog}
-            deleteFunction={deleteEventData}
-          />
+        ) : (
+          <Box sx={{ py: 10, px: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderTop: '1px solid rgba(0,0,0,0.06)', flex: 1 }}>
+            <Box sx={{ position: 'relative', mb: 4 }}>
+              <Box sx={{ width: 100, height: 100, borderRadius: '50%', backgroundColor: '#F0ECFA', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Box sx={{ width: 70, height: 70, borderRadius: '50%', backgroundColor: '#E4DDF5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <i className='tabler-calendar-event' style={{ fontSize: '2rem', color: '#523F99' }} />
+                </Box>
+              </Box>
+              <Box sx={{ position: 'absolute', top: -6, right: -6, width: 14, height: 14, borderRadius: '50%', backgroundColor: '#523F99', opacity: 0.15 }} />
+              <Box sx={{ position: 'absolute', bottom: 2, left: -10, width: 10, height: 10, borderRadius: '50%', backgroundColor: '#523F99', opacity: 0.1 }} />
+              <Box sx={{ position: 'absolute', top: 10, right: -16, width: 8, height: 8, borderRadius: '50%', backgroundColor: '#06B6D4', opacity: 0.2 }} />
+            </Box>
+            <Typography sx={{ fontSize: '1.125rem', fontWeight: 700, color: '#1E293B', mb: 1 }}>No events yet</Typography>
+            <Typography sx={{ fontSize: '0.875rem', color: '#94A3B8', mb: 1, textAlign: 'center', maxWidth: 320, lineHeight: 1.6 }}>
+              Booked events will appear here. Start by creating your first event.
+            </Typography>
+            <Button
+              variant='contained'
+              component={Link}
+              href='/admin/events/add-event'
+              disableElevation
+              startIcon={<i className='tabler-plus' style={{ fontSize: '0.875rem' }} />}
+              sx={{ borderRadius: '12px', textTransform: 'none', fontWeight: 600, fontSize: '1rem', backgroundColor: '#523F99', color: '#FFFFFF', px: 5, py: 1.5, mt: 2, '&:hover': { backgroundColor: '#6B52C4', boxShadow: '0 6px 20px rgba(82, 63, 153, 0.35)' } }}
+            >
+              Book Your First Event
+            </Button>
+            <Box sx={{ display: 'flex', gap: 4, mt: 5, pt: 4, borderTop: '1px solid rgba(0,0,0,0.04)' }}>
+              {[
+                { icon: 'tabler-calendar-plus', label: 'Create Events', color: '#523F99' },
+                { icon: 'tabler-users', label: 'Manage Guests', color: '#3B82F6' },
+                { icon: 'tabler-report-analytics', label: 'Track Revenue', color: '#10B981' }
+              ].map((item) => (
+                <Box key={item.label} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                  <Box sx={{ width: 40, height: 40, borderRadius: '10px', backgroundColor: `${item.color}10`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <i className={item.icon} style={{ fontSize: '1.125rem', color: item.color }} />
+                  </Box>
+                  <Typography sx={{ fontSize: '0.6875rem', fontWeight: 600, color: '#64748B' }}>{item.label}</Typography>
+                </Box>
+              ))}
+            </Box>
+          </Box>
         )}
-      </>
-    </>
+      </div>
+
+      {openDeleteDialog && (
+        <DeleteConfirmationDialog
+          id={dialogId}
+          buttonRef={buttonRef}
+          name={dialogName}
+          open={true}
+          setOpen={setOpenDeleteDialog}
+          deleteFunction={deleteEventData}
+        />
+      )}
+    </div>
   )
 }
 

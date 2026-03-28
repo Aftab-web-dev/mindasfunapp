@@ -15,6 +15,11 @@ axiosConfig.interceptors.request.use(async (config) => {
         config.headers.Authorization = `Bearer ${token}`;
     }
 
+    // Ensure POST requests always have a body so the server gets a valid Content-Length
+    if (config.method === 'post' && !config.data) {
+        config.data = {};
+    }
+
     return config;
 });
 

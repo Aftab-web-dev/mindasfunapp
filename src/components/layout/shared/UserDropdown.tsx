@@ -1,7 +1,7 @@
 'use client'
 
 // React Imports
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { MouseEvent } from 'react'
 
 // Next Imports
@@ -23,7 +23,7 @@ import Button from '@mui/material/Button'
 
 // Hook Imports
 import { useSettings } from '@core/hooks/useSettings'
-import { clearAuthData } from '@/utils/authStorage'
+import { clearAuthData, getUser } from '@/utils/authStorage'
 import Link from '@/components/Link'
 
 // Styled component for badge content
@@ -39,14 +39,25 @@ const BadgeContentSpan = styled('span')({
 const UserDropdown = () => {
   // States
   const [open, setOpen] = useState(false)
+  const [userName, setUserName] = useState('')
+  const [userEmail, setUserEmail] = useState('')
 
   // Refs
   const anchorRef = useRef<HTMLDivElement>(null)
 
   // Hooks
   const router = useRouter()
-
   const { settings } = useSettings()
+
+  // Load user data
+  useEffect(() => {
+    const user = getUser()
+
+    if (user) {
+      setUserName(user.employeeName || user.userName || 'User')
+      setUserEmail(user.userName || '')
+    }
+  }, [])
 
   const handleDropdownOpen = () => {
     !open ? setOpen(true) : setOpen(false)
@@ -80,7 +91,7 @@ const UserDropdown = () => {
       >
         <Avatar
           ref={anchorRef}
-          alt='John Doe'
+          alt={userName || 'User'}
           src='/images/avatars/profile.png'
           onClick={handleDropdownOpen}
           className='cursor-pointer bs-[38px] is-[38px]'
@@ -105,12 +116,12 @@ const UserDropdown = () => {
               <ClickAwayListener onClickAway={e => handleDropdownClose(e as MouseEvent | TouchEvent)}>
                 <MenuList>
                   <div className='flex items-center plb-2 pli-6 gap-2' tabIndex={-1}>
-                    <Avatar alt='John Doe' src='/images/avatars/profile.png' />
+                    <Avatar alt={userName || 'User'} src='/images/avatars/profile.png' />
                     <div className='flex items-start flex-col'>
                       <Typography className='font-medium' color='text.primary'>
-                        John Doe
+                        {userName || 'User'}
                       </Typography>
-                      <Typography variant='caption'>admin@midas-fun.com</Typography>
+                      <Typography variant='caption'>{userEmail || ''}</Typography>
                     </div>
                   </div>
                   <Divider className='mlb-1' />

@@ -59,12 +59,13 @@ const KanbanBoard = ({
   const loadDropdownOptions = useCallback(async () => {
     try {
       const user = await getUser()
+      const branchId = user?.branchId
 
       const [cake, food, card, gift] = await Promise.all([
-        dropdownApi.cake({ branchId: user?.branchId }),
-        dropdownApi.food({ branchId: user?.branchId }),
-        dropdownApi.card({ branchId: user?.branchId }),
-        dropdownApi.gift({ branchId: user?.branchId })
+        dropdownApi.cake({ branchId }).catch(() => null),
+        dropdownApi.food({ branchId }).catch(() => null),
+        dropdownApi.card({ branchId }).catch(() => null),
+        dropdownApi.gift({ branchId }).catch(() => null)
       ])
 
       setDropdownOptions({
@@ -148,11 +149,11 @@ const KanbanBoard = ({
       <div className='grid md:grid-cols-3 max-[420px]:grid-cols-1 min-[570px]:grid-cols-2 sm:grid-cols-2 gap-10 mx-auto'>
         {/* Columns 0,1,2 - Food, Card, Gift */}
         {[0, 1, 2].map(colIndex => (
-          <div key={colIndex} className='flex flex-col is-[16.5rem] mx-4'>
+          <div key={colIndex} className='flex flex-col is-full mx-4'>
             <div
               id='no-drag'
               className={classnames(
-                'flex items-center justify-between is-[16.5rem] bs-[2.125rem] mbe-4',
+                'flex items-center justify-between is-full bs-[2.125rem] mbe-4',
                 styles.kanbanColumn
               )}
             >
@@ -206,7 +207,7 @@ const KanbanBoard = ({
         ))}
 
         {/* Column 3 – Cake */}
-        <div className='flex flex-col is-[16.5rem] mx-4'>
+        <div className='flex flex-col is-full mx-4'>
           <ColumnHeader title={eventData?.[3]?.title} />
 
           {eventData[3]?.data?.id ? (
@@ -239,7 +240,7 @@ const KanbanBoard = ({
         </div>
 
         {/* Column 4 – Catering */}
-        <div className='flex flex-col is-[16.5rem] mx-4'>
+        <div className='flex flex-col is-full mx-4'>
           <ColumnHeader title={eventData?.[4]?.title} />
 
           {eventData[4]?.data?.id ? (
@@ -271,7 +272,7 @@ const KanbanBoard = ({
         </div>
 
         {/* Column 5 – Other */}
-        <div className='flex flex-col is-[16.5rem] mx-4'>
+        <div className='flex flex-col is-full mx-4'>
           <ColumnHeader title={eventData?.[5]?.title} />
 
           {eventData[5]?.data?.id ? (
@@ -310,7 +311,7 @@ const KanbanBoard = ({
 const ColumnHeader = ({ title }: { title?: string }) => (
   <div
     id='no-drag'
-    className={classnames('flex items-center justify-between is-[16.5rem] bs-[2.125rem] mbe-4', styles.kanbanColumn)}
+    className={classnames('flex items-center justify-between is-full bs-[2.125rem] mbe-4', styles.kanbanColumn)}
   >
     <Typography variant='h5' noWrap className='max-is-[80%]'>
       {title}

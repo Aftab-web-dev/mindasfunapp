@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react'
 
 import { useRouter } from 'next/navigation'
 
-import { Box, Button, CircularProgress, MenuItem, TextField, Typography } from '@mui/material'
+import { Box, Button, MenuItem, TextField, Typography } from '@mui/material'
 import { z } from 'zod'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -196,77 +196,27 @@ const CustomerAdd = () => {
     }
   }
 
-  if (loading) {
-    return (
-      <div
-        style={{
-          display: 'flex',
-          height: '100vh',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}
-      >
-        <CircularProgress />
-      </div>
-    )
-  }
-
   return (
-    <div className='w-full'>
-      <div className='p-6 bg-[#ffffff] rounded-lg mb-5 shadow-md max-md:w-full'>
-        <CustomStepper currentStep={tabIndex} />
+    <div className='max-w-6xl mx-auto px-2 sm:px-4 py-3 sm:py-6'>
+      {/* Page Header */}
+      <div className='mb-4 sm:mb-8 px-1'>
+        <h1 className='text-xl sm:text-2xl font-bold text-[#1E293B]'>Add Customer</h1>
+        <p className='text-xs sm:text-sm text-[#94A3B8] font-medium mt-0.5'>
+          {tabIndex === 0 && 'Fill in personal details'}
+          {tabIndex === 1 && 'Enter address information'}
+          {tabIndex === 2 && 'Verification & submit'}
+        </p>
       </div>
-      <form onSubmit={handleSubmit(onSubmit)} className='max-md:w-full'>
-        <div className='flex justify-between items-center text-center'>
-          <Typography
-            variant='h5'
-            align='left'
-            gutterBottom
-            className='font-bold text-[#4b41ba] leading-[0%] text-base sm:text-lg md:text-xl lg:text-2xl'
-          >
-            CUSTOMER ADD
-          </Typography>
-          {/* Next Button */}
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: { xs: 2, md: 4 }, paddingBottom: '10px' }}>
-            {tabIndex > 0 && (
-              <Button
-                variant='contained'
-                color='primary'
-                onClick={handlePrevi}
-                disabled={tabIndex < 1}
-                className='max-md:text-xs max-md:px-3 minWidth'
-              >
-                {isMobile ? <i className='tabler-chevron-left size-4' /> : 'Back'}
-              </Button>
-            )}
-            {tabIndex < 2 && (
-              <Button
-                variant='contained'
-                color='primary'
-                onClick={handleNext}
-                disabled={tabIndex === steps.length - 1}
-                className='max-md:text-xs max-md:px-3 minWidth'
-              >
-                {isMobile ? <i className='tabler-chevron-right size-4' /> : 'Next'}
-              </Button>
-            )}
-            {tabIndex == 2 && (
-              <Button
-                variant='contained'
-                color='primary'
-                type='submit'
-                disabled={isSubmitting || isLoading}
-                className='max-md:text-xs max-md:px-3 minWidth'
-              >
-                {isMobile ? <i className='tabler-brand-telegram size-4' /> : 'Submit'}
-              </Button>
-            )}
-          </Box>
-        </div>
+
+      <form onSubmit={handleSubmit(onSubmit)}>
+        {/* Step 1: Personal Details */}
         {tabIndex === 0 && (
-          <>
-            <div className='p-6 bg-[#ffffff] rounded-lg shadow-md mt-2 max-sm:mb-10'>
-              <div className='grid sm:grid-cols-2 gap-6 sm:mb-6 mb-3 sm:mt-10'>
+          <div className='rounded-none sm:rounded-2xl border-0 sm:border sm:border-[rgba(0,0,0,0.06)] bg-white'>
+            <div className='px-3 sm:px-6 pt-4 sm:pt-5 pb-3 border-b border-[rgba(0,0,0,0.06)]' style={{ isolation: 'auto' }}>
+              <CustomStepper currentStep={tabIndex} />
+            </div>
+            <div className='px-3 py-4 sm:p-6 md:p-8 relative z-20'>
+              <div className='grid grid-cols-1 md:grid-cols-2 gap-5'>
                 <Controller
                   name='ledgerName'
                   control={control}
@@ -395,14 +345,23 @@ const CustomerAdd = () => {
                   />
                 )}
               </div>
+              <Box sx={{ display: 'flex', justifyContent: { xs: 'stretch', sm: 'flex-end' }, mt: 3, pt: 2.5, borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+                <Button variant='contained' fullWidth onClick={handleNext} disableElevation sx={{ borderRadius: '12px', textTransform: 'none', fontWeight: 600, fontSize: '0.9375rem', backgroundColor: '#523F99', color: '#FFFFFF', height: { xs: 48, sm: 40 }, maxWidth: { sm: 'fit-content' }, px: 3.5, '&:hover': { backgroundColor: '#6B52C4' } }}>
+                  Next
+                </Button>
+              </Box>
             </div>
-          </>
+          </div>
         )}
 
+        {/* Step 2: Address */}
         {tabIndex === 1 && (
-          <>
-            <div className='p-6 bg-[#ffffff] rounded-lg shadow-md mt-2 max-sm:mb-10'>
-              <div className='grid sm:grid-cols-2 gap-6 sm:mb-6 mb-3 sm:mt-10'>
+          <div className='rounded-none sm:rounded-2xl border-0 sm:border sm:border-[rgba(0,0,0,0.06)] bg-white'>
+            <div className='px-3 sm:px-6 pt-4 sm:pt-5 pb-3 border-b border-[rgba(0,0,0,0.06)]' style={{ isolation: 'auto' }}>
+              <CustomStepper currentStep={tabIndex} />
+            </div>
+            <div className='px-3 py-4 sm:p-6 md:p-8 relative z-20'>
+              <div className='grid grid-cols-1 md:grid-cols-2 gap-5'>
                 <Controller
                   name='country'
                   control={control}
@@ -465,8 +424,8 @@ const CustomerAdd = () => {
                       fullWidth
                       size='small'
                       variant='standard'
-                      error={!!errors.state}
-                      helperText={errors.state?.message}
+                      error={!!errors.city}
+                      helperText={errors.city?.message}
                     >
                       {loadingCities ? (
                         <MenuItem disabled>Loading...</MenuItem>
@@ -546,13 +505,22 @@ const CustomerAdd = () => {
                   )}
                 />
               </div>
+              <Box sx={{ display: 'flex', flexDirection: { xs: 'column-reverse', sm: 'row' }, justifyContent: { sm: 'flex-end' }, gap: 1.5, mt: 3, pt: 2.5, borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+                <Button variant='outlined' onClick={handlePrevi} sx={{ borderRadius: '12px', textTransform: 'none', fontWeight: 600, fontSize: '0.9375rem', height: { xs: 48, sm: 40 }, px: 3.5, borderColor: 'rgba(0,0,0,0.12)', color: '#475569', '&:hover': { borderColor: '#523F99', color: '#523F99' } }}>Back</Button>
+                <Button variant='contained' onClick={handleNext} disableElevation sx={{ borderRadius: '12px', textTransform: 'none', fontWeight: 600, fontSize: '0.9375rem', backgroundColor: '#523F99', color: '#FFFFFF', height: { xs: 48, sm: 40 }, px: 3.5, '&:hover': { backgroundColor: '#6B52C4' } }}>Next</Button>
+              </Box>
             </div>
-          </>
+          </div>
         )}
+
+        {/* Step 3: Verification */}
         {tabIndex === 2 && (
-          <>
-            <div className='p-6 bg-[#ffffff] rounded-lg shadow-md mt-2 max-sm:mb-10'>
-              <div className='grid sm:grid-cols-2 gap-6 sm:mb-6 mb-3 sm:mt-10'>
+          <div className='rounded-none sm:rounded-2xl border-0 sm:border sm:border-[rgba(0,0,0,0.06)] bg-white'>
+            <div className='px-3 sm:px-6 pt-4 sm:pt-5 pb-3 border-b border-[rgba(0,0,0,0.06)]' style={{ isolation: 'auto' }}>
+              <CustomStepper currentStep={tabIndex} />
+            </div>
+            <div className='px-3 py-4 sm:p-6 md:p-8 relative z-20'>
+              <div className='grid grid-cols-1 md:grid-cols-2 gap-5'>
                 <Controller
                   name='proof'
                   control={control}
@@ -655,8 +623,12 @@ const CustomerAdd = () => {
                   )}
                 />
               </div>
+              <Box sx={{ display: 'flex', flexDirection: { xs: 'column-reverse', sm: 'row' }, justifyContent: { sm: 'flex-end' }, gap: 1.5, mt: 3, pt: 2.5, borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+                <Button variant='outlined' onClick={handlePrevi} sx={{ borderRadius: '12px', textTransform: 'none', fontWeight: 600, fontSize: '0.9375rem', height: { xs: 48, sm: 40 }, px: 3.5, borderColor: 'rgba(0,0,0,0.12)', color: '#475569', '&:hover': { borderColor: '#523F99', color: '#523F99' } }}>Back</Button>
+                <Button variant='contained' type='submit' disabled={isSubmitting || isLoading} disableElevation sx={{ borderRadius: '12px', textTransform: 'none', fontWeight: 600, fontSize: '0.9375rem', backgroundColor: '#523F99', color: '#FFFFFF', height: { xs: 48, sm: 40 }, px: 3.5, '&:hover': { backgroundColor: '#6B52C4' } }}>Submit</Button>
+              </Box>
             </div>
-          </>
+          </div>
         )}
       </form>
     </div>

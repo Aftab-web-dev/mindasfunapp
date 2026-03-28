@@ -10,7 +10,9 @@ export const decrypt = (text: string): string => {
         const bytes = CryptoJS.AES.decrypt(text, SECRET_KEY);
         
         return bytes.toString(CryptoJS.enc.Utf8);
-    } catch {
+    } catch (error) {
+        console.error('Decryption failed:', error);
+
         return "";
     }
 };

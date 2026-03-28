@@ -1,20 +1,30 @@
 import axiosConfig from './api-config'
 
+// In-memory cache for static dropdown data
+const cache: Record<string, any> = {}
+
+async function cachedPost(key: string, url: string) {
+    if (cache[key]) return cache[key]
+    const response = await axiosConfig.post(url)
+    cache[key] = response
+    return response
+}
+
 export const dropdownApi = {
     countries: async function () {
-        return await axiosConfig.post('DropDown/CountryDropDown')
+        return await cachedPost('countries', 'DropDown/CountryDropDown')
     },
     states: async function ({ countryId }: { countryId: number }) {
-        return await axiosConfig.post(`DropDown/StateDropDown?CountryId=${countryId}`)
+        return await cachedPost(`states_${countryId}`, `DropDown/StateDropDown?CountryId=${countryId}`)
     },
     city: async function ({ stateId }: { stateId: number }) {
-        return await axiosConfig.post(`DropDown/CityDropDown?StateId=${stateId}`)
+        return await cachedPost(`city_${stateId}`, `DropDown/CityDropDown?StateId=${stateId}`)
     },
     gender: async function () {
-        return await axiosConfig.post('DropDown/GenderDropDown')
+        return await cachedPost('gender', 'DropDown/GenderDropDown')
     },
     proofs: async function () {
-        return await axiosConfig.post('DropDown/ProofDropDown')
+        return await cachedPost('proofs', 'DropDown/ProofDropDown')
     },
     event: async function ({ branchId }: { branchId: number | undefined }) {
         return await axiosConfig.post(`DropDown/EventDropDown?BranchId=${branchId}`)

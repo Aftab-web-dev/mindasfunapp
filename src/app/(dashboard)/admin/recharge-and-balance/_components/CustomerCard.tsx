@@ -1,6 +1,5 @@
 import React from 'react'
 
-import { Badge, Card, CardContent, CardHeader } from '@mui/material'
 import { Award, Coins, CreditCard, Gift, User } from 'lucide-react'
 
 interface CustomerData {
@@ -21,82 +20,63 @@ interface CustomerCardProps {
 export const CustomerCard = ({ customerData, mobileNumber, isVerified }: CustomerCardProps) => {
   if (!isVerified || !customerData) {
     return (
-      <Card className='w-full shadow-lg border-0 bg-white/60 backdrop-blur-sm'>
-        <CardHeader
-          className='text-center flex flex-col items-center'
-          avatar={
-            <div className='mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4'>
-              <User className='w-8 h-8 text-gray-400' />
-            </div>
-          }
-          title={<div className='text-xl text-gray-600 pb-2'>Customer Information</div>}
-          subheader={
-            <div className='text-center pb-5'>
-              <p className='text-gray-500'>
-                {mobileNumber ? 'Please verify OTP to view customer details' : 'Enter mobile number to search customer'}
-              </p>
-            </div>
-          }
-        />
-      </Card>
+      <div className='rounded-none sm:rounded-2xl border-0 sm:border sm:border-[rgba(0,0,0,0.06)] bg-white px-3 py-6 sm:p-6 md:p-8 h-full flex flex-col justify-center'>
+        <div className='flex flex-col items-center text-center'>
+          <div className='w-12 h-12 sm:w-14 sm:h-14 bg-[#F1F5F9] rounded-full flex items-center justify-center mb-3'>
+            <User className='w-5 h-5 sm:w-6 sm:h-6 text-[#94A3B8]' />
+          </div>
+          <h3 className='text-base sm:text-lg font-bold text-[#1E293B] mb-0.5'>Customer Information</h3>
+          <p className='text-xs sm:text-sm text-[#94A3B8] font-medium'>
+            {mobileNumber ? 'Verify OTP to view details' : 'Enter mobile number to search'}
+          </p>
+        </div>
+      </div>
     )
   }
 
+  const balanceItems = [
+    { icon: CreditCard, label: 'Card Balance', value: customerData.cardBalance, color: '#3B82F6', bg: '#EFF6FF' },
+    { icon: Coins, label: 'Token Balance', value: customerData.tokenBalance, color: '#523F99', bg: '#F0ECFA' },
+    { icon: Gift, label: 'Cash Bonus', value: customerData.cashBonusBalance, color: '#059669', bg: '#ECFDF5' },
+    { icon: Award, label: 'Point Balance', value: customerData.pointBalance, color: '#EA580C', bg: '#FFF7ED' }
+  ]
+
   return (
-    <Card className='w-full shadow-lg border-0 bg-white/90 backdrop-blur-sm'>
-      <CardHeader
-        className='text-center flex flex-col items-center border-b'
-        avatar={
-          <div className='mx-auto w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mb-4'>
-            <User className='w-8 h-8 text-purple-700' />
+    <div className='rounded-none sm:rounded-2xl border-0 sm:border sm:border-[rgba(0,0,0,0.06)] bg-white overflow-hidden'>
+      {/* Header */}
+      <div className='px-3 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4 border-b border-[rgba(0,0,0,0.06)]'>
+        <div className='flex items-center gap-3'>
+          <div className='w-11 h-11 bg-[#F0ECFA] rounded-full flex items-center justify-center flex-shrink-0'>
+            <User className='w-5 h-5 text-[#523F99]' />
           </div>
-        }
-        title={<div className='text-xl text-gray-800'>Customer Information</div>}
-      />
-
-      <CardContent className='space-y-6 pt-6'>
-        <div className='text-center space-y-2'>
-          <h3 className='text-lg font-semibold text-gray-800'>{customerData.name}</h3>
-          <p className='text-sm text-gray-600'>+91 {mobileNumber}</p>
-          <Badge variant='standard' className='bg-green-100 rounded-sm px-2 text-green-700'>
+          <div className='min-w-0'>
+            <h3 className='text-base font-bold text-[#1E293B] truncate'>{customerData.name}</h3>
+            <p className='text-xs text-[#94A3B8] font-medium'>+91 {mobileNumber}</p>
+          </div>
+          <span className='ml-auto px-2.5 py-0.5 rounded-md text-xs font-semibold bg-[#ECFDF5] text-[#059669] flex-shrink-0'>
             {customerData.status}
-          </Badge>
+          </span>
         </div>
+      </div>
 
-        <div className='space-y-4'>
-          <div className='flex items-center justify-between p-3 bg-blue-50 rounded-lg'>
-            <div className='flex items-center space-x-3'>
-              <CreditCard className='w-5 h-5 text-blue-600' />
-              <span className='text-sm font-medium text-gray-700'>Card Balance</span>
+      {/* Balance Items */}
+      <div className='p-3 sm:p-4 space-y-2'>
+        {balanceItems.map((item) => (
+          <div
+            key={item.label}
+            className='flex items-center justify-between px-4 py-3 rounded-xl'
+            style={{ backgroundColor: item.bg }}
+          >
+            <div className='flex items-center gap-3'>
+              <item.icon className='w-[18px] h-[18px]' style={{ color: item.color }} />
+              <span className='text-sm font-medium text-[#475569]'>{item.label}</span>
             </div>
-            <span className='font-bold text-blue-600'>{customerData.cardBalance}</span>
+            <span className='text-sm font-bold' style={{ color: item.color }}>
+              {item.value}
+            </span>
           </div>
-
-          <div className='flex items-center justify-between p-3 bg-purple-50 rounded-lg'>
-            <div className='flex items-center space-x-3'>
-              <Coins className='w-5 h-5 text-purple-600' />
-              <span className='text-sm font-medium text-gray-700'>Token Balance</span>
-            </div>
-            <span className='font-bold text-purple-600'>{customerData.tokenBalance}</span>
-          </div>
-
-          <div className='flex items-center justify-between p-3 bg-green-50 rounded-lg'>
-            <div className='flex items-center space-x-3'>
-              <Gift className='w-5 h-5 text-green-600' />
-              <span className='text-sm font-medium text-gray-700'>Cash Bonus</span>
-            </div>
-            <span className='font-bold text-green-600'>{customerData.cashBonusBalance}</span>
-          </div>
-
-          <div className='flex items-center justify-between p-3 bg-orange-50 rounded-lg'>
-            <div className='flex items-center space-x-3'>
-              <Award className='w-5 h-5 text-orange-600' />
-              <span className='text-sm font-medium text-gray-700'>Point Balance</span>
-            </div>
-            <span className='font-bold text-orange-600'>{customerData.pointBalance}</span>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+        ))}
+      </div>
+    </div>
   )
 }

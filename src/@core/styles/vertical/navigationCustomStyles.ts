@@ -8,45 +8,46 @@ import type { VerticalNavState } from '@menu/contexts/verticalNavContext'
 import { menuClasses, verticalNavClasses } from '@menu/utils/menuClasses'
 
 const navigationCustomStyles = (verticalNavOptions: VerticalNavState, theme: Theme) => {
-  // Vars
-  const { collapsedWidth, isCollapsed, isHovered, transitionDuration } = verticalNavOptions
-
-  // const collapsedHovered = isCollapsed && isHovered
-  
+  const { isCollapsed, isHovered, transitionDuration } = verticalNavOptions
   const collapsedNotHovered = isCollapsed && !isHovered
 
   return {
-    color: 'var(--mui-palette-text-primary)',
+    color: '#fff',
     zIndex: 'var(--drawer-z-index) !important',
-    [`& .${verticalNavClasses.header}`]: {
-      paddingBlock: theme.spacing(5),
-      paddingInline: theme.spacing(5.5, 4),
 
+    [`& .${verticalNavClasses.header}`]: {
+      paddingBlock: theme.spacing(4),
+      paddingInline: collapsedNotHovered ? 0 : theme.spacing(4.5, 3.5),
       ...(collapsedNotHovered && {
-        paddingInline: theme.spacing(((collapsedWidth as number) - 35) / 8),
-        '& a': {
-          transform: `translateX(-${22 - ((collapsedWidth as number) - 29) / 2}px)`
-        }
+        display: 'flex',
+        justifyContent: 'center',
       }),
       '& a': {
-        transition: `transform ${transitionDuration}ms ease`
+        transition: `transform ${transitionDuration}ms ease`,
+        ...(collapsedNotHovered && {
+          display: 'flex',
+          justifyContent: 'center',
+          width: '100%',
+        }),
       }
     },
+
     [`& .${verticalNavClasses.container}`]: {
       transition: theme.transitions.create(['inline-size', 'inset-inline-start', 'box-shadow'], {
         duration: transitionDuration,
         easing: 'ease-in-out'
       }),
       borderColor: 'transparent',
-     
     },
+
     [`& .${menuClasses.root}`]: {
-      paddingBlock: theme.spacing(1),
-      paddingInline: theme.spacing(3)
+      paddingBlock: theme.spacing(0.5),
+      paddingInline: collapsedNotHovered ? theme.spacing(2.5) : theme.spacing(2.5),
     },
+
     [`& .${verticalNavClasses.backdrop}`]: {
       backgroundColor: 'var(--backdrop-color)'
-    }
+    },
   }
 }
 

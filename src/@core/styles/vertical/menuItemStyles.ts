@@ -85,13 +85,13 @@ const menuItemStyles = (verticalNavOptions: VerticalNavState, theme: Theme): Men
       })
     }),
     icon: ({ level }) => ({
-      transition: `margin-inline-end ${transitionDuration}ms ease-in-out`,
+      transition: `margin-inline-end ${transitionDuration}ms ease-in-out, font-size ${transitionDuration}ms ease-in-out`,
       ...(level === 0 && {
-        fontSize: '1.375rem'
+        fontSize: collapsedNotHovered ? '1.7rem' : '1.25rem'
       }),
       ...(level > 0 && {
         fontSize: '0.75rem',
-        color: 'var(--mui-palette-text-secondary)'
+        color: 'inherit'
       }),
       ...(level === 0 && {
         marginInlineEnd: theme.spacing(2)
@@ -134,8 +134,10 @@ const menuItemStyles = (verticalNavOptions: VerticalNavState, theme: Theme): Men
     subMenuExpandIcon: {
       fontSize: '1.25rem',
       marginInlineStart: theme.spacing(2),
+      color: 'inherit',
       '& i, & svg': {
-        fontSize: 'inherit'
+        fontSize: 'inherit',
+        color: 'inherit'
       }
     },
     subMenuContent: ({ level }) => ({

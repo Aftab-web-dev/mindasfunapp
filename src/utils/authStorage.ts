@@ -5,6 +5,9 @@ import { decrypt, encrypt } from './encrypt';
 const TOKEN_KEY = process.env.NEXT_PUBLIC_TOKEN_KEY as any
 const USER_KEY = process.env.NEXT_PUBLIC_USER_KEY as any;
 
+// In-memory cache to avoid repeated decrypt calls
+let cachedToken: string | null = null;
+
 type Tuser = {
   id: number,
   userStatus: number,
@@ -20,6 +23,9 @@ type Tuser = {
 
 export const getToken = async () => {
   try {
+    // Return cached token if available (avoids repeated decrypt)
+    if (cachedToken) return cachedToken;
+
     let encryptedToken
 
     if (typeof window !== "undefined") {
@@ -33,31 +39,38 @@ export const getToken = async () => {
     }
 
     if (encryptedToken) {
-      return decrypt(encryptedToken);
+      cachedToken = decrypt(encryptedToken);
+
+      return cachedToken;
     }
 
     return null;
-  } catch {
+  } catch (error) {
+    console.error('Failed to retrieve token:', error);
+
     return null;
   }
 };
 
 export const setToken = (token: string): void => {
   try {
+    cachedToken = token;
     const encryptedToken = encrypt(token);
 
     localStorage.setItem(TOKEN_KEY, encryptedToken);
-    Cookies.set(TOKEN_KEY, encryptedToken)
-  } catch {
-    // Handle storage error silently
+    Cookies.set(TOKEN_KEY, encryptedToken, { secure: true, sameSite: 'strict' })
+  } catch (error) {
+    console.error('Failed to store token:', error);
   }
 };
 
 export const removeToken = (): void => {
   try {
+    cachedToken = null;
     localStorage.removeItem(TOKEN_KEY);
-  } catch {
-    // Handle storage error silently
+    Cookies.remove(TOKEN_KEY);
+  } catch (error) {
+    console.error('Failed to remove token:', error);
   }
 };
 
@@ -73,7 +86,9 @@ export const getUser = (): Tuser | null => {
     }
 
     return null;
-  } catch {
+  } catch (error) {
+    console.error('Failed to retrieve user data:', error);
+
     return null;
   }
 };
@@ -83,16 +98,16 @@ export const setUser = (user: any): void => {
     const encryptedUser = encrypt(JSON.stringify(user));
 
     localStorage.setItem(USER_KEY, encryptedUser);
-  } catch {
-    // Handle storage error silently
+  } catch (error) {
+    console.error('Failed to store user data:', error);
   }
 };
 
 export const removeUser = (): void => {
   try {
     localStorage.removeItem(USER_KEY);
-  } catch {
-    // Handle storage error silently
+  } catch (error) {
+    console.error('Failed to remove user data:', error);
   }
 };
 

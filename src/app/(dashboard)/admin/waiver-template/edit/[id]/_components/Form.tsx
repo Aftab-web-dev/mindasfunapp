@@ -5,10 +5,9 @@ import React, { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Box, Button, CircularProgress, TextField, Tooltip, Typography } from '@mui/material'
+import { Box, Button, Skeleton, TextField, Tooltip, Typography } from '@mui/material'
 import { Controller, useForm } from 'react-hook-form'
 import { z } from 'zod'
-import draftToHtml from 'draftjs-to-html'
 import { convertFromHTML, convertToRaw, EditorState, ContentState } from 'draft-js'
 import toast from 'react-hot-toast'
 
@@ -201,8 +200,14 @@ export default function WaiverFormEdit({ data, id }: { data: any; id: string }) 
 
   if (!mounted) return null
 
-  const onSubmit = (values: EventFormValues) => {
-    const htmlContent = values.description ? draftToHtml(convertToRaw(values.description.getCurrentContent())) : ''
+  const onSubmit = async (values: EventFormValues) => {
+    let htmlContent = ''
+
+    if (values.description) {
+      const { default: draftToHtml } = await import('draftjs-to-html')
+
+      htmlContent = draftToHtml(convertToRaw(values.description.getCurrentContent()))
+    }
 
     const formData = {
       ...values,
@@ -216,15 +221,17 @@ export default function WaiverFormEdit({ data, id }: { data: any; id: string }) 
 
   if (loading) {
     return (
-      <div
-        style={{
-          display: 'flex',
-          height: '100vh',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}
-      >
-        <CircularProgress />
+      <div className='p-6 bg-[#ffffff] rounded-lg shadow-md'>
+        <Skeleton variant='text' width={220} height={36} sx={{ borderRadius: '8px', mb: 3 }} />
+        <Skeleton variant='rounded' height={48} sx={{ borderRadius: '10px', mb: 3 }} />
+        <Skeleton variant='rounded' height={200} sx={{ borderRadius: '12px', mb: 3 }} />
+        <Skeleton variant='rounded' height={48} sx={{ borderRadius: '10px', mb: 3 }} />
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
+          {[...Array(7)].map((_, i) => (
+            <Skeleton key={i} variant='rounded' width={120} height={40} sx={{ borderRadius: '10px' }} />
+          ))}
+        </Box>
+        <Skeleton variant='rounded' width={200} height={48} sx={{ borderRadius: '12px' }} />
       </div>
     )
   }

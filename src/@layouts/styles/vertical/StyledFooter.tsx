@@ -74,6 +74,11 @@ const StyledFooter = styled.footer<StyledFooterProps>`
     padding-inline: ${themeConfig.layoutPadding}px;
   }
 
+  /* Hide footer on mobile — bottom tab nav replaces it */
+  @media (max-width: 1199px) {
+    display: none;
+  }
+
   ${({ overrideStyles }) => overrideStyles}
 `
 

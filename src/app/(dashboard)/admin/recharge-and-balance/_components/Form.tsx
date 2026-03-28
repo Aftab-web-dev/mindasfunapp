@@ -85,39 +85,37 @@ const Form = () => {
   }
 
   return (
-    <div className='min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-indigo-100'>
-      <div className='container mx-auto px-4 py-6 max-w-6xl'>
-        {/* Header */}
-        <div className='text-center mb-8'>
-          <h1 className='text-3xl md:text-4xl font-bold text-gray-800 mb-2'>Customer Service Portal</h1>
-          <p className='text-gray-600'>Recharge & Balance Management System</p>
+    <div className='max-w-6xl mx-auto px-2 sm:px-4 py-3 sm:py-6'>
+      {/* Header */}
+      <div className='mb-4 sm:mb-8 px-1'>
+        <h1 className='text-xl sm:text-2xl font-bold text-[#1E293B]'>Recharge & Balance</h1>
+        <p className='text-xs sm:text-sm text-[#94A3B8] font-medium mt-0.5'>Customer verification & balance management</p>
+      </div>
+
+      {/* Main Content */}
+      <div className='grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 items-stretch'>
+        {/* Left Column - Verification & Operations */}
+        <div className='lg:col-span-2 space-y-6 flex flex-col'>
+          {step === 'mobile' && <MobileNumberInput onSubmit={handleMobileSubmit} />}
+
+          {step === 'otp' && (
+            <OTPInput
+              mobileNumber={mobileNumber}
+              onVerify={handleOTPVerify}
+              onBack={handleBackToMobile}
+              isError={isError}
+              setIsError={setIsError}
+            />
+          )}
+
+          {step === 'verified' && (
+            <BalanceOperations mobileNumber={mobileNumber} customerData={customerData} onBack={handleBackToMobile} />
+          )}
         </div>
 
-        {/* Main Content */}
-        <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
-          {/* Left Column - Verification & Operations */}
-          <div className='lg:col-span-2 space-y-6'>
-            {step === 'mobile' && <MobileNumberInput onSubmit={handleMobileSubmit} />}
-
-            {step === 'otp' && (
-              <OTPInput
-                mobileNumber={mobileNumber}
-                onVerify={handleOTPVerify}
-                onBack={handleBackToMobile}
-                isError={isError}
-                setIsError={setIsError}
-              />
-            )}
-
-            {step === 'verified' && (
-              <BalanceOperations mobileNumber={mobileNumber} customerData={customerData} onBack={handleBackToMobile} />
-            )}
-          </div>
-
-          {/* Right Column - Customer Info */}
-          <div className='lg:col-span-1'>
-            <CustomerCard customerData={customerData} mobileNumber={mobileNumber} isVerified={step === 'verified'} />
-          </div>
+        {/* Right Column - Customer Info */}
+        <div className='lg:col-span-1'>
+          <CustomerCard customerData={customerData} mobileNumber={mobileNumber} isVerified={step === 'verified'} />
         </div>
       </div>
     </div>

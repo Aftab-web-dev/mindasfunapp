@@ -35,8 +35,11 @@ export const menuButtonStyles = (props: MenuButtonStylesProps) => {
     color: 'inherit',
     boxSizing: 'border-box',
     cursor: 'pointer',
-    paddingInlineEnd: '20px',
-    paddingInlineStart: `${level === 0 ? 20 : (isPopoutWhenCollapsed && isCollapsed ? level : level + 1) * 20}px`,
+    paddingInlineEnd: isCollapsed && !isPopoutWhenCollapsed && level === 0 ? '0px' : '20px',
+    paddingInlineStart: isCollapsed && !isPopoutWhenCollapsed && level === 0 ? '0px' : `${level === 0 ? 20 : (isPopoutWhenCollapsed && isCollapsed ? level : level + 1) * 20}px`,
+    ...(isCollapsed && !isPopoutWhenCollapsed && level === 0 && {
+      justifyContent: 'center',
+    }),
 
     '&:hover, &[aria-expanded="true"]': {
       backgroundColor: '#f3f3f3'

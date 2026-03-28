@@ -121,10 +121,10 @@ const CheckInHistoryTable = () => {
 
   const columns: GridColDef<any>[] = [
     {
-      flex: 0.275,
-      minWidth: 290,
+      flex: 1,
+      minWidth: 160,
       field: 'date',
-      headerName: ' Checked Date & Time',
+      headerName: 'Date & Time',
       sortable: false,
       disableColumnMenu: true,
       renderCell: (params: any) => {
@@ -136,18 +136,16 @@ const CheckInHistoryTable = () => {
 
         return (
           <Box sx={{ display: 'flex', alignItems: 'center', height: '100%' }}>
-            <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-              <Typography noWrap variant='body2' sx={{ color: 'text.primary', fontWeight: 600 }}>
-                {formatted}
-              </Typography>
-            </Box>
+            <Typography noWrap variant='body2' sx={{ color: 'text.primary', fontWeight: 600 }}>
+              {formatted}
+            </Typography>
           </Box>
         )
       }
     },
     {
-      flex: 0.275,
-      minWidth: 290,
+      flex: 1,
+      minWidth: 140,
       field: 'checker',
       headerName: 'Check-in By',
       sortable: false,
@@ -157,21 +155,19 @@ const CheckInHistoryTable = () => {
 
         return (
           <Box sx={{ display: 'flex', alignItems: 'center', height: '100%' }}>
-            <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-              <Typography noWrap variant='body2' sx={{ color: 'text.primary', fontWeight: 600 }}>
-                {row.checker_email}
-              </Typography>
-            </Box>
+            <Typography noWrap variant='body2' sx={{ color: 'text.primary', fontWeight: 600 }}>
+              {row.checker_email}
+            </Typography>
           </Box>
         )
       }
     },
 
     {
-      flex: 0.275,
-      minWidth: 290,
+      flex: 1,
+      minWidth: 130,
       field: 'customer_name',
-      headerName: 'Customer Name',
+      headerName: 'Customer',
       sortable: false,
       disableColumnMenu: true,
       renderCell: (params: any) => {
@@ -179,28 +175,22 @@ const CheckInHistoryTable = () => {
 
         return (
           <Box sx={{ display: 'flex', alignItems: 'center', height: '100%' }}>
-            <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-              <Typography noWrap variant='body2' sx={{ color: 'text.primary', fontWeight: 600 }}>
-                {row.customer_details.name}
-              </Typography>
-            </Box>
+            <Typography noWrap variant='body2' sx={{ color: 'text.primary', fontWeight: 600 }}>
+              {row.customer_details.name}
+            </Typography>
           </Box>
         )
       }
     },
 
     {
-      flex: 0.1,
-      minWidth: 80,
+      flex: 0,
+      minWidth: 50,
       field: 'code',
-      headerName: 'View and Download as PDF',
+      headerName: 'PDF',
       sortable: false,
       disableColumnMenu: true,
-      renderCell: () =>
-        // params: any "its inside the renderCell function Brackt"
-        {
-          // const { row } = params
-
+      renderCell: () => {
           return (
             <Tooltip title='Click to download'>
               <Box sx={{ display: 'flex', alignItems: 'center', height: '100%', cursor: 'pointer' }}>
@@ -211,19 +201,14 @@ const CheckInHistoryTable = () => {
         }
     },
     {
-      flex: 0.0,
-      minWidth: 130,
+      flex: 0,
+      minWidth: 100,
       sortable: false,
       field: 'actions',
       headerName: 'Actions',
       disableColumnMenu: true,
       renderCell: ({}) => (
         <Box sx={{ display: 'flex', alignItems: 'center', height: '100%' }}>
-          {/* <Tooltip title='View'>
-            <IconButton size='small' component={Link} href={`#`}>
-              <Icon icon='raphael:view' fontSize={20} />
-            </IconButton>
-          </Tooltip> */}
           <Tooltip title='Edit'>
             <IconButton size='small' component={Link} href={`#`}>
               <Icon icon='tabler:edit' fontSize={20} />
@@ -241,97 +226,48 @@ const CheckInHistoryTable = () => {
   ]
 
   return (
-    <>
-      <>
-        <Card>
-          <CardHeader
-            title='Check-in History'
-            action={
-              <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                <TextField size='small' placeholder='Search...' value={''} onChange={() => {}} />
+    <div className='max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-6 min-h-[calc(100vh-64px)]'>
+      <div className='rounded-2xl border border-[rgba(0,0,0,0.06)] bg-white min-h-[calc(100vh-120px)] flex flex-col overflow-hidden'>
+        <Box sx={{ px: { xs: 3, sm: 4, md: 5 }, pt: { xs: 3, sm: 3, md: 4 }, pb: 2.5 }}>
+          <Box sx={{ mb: 2.5 }}>
+            <Typography sx={{ fontSize: '1.125rem', fontWeight: 700, color: '#1E293B' }}>Check-in History</Typography>
+            <Typography sx={{ fontSize: '0.8125rem', color: '#94A3B8', fontWeight: 500, mt: 0.25 }}>Track all customer check-in activity</Typography>
+          </Box>
+          <TextField
+            fullWidth size='small' placeholder='Search by customer name, email...'
+            InputProps={{ startAdornment: (<Box sx={{ mr: 1.5, display: 'flex', color: '#94A3B8' }}><i className='tabler-search' style={{ fontSize: '1rem' }} /></Box>) }}
+            sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px', backgroundColor: '#F8FAFC', height: 44, '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(82,63,153,0.3)' }, '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#523F99', borderWidth: 2 } }, '& .MuiOutlinedInput-input': { fontSize: '0.875rem' } }}
+          />
+        </Box>
+
+        {rows.length > 0 ? (
+          <Box sx={{ overflow: 'auto', flex: 1 }}>
+          <DataGrid autoHeight rows={rows} columns={columns} getRowId={row => row._id} pagination sortingMode='server'
+            sx={{
+              border: 'none',
+              minWidth: 580,
+              '& .MuiDataGrid-columnHeaders': { backgroundColor: '#F8FAFC', borderTop: '1px solid rgba(0,0,0,0.06)', borderBottom: '1px solid rgba(0,0,0,0.06)' },
+              '& .MuiDataGrid-columnHeaderTitle': { fontSize: '0.75rem', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px' },
+              '& .MuiDataGrid-cell': { borderBottom: '1px solid rgba(0,0,0,0.04)', fontSize: '0.8125rem', py: 1.5 },
+              '& .MuiDataGrid-row:hover': { backgroundColor: 'rgba(82,63,153,0.02)' },
+              '& .MuiDataGrid-footerContainer': { borderTop: '1px solid rgba(0,0,0,0.06)' }
+            }}
+            slotProps={{ baseButton: { size: 'medium', variant: 'tonal' }, toolbar: { csvOptions: { disableToolbarButton: true }, printOptions: { disableToolbarButton: true }, showQuickFilter: true, quickFilterProps: { debounceMs: 1000 } } } as any}
+          />
+          </Box>
+        ) : (
+          <Box sx={{ py: { xs: 5, sm: 8 }, px: { xs: 2, sm: 3 }, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderTop: '1px solid rgba(0,0,0,0.06)', flex: 1 }}>
+            <Box sx={{ width: 100, height: 100, borderRadius: '50%', backgroundColor: '#F0ECFA', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 4 }}>
+              <Box sx={{ width: 70, height: 70, borderRadius: '50%', backgroundColor: '#E4DDF5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <i className='tabler-checklist' style={{ fontSize: '2rem', color: '#523F99' }} />
               </Box>
-            }
-          />
-          <DataGrid
-            autoHeight
-            rows={rows || []}
-
-            // rowCount={total}
-            columns={columns}
-            getRowId={row => row._id}
-            pagination
-            sortingMode='server'
-
-            // paginationMode='server'
-
-            // pageSizeOptions={[15, 50]}
-            // paginationModel={paginationModel}
-            // onPaginationModelChange={setPaginationModel}
-            slotProps={
-              {
-                baseButton: {
-                  size: 'medium',
-                  variant: 'tonal'
-                },
-                toolbar: {
-                  csvOptions: { disableToolbarButton: true },
-                  printOptions: { disableToolbarButton: true },
-                  showQuickFilter: true,
-                  quickFilterProps: { debounceMs: 1000 }
-
-                  // value: searchValue,
-                  // clearSearch: () => handleSearch(''),
-                  // onChange: (event: ChangeEvent<HTMLInputElement>) => handleSearch(event.target.value)
-                }
-              } as any
-            }
-          />
-        </Card>
-        {/* {openDeleteDialog && (
-          <DeleteConfirmationDialog
-            id={dialogId}
-            buttonRef={buttonRef}
-            name={dialogName}
-            open={true}
-            setOpen={setOpenDeleteDialog}
-            deleteFunction={deletePeopleData}
-          />
-        )} */}
-        {/* <Dialog open={openModal} onClose={() => setOpenModal(false)} fullWidth maxWidth='md'>
-          <DialogTitle>Check-in Records</DialogTitle>
-          <DialogContent>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Date</TableCell>
-                  <TableCell>Check-in By</TableCell>
-                  <TableCell>Notes</TableCell>
-                  <TableCell>Action</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {selectedCheckIn?.check_ins?.map((check: any, index: number) => (
-                  <TableRow key={index}>
-                    <TableCell>{format(new Date(check.date), 'yyyy/M/d H:mm')}</TableCell>
-                    <TableCell>{check.email}</TableCell>
-                    <TableCell>{check.notes}</TableCell>
-                    <TableCell>
-                      <Button size='small'>Edit</Button>
-                      <Button size='small' color='error'>
-                        Delete
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setOpenModal(false)}>Close</Button>
-          </DialogActions>
-        </Dialog> */}
-      </>
-    </>
+            </Box>
+            <Typography sx={{ fontSize: '1.125rem', fontWeight: 700, color: '#1E293B', mb: 1 }}>No check-in history</Typography>
+            <Typography sx={{ fontSize: '0.875rem', color: '#94A3B8', textAlign: 'center', maxWidth: 320, lineHeight: 1.6 }}>Customer check-in records will appear here.</Typography>
+          </Box>
+        )}
+      </div>
+    </div>
   )
 }
 

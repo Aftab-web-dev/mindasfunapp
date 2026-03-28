@@ -24,6 +24,11 @@ const StyledMain = styled.main<StyledMainProps>`
     display: flex;
     overflow: hidden;
   }
+
+  /* Add bottom padding on mobile for the bottom tab bar */
+  @media (max-width: 1199px) {
+    padding-bottom: ${themeConfig.layoutPadding + 72}px;
+  }
 `
 
 export default StyledMain

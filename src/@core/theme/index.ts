@@ -16,7 +16,12 @@ import shadows from './shadows'
 import customShadows from './customShadows'
 import typography from './typography'
 
-const public_sans = Public_Sans({ subsets: ['latin'], weight: ['300', '400', '500', '600', '700', '800', '900'] })
+const public_sans = Public_Sans({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
+  variable: '--font-public-sans',
+})
 
 const theme = (settings: Settings, mode: SystemMode, direction: Theme['direction']): Theme => {
   return {

@@ -16,10 +16,14 @@ type Props = ComponentProps<typeof ReactDatePicker> & {
 
 const StyledDatePickerWrapper = styled(Box)<BoxProps>(() => ({
   width: '100%',
+  position: 'relative',
+  zIndex: 50,
   '.react-datepicker-wrapper': {
     width: '100%'
   },
-
+  '.react-datepicker-popper': {
+    zIndex: '50 !important'
+  },
   '.react-datepicker__input-container': {
     width: '100%'
   },

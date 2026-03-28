@@ -11,9 +11,9 @@ const SingleNewTask = ({ setDrawerOpen, text }: { setDrawerOpen: any; text: stri
   }
 
   return (
-    <div className='flex flex-col gap-4 items-start'>
+    <div className='flex flex-col gap-4 items-start is-full'>
       <div
-        className='flex flex-col gap-4 lg:is-[16.5rem] md:is-[14.5rem] sm:is-[16.5rem] max-[320px]:is-[12.5rem] min-[390px]:is-[16.5rem] min-[425px]:is-[18.5rem] min-[570px]:is-[14.5rem] min-[590px]:is-[16.5rem] cursor-pointer'
+        className='flex flex-col gap-4 is-full cursor-pointer'
         onClick={() => toggleDisplay()}
       >
         <Card className={classNames('  overflow-visible mbe-4', styles.card)}>

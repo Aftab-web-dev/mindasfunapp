@@ -172,6 +172,9 @@ const StyledHeader = styled.header<StyledHeaderProps>`
     inline-size: 100%;
   }
 
+  /* Hide navbar — sidebar handles navigation on desktop, bottom tabs on mobile */
+  display: none;
+
   ${({ overrideStyles }) => overrideStyles}
 `
 

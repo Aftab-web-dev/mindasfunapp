@@ -5,3 +5,4 @@ export const managementDashboardApi = {
     return await axiosConfig.post(`MangementDashBoard/ManagementValues`)
   }
 }
+

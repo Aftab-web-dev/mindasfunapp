@@ -261,21 +261,6 @@ const EventAddForm = () => {
   }, [])
 
 
-  if (loading) {
-    return (
-      <div
-        style={{
-          display: 'flex',
-          height: '100vh',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}
-      >
-        <CircularProgress />
-      </div>
-    )
-  }
-
   const onSubmit = async (data: EventFormValues) => {
     try {
       const items = [
@@ -358,44 +343,26 @@ const EventAddForm = () => {
   }
 
   return (
-    <>
-      <div className='p-6 bg-[#ffffff] rounded-lg mb-5 shadow-md'>
-        {' '}
-        <CustomStepper currentStep={tabIndex} />
+    <div className='max-w-6xl mx-auto px-2 sm:px-4 py-3 sm:py-6'>
+      {/* Page Header */}
+      <div className='mb-4 sm:mb-8 px-1'>
+        <h1 className='text-xl sm:text-2xl font-bold text-[#1E293B]'>Event Booking</h1>
+        <p className='text-xs sm:text-sm text-[#94A3B8] font-medium mt-0.5'>
+          {tabIndex === 0 && 'Fill in customer details'}
+          {tabIndex === 1 && 'Configure event details'}
+          {tabIndex === 2 && 'Set up arrangements'}
+          {tabIndex === 3 && 'Review and submit'}
+        </p>
       </div>
+
       <form onSubmit={handleSubmit(onSubmit)}>
-        <div className='flex justify-between items-center text-center'>
-          <Typography
-            variant='h5'
-            align='left'
-            gutterBottom
-            className='font-bold text-[#4b41ba] leading-[0%] text-base sm:text-lg md:text-xl lg:text-2xl'
-          >
-            EVENT BOOKING
-          </Typography>
-          {/* Next Button */}
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 4, paddingBottom: '10px' }}>
-            {tabIndex > 0 && (
-              <Button variant='contained' color='primary' onClick={handlePrevi} disabled={tabIndex < 1}>
-                Back
-              </Button>
-            )}
-            {tabIndex < 3 && (
-              <Button variant='contained' color='primary' onClick={handleNext} disabled={tabIndex === steps.length - 1}>
-                Next
-              </Button>
-            )}
-            {tabIndex == 3 && (
-              <Button variant='contained' color='primary' type='submit' disabled={isSubmitting || isLoading}>
-                Submit
-              </Button>
-            )}
-          </Box>
-        </div>
         {tabIndex === 0 && (
-          <>
-            <div className='p-6 bg-[#ffffff] rounded-lg shadow-md mt-2'>
-              <div className='grid grid-cols-2 gap-6 mb-6 mt-10'>
+          <div className='rounded-none sm:rounded-2xl border-0 sm:border sm:border-[rgba(0,0,0,0.06)] bg-white overflow-hidden'>
+            <div className='px-3 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4 border-b border-[rgba(0,0,0,0.06)]'>
+              <CustomStepper currentStep={tabIndex} />
+            </div>
+            <div className='px-3 py-4 sm:p-6 md:p-8'>
+              <div className='grid grid-cols-1 md:grid-cols-2 gap-5'>
                 <Controller
                   name='name'
                   control={control}
@@ -463,14 +430,22 @@ const EventAddForm = () => {
                   )}
                 />
               </div>
+              <Box sx={{ display: 'flex', justifyContent: { xs: 'stretch', sm: 'flex-end' }, mt: 3, pt: 2.5, borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+                <Button variant='contained' fullWidth onClick={handleNext} disableElevation sx={{ borderRadius: '12px', textTransform: 'none', fontWeight: 600, fontSize: '0.9375rem', backgroundColor: '#523F99', color: '#FFFFFF', height: { xs: 48, sm: 40 }, maxWidth: { sm: 'fit-content' }, px: 3.5, '&:hover': { backgroundColor: '#6B52C4' } }}>
+                  Next
+                </Button>
+              </Box>
             </div>
-          </>
+          </div>
         )}
 
         {tabIndex === 1 && (
-          <>
-            <div className='p-6 bg-[#ffffff] rounded-lg shadow-md mt-2'>
-              <div className='grid grid-cols-2 gap-6 mb-6 mt-10'>
+          <div className='rounded-none sm:rounded-2xl border-0 sm:border sm:border-[rgba(0,0,0,0.06)] bg-white overflow-hidden'>
+            <div className='px-3 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4 border-b border-[rgba(0,0,0,0.06)]'>
+              <CustomStepper currentStep={tabIndex} />
+            </div>
+            <div className='px-3 py-4 sm:p-6 md:p-8'>
+              <div className='grid grid-cols-1 md:grid-cols-2 gap-5'>
                 <Controller
                   name='event'
                   control={control}
@@ -593,61 +568,81 @@ const EventAddForm = () => {
                   )}
                 />
               </div>
+              <Box sx={{ display: 'flex', flexDirection: { xs: 'column-reverse', sm: 'row' }, justifyContent: { sm: 'flex-end' }, gap: 1.5, mt: 3, pt: 2.5, borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+                <Button variant='outlined' onClick={handlePrevi} sx={{ borderRadius: '12px', textTransform: 'none', fontWeight: 600, fontSize: '0.9375rem', height: { xs: 48, sm: 40 }, px: 3.5, borderColor: 'rgba(0,0,0,0.12)', color: '#475569', '&:hover': { borderColor: '#523F99', color: '#523F99' } }}>Back</Button>
+                <Button variant='contained' onClick={handleNext} disableElevation sx={{ borderRadius: '12px', textTransform: 'none', fontWeight: 600, fontSize: '0.9375rem', backgroundColor: '#523F99', color: '#FFFFFF', height: { xs: 48, sm: 40 }, px: 3.5, '&:hover': { backgroundColor: '#6B52C4' } }}>Next</Button>
+              </Box>
             </div>
-          </>
+          </div>
         )}
 
         {tabIndex === 2 && (
-          <>
-            <div className='p-6 bg-[#ffffff] rounded-lg shadow-md mt-2'>
+          <div className='rounded-none sm:rounded-2xl border-0 sm:border sm:border-[rgba(0,0,0,0.06)] bg-white overflow-hidden'>
+            <div className='px-3 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4 border-b border-[rgba(0,0,0,0.06)]'>
+              <CustomStepper currentStep={tabIndex} />
+            </div>
+            <div className='px-3 py-4 sm:p-6 md:p-8'>
               <div className={classNames(styles.scroll, 'w-full overflow-auto pis-2 -mis-2')}>
                 <KanbanBoard setEventData={setEventData} eventData={eventData} />
               </div>
+              <Box sx={{ display: 'flex', flexDirection: { xs: 'column-reverse', sm: 'row' }, justifyContent: { sm: 'flex-end' }, gap: 1.5, mt: 3, pt: 2.5, borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+                <Button variant='outlined' onClick={handlePrevi} sx={{ borderRadius: '12px', textTransform: 'none', fontWeight: 600, fontSize: '0.9375rem', height: { xs: 48, sm: 40 }, px: 3.5, borderColor: 'rgba(0,0,0,0.12)', color: '#475569', '&:hover': { borderColor: '#523F99', color: '#523F99' } }}>Back</Button>
+                <Button variant='contained' onClick={handleNext} disableElevation sx={{ borderRadius: '12px', textTransform: 'none', fontWeight: 600, fontSize: '0.9375rem', backgroundColor: '#523F99', color: '#FFFFFF', height: { xs: 48, sm: 40 }, px: 3.5, '&:hover': { backgroundColor: '#6B52C4' } }}>Next</Button>
+              </Box>
             </div>
-          </>
+          </div>
         )}
 
         {tabIndex === 3 && (
-          <>
-            {(() => {
-              const personalInfo = {
-                name: getValues('name'),
-                phone: getValues('phone'),
-                email: getValues('email'),
-                address: getValues('address')
-              }
+          <div className='rounded-none sm:rounded-2xl border-0 sm:border sm:border-[rgba(0,0,0,0.06)] bg-white overflow-hidden'>
+            <div className='px-3 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4 border-b border-[rgba(0,0,0,0.06)]'>
+              <CustomStepper currentStep={tabIndex} />
+            </div>
+            <div className='px-3 py-4 sm:p-6 md:p-8'>
+              {(() => {
+                const personalInfo = {
+                  name: getValues('name'),
+                  phone: getValues('phone'),
+                  email: getValues('email'),
+                  address: getValues('address')
+                }
 
-              const eventInfo = {
-                event_date: getValues('event_date'),
-                event: getValues('event'),
-                venue: getValues('venue'),
-                venue_cost: getValues('venue_cost'),
-                no_of_attendees: getValues('no_of_attendees')
-              }
+                const eventInfo = {
+                  event_date: getValues('event_date'),
+                  event: getValues('event'),
+                  venue: getValues('venue'),
+                  venue_cost: getValues('venue_cost'),
+                  no_of_attendees: getValues('no_of_attendees')
+                }
 
-              return (
-                <div className='grid grid-cols-12 '>
-                  <div className='col-span-8 '>
-                    <Details
-                      control={control}
-                      errors={errors}
-                      setTabIndex={setTabIndex}
-                      data={eventData || ''}
-                      setValue={setValue}
-                      venue_cost={getValues('venue_cost')}
-                    />
+                return (
+                  <div className='grid grid-cols-1 xl:grid-cols-12 gap-6'>
+                    <div className='xl:col-span-8'>
+                      <Details
+                        control={control}
+                        errors={errors}
+                        setTabIndex={setTabIndex}
+                        data={eventData || ''}
+                        setValue={setValue}
+                        venue_cost={getValues('venue_cost')}
+                      />
+                    </div>
+                    <div className='xl:col-span-4'>
+                      <Preview setTabIndex={setTabIndex} data={personalInfo} />
+                      <EventDetail setTabIndex={setTabIndex} data={eventInfo} />
+                    </div>
                   </div>
-                  <div className='col-span-4 mr-4'>
-                    <Preview setTabIndex={setTabIndex} data={personalInfo} />
-                    <EventDetail setTabIndex={setTabIndex} data={eventInfo} />
-                  </div>
-                </div>
-              )
-            })()}
-          </>
+                )
+              })()}
+              <Box sx={{ display: 'flex', flexDirection: { xs: 'column-reverse', sm: 'row' }, justifyContent: { sm: 'flex-end' }, gap: 1.5, mt: 3, pt: 2.5, borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+                <Button variant='outlined' onClick={handlePrevi} sx={{ borderRadius: '12px', textTransform: 'none', fontWeight: 600, fontSize: '0.9375rem', height: { xs: 48, sm: 40 }, px: 3.5, borderColor: 'rgba(0,0,0,0.12)', color: '#475569', '&:hover': { borderColor: '#523F99', color: '#523F99' } }}>Back</Button>
+                <Button variant='contained' type='submit' disabled={isSubmitting || isLoading} disableElevation sx={{ borderRadius: '12px', textTransform: 'none', fontWeight: 600, fontSize: '0.9375rem', backgroundColor: '#523F99', color: '#FFFFFF', height: { xs: 48, sm: 40 }, px: 3.5, '&:hover': { backgroundColor: '#6B52C4' } }}>Submit</Button>
+              </Box>
+            </div>
+          </div>
         )}
       </form>
-    </>
+    </div>
   )
 }
 
