@@ -1,28 +1,28 @@
 import React from 'react'
 
 import { Controller } from 'react-hook-form'
-import type { Control, FieldErrors } from 'react-hook-form'
+import type { Control, FieldErrors, FieldValues, Path } from 'react-hook-form'
 import DatePicker from 'react-datepicker'
 
 import 'react-datepicker/dist/react-datepicker.css'
 import CustomTextField from '@/@core/components/mui/TextField'
 import DatePickerWrapper from '@/@core/styles/libs/react-datepicker'
 
-interface CustomizedDatePickerProps {
-  control: Control<any>
-  name: string
+interface CustomizedDatePickerProps<T extends FieldValues = FieldValues> {
+  control: Control<T>
+  name: Path<T>
   label: string
-  errors: FieldErrors
+  errors: FieldErrors<T>
   popperPlacement?: 'top' | 'bottom' | 'left' | 'right' | 'bottom-start'
 }
 
-export function CustomizedDatePicker({
+export function CustomizedDatePicker<T extends FieldValues = FieldValues>({
   control,
   name,
   label,
   errors,
   popperPlacement = 'bottom-start'
-}: CustomizedDatePickerProps) {
+}: CustomizedDatePickerProps<T>) {
   return (
     <DatePickerWrapper>
       <Controller
