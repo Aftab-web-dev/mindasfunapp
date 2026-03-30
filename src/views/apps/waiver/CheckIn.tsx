@@ -28,15 +28,15 @@ export const getSchema = (data: any) => {
   const baseFields: z.ZodRawShape = {}
 
   baseFields['selectedCustomer'] = z
-  .object({
-    ledgerId: z.number({
-      required_error: 'Please Select a Customer'
+    .object({
+      ledgerId: z.number({
+        required_error: 'Please Select a Customer'
+      })
     })
-  })
-  .nullable()
-  .refine(val => val !== null, {
-    message: 'Please Select a Customer'
-  })
+    .nullable()
+    .refine(val => val !== null, {
+      message: 'Please Select a Customer'
+    })
 
   // ✅ NAME
   if (data.name === 1) {
@@ -177,7 +177,7 @@ const CheckIn = ({ data, customers }: { data: Tdata; customers: TCustomer[] }) =
 
   const [savedSignature, setSavedSignature] = useState<string | null>(null)
   const [isSignatureModalOpen, setSignatureModalOpen] = useState(false)
-  const sigCanvasRef = useRef<SignatureCanvas>(null)
+  const sigCanvasRef = useRef<any>(null)
   const [showFullDescription, setShowFullDescription] = useState(false)
   const [isDescriptionClamped, setIsDescriptionClamped] = useState(false)
   const descriptionRef = useRef<HTMLDivElement>(null)
@@ -535,7 +535,7 @@ const CheckIn = ({ data, customers }: { data: Tdata; customers: TCustomer[] }) =
             Sign Below
           </Typography>
           <SignatureCanvas
-            ref={sigCanvasRef}
+            {...({ ref: sigCanvasRef } as any)}
             penColor='black'
             canvasProps={{ width: 360, height: 150, className: 'sigCanvas border' }}
           />
