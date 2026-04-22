@@ -4,9 +4,9 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 import Link from 'next/link'
 
-import { Box, Button, Card, CardHeader, IconButton, TextField, Tooltip, Typography } from '@mui/material'
+import { Box, Button, Card, CardHeader, IconButton, TextField, Tooltip, Typography, alpha } from '@mui/material'
 
-import { DataGrid } from '@mui/x-data-grid'
+import { DataGrid, DataGridProps } from '@mui/x-data-grid'
 import type { GridColDef } from '@mui/x-data-grid'
 
 import { Icon } from '@iconify/react/dist/iconify.js'
@@ -204,15 +204,61 @@ const CustomerTable = () => {
             getRowId={row => row.ledgerId}
             pagination
             sortingMode='server'
+            disableRowSelectionOnClick
             columnVisibilityModel={{ phone: typeof window !== 'undefined' ? window.innerWidth >= 640 : true }}
             sx={{
               border: 'none',
-              '& .MuiDataGrid-columnHeaders': { backgroundColor: '#F8FAFC', borderTop: '1px solid rgba(0,0,0,0.06)', borderBottom: '1px solid rgba(0,0,0,0.06)' },
-              '& .MuiDataGrid-columnHeaderTitle': { fontSize: '0.75rem', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px' },
-              '& .MuiDataGrid-cell': { borderBottom: '1px solid rgba(0,0,0,0.04)', fontSize: '0.8125rem' },
-              '& .MuiDataGrid-row:hover': { backgroundColor: 'rgba(82,63,153,0.02)' },
+              borderRadius: '12px',
+              overflow: 'hidden',
+              '& .MuiDataGrid-columnHeaders': { 
+                backgroundColor: '#F8FAFC', 
+                borderBottom: '1px solid rgba(0,0,0,0.08)' 
+              },
+              '& .MuiDataGrid-columnHeaderTitle': { 
+                fontSize: '0.75rem', 
+                fontWeight: 600, 
+                color: '#64748B', 
+                textTransform: 'uppercase', 
+                letterSpacing: '0.5px' 
+              },
+              '& .MuiDataGrid-columnHeader': {
+                '&:focus, &:focus-within': {
+                  outline: 'none'
+                }
+              },
+              '& .MuiDataGrid-cell': { 
+                borderBottom: '1px solid rgba(0,0,0,0.06)', 
+                fontSize: '0.875rem',
+                py: 1.5
+              },
+              '& .MuiDataGrid-row': {
+                '&:hover': { 
+                  backgroundColor: alpha('#523F99', 0.04) 
+                },
+                '&:focus, &:focus-within': {
+                  outline: 'none',
+                  backgroundColor: alpha('#523F99', 0.04)
+                }
+              },
+              '& .MuiDataGrid-footerContainer': {
+                borderTop: '1px solid rgba(0,0,0,0.08)'
+              },
+              '& .MuiTablePagination-root': {
+                fontSize: '0.8125rem'
+              },
+              '& .MuiDataGrid-virtualScroller': {
+                minHeight: '300px'
+              }
             }}
-            slotProps={{ baseButton: { size: 'medium', variant: 'tonal' }, toolbar: { csvOptions: { disableToolbarButton: true }, printOptions: { disableToolbarButton: true }, showQuickFilter: true, quickFilterProps: { debounceMs: 1000 } } } as any}
+            slotProps={{ 
+              baseButton: { size: 'medium', variant: 'tonal' }, 
+              toolbar: { 
+                csvOptions: { disableToolbarButton: true }, 
+                printOptions: { disableToolbarButton: true }, 
+                showQuickFilter: true, 
+                quickFilterProps: { debounceMs: 1000 } 
+              } 
+            } as any}
           />
         ) : (
           <Box sx={{ py: { xs: 5, sm: 8 }, px: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderTop: '1px solid rgba(0,0,0,0.06)', flex: 1 }}>

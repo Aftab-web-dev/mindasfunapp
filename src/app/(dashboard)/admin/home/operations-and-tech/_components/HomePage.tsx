@@ -1,5 +1,6 @@
 'use client'
 import React, { useState } from 'react'
+import { Box } from '@mui/material'
 
 import StatsCard from './StatsCard'
 import DataTable from './DataTable'
@@ -13,11 +14,11 @@ const statsCardArray = [
     status_content: '+89%',
     icon: 'tabler-access-point',
     maintenanceData: [
-      { equipment: 'VR Pod 1', issue: 'Tracking Loss', technician: 'Liam R.', eta: '45 mins', status: { label: 'In Progress', color: 'bg-blue-100 text-blue-600' } },
-      { equipment: 'Foosball Table', issue: 'Stuck Rods', technician: 'Nina M.', eta: '1 hour', status: { label: 'Scheduled', color: 'bg-green-100 text-green-700' } },
-      { equipment: 'Laser Tag Gun', issue: 'Battery Drain', technician: 'Tom H.', eta: '30 mins', status: { label: 'Diagnosed', color: 'bg-gray-100 text-gray-600' } },
-      { equipment: 'Dance Machine', issue: 'Pad Unresponsive', technician: 'Sara K.', eta: '2 hours', status: { label: 'Waiting Parts', color: 'bg-yellow-100 text-yellow-700' } },
-      { equipment: 'Racing Sim 1', issue: 'Seat Motor Fault', technician: 'Raj P.', eta: '1.5 hours', status: { label: 'Critical', color: 'bg-red-100 text-red-600' } }
+      { equipment: 'VR Pod 1', issue: 'Tracking Loss', technician: 'Liam R.', eta: '45 mins', status: { label: 'In Progress', color: '' } },
+      { equipment: 'Foosball Table', issue: 'Stuck Rods', technician: 'Nina M.', eta: '1 hour', status: { label: 'Pending', color: '' } },
+      { equipment: 'Laser Tag Gun', issue: 'Battery Drain', technician: 'Tom H.', eta: '30 mins', status: { label: 'Pending', color: '' } },
+      { equipment: 'Dance Machine', issue: 'Pad Unresponsive', technician: 'Sara K.', eta: '2 hours', status: { label: 'Pending', color: '' } },
+      { equipment: 'Racing Sim 1', issue: 'Seat Motor Fault', technician: 'Raj P.', eta: '1.5 hours', status: { label: 'Pending', color: '' } }
     ],
     alertsData: [
       { title: 'Laser Tag Arena', desc: 'Battery low warning', time: '20 mins ago' },
@@ -33,11 +34,11 @@ const statsCardArray = [
     status_content: '+89%',
     icon: 'tabler-wifi-off',
     maintenanceData: [
-      { equipment: 'Arcade Machine 7', issue: 'Display Flickering', technician: 'Maria S.', eta: '2 hours', status: { label: 'Waiting Parts', color: 'bg-yellow-100 text-yellow-700' } },
-      { equipment: 'VR Headset 4', issue: 'Controller Not Responding', technician: 'John D.', eta: '30 mins', status: { label: 'Scheduled', color: 'bg-green-100 text-green-700' } },
-      { equipment: 'Bowling Lane 3', issue: 'Pin Setter Jam', technician: 'Sam K.', eta: '3 hours', status: { label: 'Diagnosed', color: 'bg-gray-100 text-gray-600' } },
-      { equipment: 'Air Hockey Table', issue: 'Air Pressure Low', technician: 'Emma P.', eta: '45 mins', status: { label: 'Critical', color: 'bg-red-100 text-red-600' } },
-      { equipment: 'Photo Booth', issue: 'Printer Paper Jam', technician: 'Derek L.', eta: '1 hour', status: { label: 'In Progress', color: 'bg-blue-100 text-blue-600' } }
+      { equipment: 'Arcade Machine 7', issue: 'Display Flickering', technician: 'Maria S.', eta: '2 hours', status: { label: 'Waiting Parts', color: '' } },
+      { equipment: 'VR Headset 4', issue: 'Controller Not Responding', technician: 'John D.', eta: '30 mins', status: { label: 'Pending', color: '' } },
+      { equipment: 'Bowling Lane 3', issue: 'Pin Setter Jam', technician: 'Sam K.', eta: '3 hours', status: { label: 'Diagnosed', color: '' } },
+      { equipment: 'Air Hockey Table', issue: 'Air Pressure Low', technician: 'Emma P.', eta: '45 mins', status: { label: 'Critical', color: '' } },
+      { equipment: 'Photo Booth', issue: 'Printer Paper Jam', technician: 'Derek L.', eta: '1 hour', status: { label: 'In Progress', color: '' } }
     ],
     alertsData: [
       { title: 'Photo Booth', desc: 'Printer paper empty', time: '35 mins ago' },
@@ -53,11 +54,11 @@ const statsCardArray = [
     status_content: '3 Urgent',
     icon: 'tabler-devices-cog',
     maintenanceData: [
-      { equipment: 'Claw Machine 2', issue: 'Grabber Stuck', technician: 'Jason K.', eta: '1.5 hours', status: { label: 'Critical', color: 'bg-red-100 text-red-600' } },
-      { equipment: 'Whack-a-Mole', issue: 'Buttons Jammed', technician: 'Ava C.', eta: '2 hours', status: { label: 'Scheduled', color: 'bg-green-100 text-green-700' } },
-      { equipment: 'Mini Golf Hole 3', issue: 'Obstacle Misaligned', technician: 'Ethan Z.', eta: '1 hour', status: { label: 'Diagnosed', color: 'bg-gray-100 text-gray-600' } },
-      { equipment: 'Karaoke Booth', issue: 'Microphone Distortion', technician: 'Zara V.', eta: '1 hour', status: { label: 'Waiting Parts', color: 'bg-yellow-100 text-yellow-700' } },
-      { equipment: 'Prize Crane', issue: 'Motor Overheat', technician: 'Kyle N.', eta: '45 mins', status: { label: 'In Progress', color: 'bg-blue-100 text-blue-600' } }
+      { equipment: 'Claw Machine 2', issue: 'Grabber Stuck', technician: 'Jason K.', eta: '1.5 hours', status: { label: 'Critical', color: '' } },
+      { equipment: 'Whack-a-Mole', issue: 'Buttons Jammed', technician: 'Ava C.', eta: '2 hours', status: { label: 'Pending', color: '' } },
+      { equipment: 'Mini Golf Hole 3', issue: 'Obstacle Misaligned', technician: 'Ethan Z.', eta: '1 hour', status: { label: 'Diagnosed', color: '' } },
+      { equipment: 'Karaoke Booth', issue: 'Microphone Distortion', technician: 'Zara V.', eta: '1 hour', status: { label: 'Waiting Parts', color: '' } },
+      { equipment: 'Prize Crane', issue: 'Motor Overheat', technician: 'Kyle N.', eta: '45 mins', status: { label: 'In Progress', color: '' } }
     ],
     alertsData: [
       { title: 'VR Room', desc: 'Calibration error', time: '2 hours ago' },
@@ -73,11 +74,11 @@ const statsCardArray = [
     status_content: '2 Remote',
     icon: 'tabler-users',
     maintenanceData: [
-      { equipment: 'Mini Golf 1', issue: 'Lighting Flicker', technician: 'Diana F.', eta: '50 mins', status: { label: 'Scheduled', color: 'bg-green-100 text-green-700' } },
-      { equipment: 'Virtual Bike Ride', issue: 'VR Glitch', technician: 'Ben H.', eta: '1 hour', status: { label: 'Diagnosed', color: 'bg-gray-100 text-gray-600' } },
-      { equipment: 'Photo Machine', issue: 'Color Mismatch', technician: 'Riya S.', eta: '1.5 hours', status: { label: 'Waiting Parts', color: 'bg-yellow-100 text-yellow-700' } },
-      { equipment: 'Dance Mat 2', issue: 'Sensor Lag', technician: 'Ibrahim K.', eta: '2 hours', status: { label: 'Critical', color: 'bg-red-100 text-red-600' } },
-      { equipment: 'Prize Crane 3', issue: 'Grabber Fault', technician: 'Luca W.', eta: '45 mins', status: { label: 'In Progress', color: 'bg-blue-100 text-blue-600' } }
+      { equipment: 'Mini Golf 1', issue: 'Lighting Flicker', technician: 'Diana F.', eta: '50 mins', status: { label: 'Pending', color: '' } },
+      { equipment: 'Virtual Bike Ride', issue: 'VR Glitch', technician: 'Ben H.', eta: '1 hour', status: { label: 'Diagnosed', color: '' } },
+      { equipment: 'Photo Machine', issue: 'Color Mismatch', technician: 'Riya S.', eta: '1.5 hours', status: { label: 'Waiting Parts', color: '' } },
+      { equipment: 'Dance Mat 2', issue: 'Sensor Lag', technician: 'Ibrahim K.', eta: '2 hours', status: { label: 'Critical', color: '' } },
+      { equipment: 'Prize Crane 3', issue: 'Grabber Fault', technician: 'Luca W.', eta: '45 mins', status: { label: 'In Progress', color: '' } }
     ],
     alertsData: [
       { title: 'Employee Terminal', desc: 'Login timeout', time: '5 mins ago' },
@@ -93,11 +94,11 @@ const statsCardArray = [
     status_content: '5 High Priority',
     icon: 'tabler-file-text',
     maintenanceData: [
-      { equipment: 'Basketball Game 1', issue: 'Score Not Updating', technician: 'Luca W.', eta: '40 mins', status: { label: 'In Progress', color: 'bg-blue-100 text-blue-600' } },
-      { equipment: 'Photo Machine', issue: 'Color Mismatch', technician: 'Riya S.', eta: '1.5 hours', status: { label: 'Waiting Parts', color: 'bg-yellow-100 text-yellow-700' } },
-      { equipment: 'Whack-a-Mole 2', issue: 'Hammer Jam', technician: 'Ava C.', eta: '2 hours', status: { label: 'Scheduled', color: 'bg-green-100 text-green-700' } },
-      { equipment: 'Claw Crane 5', issue: 'Claw Weak Grip', technician: 'Jason K.', eta: '1 hour', status: { label: 'Diagnosed', color: 'bg-gray-100 text-gray-600' } },
-      { equipment: 'Ticket Printer', issue: 'Ink Low', technician: 'Sara K.', eta: '30 mins', status: { label: 'Critical', color: 'bg-red-100 text-red-600' } }
+      { equipment: 'Basketball Game 1', issue: 'Score Not Updating', technician: 'Luca W.', eta: '40 mins', status: { label: 'In Progress', color: '' } },
+      { equipment: 'Photo Machine', issue: 'Color Mismatch', technician: 'Riya S.', eta: '1.5 hours', status: { label: 'Waiting Parts', color: '' } },
+      { equipment: 'Whack-a-Mole 2', issue: 'Hammer Jam', technician: 'Ava C.', eta: '2 hours', status: { label: 'Pending', color: '' } },
+      { equipment: 'Claw Crane 5', issue: 'Claw Weak Grip', technician: 'Jason K.', eta: '1 hour', status: { label: 'Diagnosed', color: '' } },
+      { equipment: 'Ticket Printer', issue: 'Ink Low', technician: 'Sara K.', eta: '30 mins', status: { label: 'Critical', color: '' } }
     ],
     alertsData: [
       { title: 'Customer Queue Display', desc: 'Flickering', time: '1 hour ago' },
@@ -113,11 +114,11 @@ const statsCardArray = [
     status_content: '+1.2% ^',
     icon: 'tabler-activity',
     maintenanceData: [
-      { equipment: 'Main Server Rack', issue: 'Overheating', technician: 'Ken B.', eta: '2 hours', status: { label: 'Diagnosed', color: 'bg-gray-100 text-gray-600' } },
-      { equipment: 'Karaoke Booth', issue: 'Mic Distortion', technician: 'Zara V.', eta: '1 hour', status: { label: 'Scheduled', color: 'bg-green-100 text-green-700' } },
-      { equipment: 'Network Switch', issue: 'Port Failure', technician: 'Mark S.', eta: '3 hours', status: { label: 'Critical', color: 'bg-red-100 text-red-600' } },
-      { equipment: 'Cooling Unit', issue: 'Fan Noise', technician: 'Olivia J.', eta: '1.5 hours', status: { label: 'In Progress', color: 'bg-blue-100 text-blue-600' } },
-      { equipment: 'Backup Generator', issue: 'Battery Check', technician: 'Ken B.', eta: '45 mins', status: { label: 'Waiting Parts', color: 'bg-yellow-100 text-yellow-700' } }
+      { equipment: 'Main Server Rack', issue: 'Overheating', technician: 'Ken B.', eta: '2 hours', status: { label: 'Diagnosed', color: '' } },
+      { equipment: 'Karaoke Booth', issue: 'Mic Distortion', technician: 'Zara V.', eta: '1 hour', status: { label: 'Pending', color: '' } },
+      { equipment: 'Network Switch', issue: 'Port Failure', technician: 'Mark S.', eta: '3 hours', status: { label: 'Critical', color: '' } },
+      { equipment: 'Cooling Unit', issue: 'Fan Noise', technician: 'Olivia J.', eta: '1.5 hours', status: { label: 'In Progress', color: '' } },
+      { equipment: 'Backup Generator', issue: 'Battery Check', technician: 'Ken B.', eta: '45 mins', status: { label: 'Waiting Parts', color: '' } }
     ],
     alertsData: [
       { title: 'System Health Monitor', desc: 'Uptime below threshold', time: '3 hours ago' },
@@ -126,30 +127,41 @@ const statsCardArray = [
       { title: 'Power Grid', desc: 'Voltage fluctuation', time: '15 mins ago' }
     ]
   }
-];
-
+]
 
 const HomePage = () => {
   const [selectedStat, setSelectedStat] = useState(statsCardArray[0])
 
   return (
-    <div>
-      <div className='grid  lg:grid-rows-2 ~gap-[0.5rem]/[1rem] md:grid-cols-3 grid-cols-2 '>
+    <Box>
+      {/* Stats Cards Grid */}
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
+          gap: { xs: 1, sm: 1.5, md: 2 },
+        }}
+      >
         {statsCardArray.map((item, i) => (
-          <div key={i} onClick={() => setSelectedStat(item)}>
-            <StatsCard item={item} selected={selectedStat.title === item.title} />
-          </div>
+          <Box key={i} onClick={() => setSelectedStat(item)}>
+            <StatsCard item={item} selected={selectedStat.title === item.title} index={i} />
+          </Box>
         ))}
-      </div>
-      <div className='md:grid md:grid-cols-12 gap-4  pt-4'>
-        <div className='md:col-span-8 '>
-          <DataTable maintenanceData={selectedStat.maintenanceData} title={selectedStat.title}/>
-        </div>{' '}
-        <div className='md:col-span-4 max-md:pt-4'>
-          <Alerts alertsData={selectedStat.alertsData} />
-        </div>{' '}
-      </div>{' '}
-    </div>
+      </Box>
+
+      {/* Table + Alerts */}
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', md: '8fr 4fr' },
+          gap: { xs: 2, md: 2.5 },
+          mt: { xs: 2, md: 2.5 },
+        }}
+      >
+        <DataTable maintenanceData={selectedStat.maintenanceData} title={selectedStat.title} />
+        <Alerts alertsData={selectedStat.alertsData} />
+      </Box>
+    </Box>
   )
 }
 

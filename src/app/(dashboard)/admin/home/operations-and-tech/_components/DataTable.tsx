@@ -1,66 +1,157 @@
-import React from 'react'
+'use client'
 
-const DataTable = ({ maintenanceData, title }: { maintenanceData: any; title: any }) => (
-  <div className='w-full'>
-    {/* Maintenance Schedule */}
-    <div className='bg-white rounded-xl p-7 flex-1 shadow-sm max-w-full overflow-x-auto'>
-      <h2 className='font-semibold text-lg ~text-[0.8rem]/[1.125rem] ~leading-[1.25rem]/[1.75rem] mb-6'>Maintenance Schedule - {title}</h2>
-      <table className='w-full ~text-[0.5rem]/[0.875rem] ~leading-[0.7rem]/[1.25rem]'>
-        <thead>
-          <tr className='text-gray-500 text-left '>
-            <th className='pb-4'>Equipment</th>
-            <th className='pb-4'>Issue</th>
-            <th className='pb-4'>Technician</th>
-            <th className='pb-4'>ETA</th>
-            <th className='pb-4'>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {maintenanceData.map((row: any, idx: any) => (
-            <tr key={idx} className='border-t border-gray-200'>
-              <td
-                className={`border-[#eee] px-4 py-4 dark:border-dark-3 ${idx === maintenanceData.length ? 'border-t-0' : 'border-t'}`}
-              >
-                {row.equipment}
-              </td>
-              <td
-                className={`border-[#eee] px-4 py-4 dark:border-dark-3 ${idx === maintenanceData.length ? 'border-t-0' : 'border-t'}`}
-              >
-                {row.issue}
-              </td>
-              <td
-                className={`border-[#eee] px-4 py-4 dark:border-dark-3 ${idx === maintenanceData.length ? 'border-t-0' : 'border-t'}`}
-              >
-                {row.technician}
-              </td>
-              <td
-                className={`border-[#eee] px-4 py-4 dark:border-dark-3 ${idx === maintenanceData.length ? 'border-t-0' : 'border-t'}`}
-              >
-                {row.eta}
-              </td>
-              <td
-                className={`border-[#eee] px-4 py-4 dark:border-dark-3 ${idx === maintenanceData.length ? 'border-t-0' : 'border-t'}`}
-              >
-                <select
-                  className={`px-2 py-1 rounded ~text-[0.5rem]/[0.75rem] md:~text-[0.35rem]/[0.75rem] ~leading-[0.5rem]/[1rem] font-medium border ${row.status.color}`}
-                  value={row.status.label}
-                  onChange={() => {
-                    // Optionally handle status change here
-                    // Example: row.status.label = e.target.value
+import React from 'react'
+import { Box, Typography, Select, MenuItem } from '@mui/material'
+
+type MaintenanceRow = {
+  equipment: string
+  issue: string
+  technician: string
+  eta: string
+  status: {
+    label: string
+    color: string
+  }
+}
+
+const statusOptions = ['Pending', 'In Progress', 'Completed', 'Delayed']
+
+const getStatusStyles = (label: string) => {
+  switch (label) {
+    case 'In Progress':
+      return { bg: '#EEF2FF', color: '#4338CA', border: '#C7D2FE' }
+    case 'Pending':
+    case 'Scheduled':
+      return { bg: '#F0ECFA', color: '#523F99', border: '#D8D0F0' }
+    case 'Completed':
+      return { bg: '#ECFDF5', color: '#059669', border: '#A7F3D0' }
+    case 'Critical':
+      return { bg: '#FEF2F2', color: '#DC2626', border: '#FECACA' }
+    case 'Diagnosed':
+      return { bg: '#F8FAFC', color: '#64748B', border: '#E2E8F0' }
+    case 'Waiting Parts':
+      return { bg: '#FFFBEB', color: '#D97706', border: '#FDE68A' }
+    case 'Delayed':
+      return { bg: '#FFF7ED', color: '#EA580C', border: '#FED7AA' }
+    default:
+      return { bg: '#F8FAFC', color: '#64748B', border: '#E2E8F0' }
+  }
+}
+
+const DataTable = ({ maintenanceData, title }: { maintenanceData: MaintenanceRow[]; title: string }) => {
+  const columns = ['Equipment', 'Issue', 'Technician', 'ETA', 'Status']
+
+  return (
+    <Box
+      sx={{
+        backgroundColor: '#FFFFFF',
+        borderRadius: '14px',
+        p: { xs: 2.5, sm: 3, md: 4 },
+        boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+        border: '1px solid rgba(0,0,0,0.06)',
+        overflow: 'hidden',
+      }}
+    >
+      <Typography
+        sx={{
+          fontSize: { xs: '0.875rem', sm: '1rem', md: '1.125rem' },
+          fontWeight: 600,
+          color: '#1E293B',
+          mb: 3,
+          lineHeight: 1.4,
+        }}
+      >
+        Maintenance Schedule - {title}
+      </Typography>
+
+      <Box sx={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr>
+              {columns.map((col) => (
+                <th
+                  key={col}
+                  style={{
+                    textAlign: 'left',
+                    paddingBottom: '16px',
+                    fontSize: '0.8125rem',
+                    fontWeight: 500,
+                    color: '#94A3B8',
+                    letterSpacing: '0.01em',
+                    whiteSpace: 'nowrap',
                   }}
                 >
-                  <option value='Pending'>Pending</option>
-                  <option value='In Progress'>In Progress</option>
-                  <option value='Completed'>Completed</option>
-                  <option value='Delayed'>Delayed</option>
-                </select>
-              </td>
+                  {col}
+                </th>
+              ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  </div>
-)
+          </thead>
+          <tbody>
+            {maintenanceData.map((row, idx) => (
+              <tr
+                key={idx}
+                style={{
+                  borderTop: '1px solid #F1F5F9',
+                }}
+              >
+                <td style={{ padding: '14px 12px 14px 0', fontSize: '0.8125rem', fontWeight: 500, color: '#1E293B', whiteSpace: 'nowrap' }}>
+                  {row.equipment}
+                </td>
+                <td style={{ padding: '14px 12px', fontSize: '0.8125rem', color: '#64748B', whiteSpace: 'nowrap' }}>
+                  {row.issue}
+                </td>
+                <td style={{ padding: '14px 12px', fontSize: '0.8125rem', color: '#64748B', whiteSpace: 'nowrap' }}>
+                  {row.technician}
+                </td>
+                <td style={{ padding: '14px 12px', fontSize: '0.8125rem', color: '#64748B', whiteSpace: 'nowrap' }}>
+                  {row.eta}
+                </td>
+                <td style={{ padding: '14px 0 14px 12px' }}>
+                  {(() => {
+                    const styles = getStatusStyles(row.status.label)
+                    return (
+                      <Select
+                        size='small'
+                        defaultValue={row.status.label}
+                        sx={{
+                          fontSize: '0.75rem',
+                          fontWeight: 600,
+                          backgroundColor: styles.bg,
+                          color: styles.color,
+                          borderRadius: '8px',
+                          height: '32px',
+                          minWidth: '120px',
+                          '.MuiOutlinedInput-notchedOutline': {
+                            borderColor: styles.border,
+                          },
+                          '&:hover .MuiOutlinedInput-notchedOutline': {
+                            borderColor: styles.color,
+                          },
+                          '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                            borderColor: styles.color,
+                          },
+                          '.MuiSelect-icon': {
+                            color: styles.color,
+                            fontSize: '1.1rem',
+                          },
+                        }}
+                      >
+                        {statusOptions.map((opt) => (
+                          <MenuItem key={opt} value={opt} sx={{ fontSize: '0.8125rem' }}>
+                            {opt}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    )
+                  })()}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Box>
+    </Box>
+  )
+}
 
 export default DataTable

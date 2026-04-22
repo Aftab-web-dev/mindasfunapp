@@ -69,6 +69,8 @@ const VerticalMenu = ({ scrollMenu }: Props) => {
       >
         <SubMenu label='Dashboard' icon={<i className='tabler-smart-home' />}>
           <MenuItem href='/admin/home/management'>Management</MenuItem>
+          <MenuItem href='/admin/home/operations-and-tech'>Operations & Tech</MenuItem>
+          <MenuItem href='/admin/home/stores'>Stores</MenuItem>
         </SubMenu>
 
         {!collapsedNotHovered && (

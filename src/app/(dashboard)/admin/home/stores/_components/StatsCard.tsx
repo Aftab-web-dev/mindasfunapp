@@ -1,6 +1,7 @@
-import React from 'react'
+'use client'
 
-import { Box, Card, CardContent, Typography } from '@mui/material'
+import React from 'react'
+import { Box, Typography } from '@mui/material'
 
 type Props = {
   item: {
@@ -11,38 +12,124 @@ type Props = {
     icon: string
   }
   selected: boolean
+  index?: number
 }
 
-const StatsCard = ({ item, selected }: Props) => {
+const iconConfigs: Record<number, { bg: string; color: string; gradient: string }> = {
+  0: { bg: '#F0ECFA', color: '#523F99', gradient: 'linear-gradient(135deg, #523F99 0%, #7C63D4 100%)' },
+  1: { bg: '#EEF2FF', color: '#4F46E5', gradient: 'linear-gradient(135deg, #4F46E5 0%, #818CF8 100%)' },
+  2: { bg: '#ECFDF5', color: '#059669', gradient: 'linear-gradient(135deg, #059669 0%, #34D399 100%)' },
+  3: { bg: '#FFF7ED', color: '#EA580C', gradient: 'linear-gradient(135deg, #EA580C 0%, #FB923C 100%)' },
+  4: { bg: '#FEF2F2', color: '#DC2626', gradient: 'linear-gradient(135deg, #DC2626 0%, #F87171 100%)' },
+  5: { bg: '#FAF5FF', color: '#9333EA', gradient: 'linear-gradient(135deg, #9333EA 0%, #C084FC 100%)' },
+  6: { bg: '#ECFEFF', color: '#0891B2', gradient: 'linear-gradient(135deg, #0891B2 0%, #22D3EE 100%)' },
+  7: { bg: '#FFF1F2', color: '#E11D48', gradient: 'linear-gradient(135deg, #E11D48 0%, #FB7185 100%)' },
+}
+
+const StatsCard = ({ item, selected, index = 0 }: Props) => {
+  const config = iconConfigs[index % 8]
+
   return (
-    <Card className={`rounded-xl ${selected && 'bg-[#523F99]'} cursor-pointer`}>
-      <CardContent className='flex justify-between items-start ~py-[0.5rem]/[1rem] ~px-[1rem]/[1.5rem]'>
-        <Box>
-          <Typography
-            className={`~text-[0.9375rem]/[1.2rem] font-normal text-[#523F99] sm:leading-[1.375rem] ~pb-[0.125rem]/[0.25rem]  ${selected ? 'text-white' : 'text-[#2F2B3DE5]/90'}`}
-          >
-            {item.title}
-          </Typography>
-          <div className='flex items-center gap-3'>
-            <Typography
-              className={`~text-[0.7rem]/[1.3rem]  font-[500] leading-[2.375rem] ${selected ? 'text-white' : 'text-[#2F2B3DE5]/90'}`}
-            >
-              {item.revenue}
-            </Typography>
-            <div
-              className={`${item.status ? 'bg-green-100 text-green-900' : 'bg-red-100 text-red-900'} rounded-sm ~text-[0.3rem]/[0.6rem] px-1 pt-[2px] pb-[1px] font-medium`}
-            >
-              {item.status_content}
-            </div>
-          </div>
-        </Box>
-        <Box
-          className={` rounded-md flex justify-center items-center w-[42px] h-[42px] max-sm:hidden ${selected ? 'bg-[#8638E5]' : 'bg-[#8638E5]/[16%]'} ${selected ? 'text-white' : 'text-[#8638E5]'}`}
+    <Box
+      sx={{
+        borderRadius: '14px',
+        p: { xs: 2, sm: 2.5, md: 3 },
+        cursor: 'pointer',
+        transition: 'all 0.25s ease',
+        background: selected ? config.gradient : '#FFFFFF',
+        border: '1px solid',
+        borderColor: selected ? 'transparent' : 'rgba(0,0,0,0.06)',
+        boxShadow: selected
+          ? `0 8px 24px ${config.color}40`
+          : '0 1px 3px rgba(0,0,0,0.03)',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        gap: 1.5,
+        height: '100%',
+        '&:hover': {
+          boxShadow: selected
+            ? `0 10px 28px ${config.color}45`
+            : '0 4px 14px rgba(0,0,0,0.07)',
+          transform: 'translateY(-2px)'
+        }
+      }}
+    >
+      <Box sx={{ minWidth: 0 }}>
+        <Typography
+          noWrap
+          sx={{
+            fontSize: { xs: '0.6875rem', sm: '0.8125rem', md: '0.9375rem' },
+            fontWeight: 500,
+            color: selected ? 'rgba(255,255,255,0.8)' : '#64748B',
+            mb: 0.5,
+            lineHeight: 1.3,
+          }}
         >
-          <i className={item.icon} />
+          {item.title}
+        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Typography
+            noWrap
+            sx={{
+              fontSize: { xs: '0.875rem', sm: '1.05rem', md: '1.25rem' },
+              fontWeight: 600,
+              color: selected ? '#FFFFFF' : '#1E293B',
+              lineHeight: 1.3,
+              letterSpacing: '-0.01em'
+            }}
+          >
+            {item.revenue}
+          </Typography>
+          <Box
+            sx={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              px: 1,
+              py: 0.25,
+              borderRadius: '4px',
+              fontSize: { xs: '0.5rem', sm: '0.625rem', md: '0.6875rem' },
+              fontWeight: 600,
+              backgroundColor: selected
+                ? 'rgba(255,255,255,0.2)'
+                : item.status
+                  ? '#DCFCE7'
+                  : '#FEE2E2',
+              color: selected
+                ? '#FFFFFF'
+                : item.status
+                  ? '#166534'
+                  : '#991B1B',
+              lineHeight: 1.4,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {item.status_content}
+          </Box>
         </Box>
-      </CardContent>
-    </Card>
+      </Box>
+
+      <Box
+        sx={{
+          width: { xs: 34, sm: 40, md: 42 },
+          height: { xs: 34, sm: 40, md: 42 },
+          borderRadius: '10px',
+          display: { xs: 'none', sm: 'flex' },
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: selected ? 'rgba(255,255,255,0.18)' : config.bg,
+          flexShrink: 0
+        }}
+      >
+        <i
+          className={item.icon}
+          style={{
+            fontSize: '1.25rem',
+            color: selected ? '#FFFFFF' : config.color
+          }}
+        />
+      </Box>
+    </Box>
   )
 }
 
