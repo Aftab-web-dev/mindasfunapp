@@ -129,24 +129,36 @@ useEffect(() => {
   const onSubmit = async (values: RechargeFormValues) => {
     try {
       const storedUserData = getUser()
-      const branchId = storedUserData?.branchId.toString()
+      const branchId = storedUserData?.branchId?.toString()
+
+      if (!customerData?.ledgerId) {
+        toast.error('Customer not selected')
+
+        return
+      }
 
       const body = {
-        ...values,
+        amount: values.amount,
+        discount: values.discount,
+        taxPercentage: values.gst,
+        tax_amount: values.tax_amount,
+        net_amount: values.net_amount,
+        g_note: values.g_note,
+        remarks: values.remarks,
         branchId,
-        ledgerId: customerData?.ledgerId
+        ledgerId: customerData.ledgerId
       }
 
       const response = await rechargeAndBalanceApi.recharge({ body })
 
       if (response.status === 200) {
-        setTimeout(() => {
-          window.location.reload()
-        }, 2000)
-        toast.success(response.data.message)
+        toast.success(response.data?.message || 'Recharge successful')
+        setTimeout(() => window.location.reload(), 2000)
       }
-    } catch (error) {
-      toast.error('Error')
+    } catch (error: any) {
+      const msg = error?.response?.data?.message || error?.message || 'Recharge failed'
+
+      toast.error(msg)
     }
   }
 

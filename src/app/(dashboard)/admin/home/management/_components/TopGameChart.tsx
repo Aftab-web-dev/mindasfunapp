@@ -18,8 +18,6 @@ type DataType = {
   colorClass: string
 }
 
-const series = [{ data: [35, 20, 14, 12, 12, 12] }]
-
 const TopGameChart = ({
   selectedStat
 }: {
@@ -37,6 +35,10 @@ const TopGameChart = ({
   const data1 = selectedStat.data1
   const data2 = selectedStat.data2
   const theme = useTheme()
+
+  // Bar chart series = top 6 percentage values derived from API data
+  const percentages = [...data1, ...data2].map(d => d.value)
+  const series = [{ data: percentages }]
 
   const options: ApexOptions = {
     chart: {
@@ -86,7 +88,7 @@ const TopGameChart = ({
     xaxis: {
       axisTicks: { show: false },
       axisBorder: { show: false },
-      categories: ['6', '5', '4', '3', '2', '1'],
+      categories: labels,
       labels: {
         formatter: val => `${val}%`,
         style: { fontSize: '0.75rem', colors: '#94A3B8', fontWeight: 500 }

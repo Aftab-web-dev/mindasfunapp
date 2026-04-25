@@ -1,133 +1,102 @@
 'use client'
 
-import {  useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import Link from 'next/link'
 
-// import { useRouter } from 'next/navigation'
-
-import { Box, Button, Card, CardHeader, IconButton, TextField, Tooltip, Typography } from '@mui/material'
+import { Box, Button, IconButton, TextField, Tooltip, Typography } from '@mui/material'
 
 import { DataGrid } from '@mui/x-data-grid'
 import type { GridColDef } from '@mui/x-data-grid'
 
-// import { useDebounce } from 'react-use'
 import { Icon } from '@iconify/react/dist/iconify.js'
 
-// import axios from 'axios'
+import toast from 'react-hot-toast'
 
-// import { reqData } from '../../../../../../fake-db/apps/data'
-
-// type SortType = 'asc' | 'desc' | undefined | null
+import { eventsApi } from '@/api/events-api'
+import { getUser } from '@/utils/authStorage'
+import DeleteConfirmationDialog from '@/components/DeleteConfimationDialogBox'
 
 const ReqEventTable = () => {
-  // const router = useRouter()
+  const buttonRef = useRef<HTMLButtonElement>(null)
 
-  // const [total, setTotal] = useState<number>(0)
-  // const buttonRef = useRef<HTMLButtonElement>(null)
+  const [rows, setRows] = useState<any[]>([])
+  const [loading, setLoading] = useState<boolean>(false)
 
-  const [rows] = useState<any[]>([])
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false)
+  const [dialogId, setDialogId] = useState('')
+  const [dialogName, setDialogName] = useState('')
 
-  // const [openDeleteDialog, setOpenDeleteDialog] = useState(false)
-  // const [dialogId, setDialogId] = useState('')
+  const fetchTableData = useCallback(async () => {
+    setLoading(true)
 
-  // const [dialogName, setDialogName] = useState('')
+    try {
+      const storedUserData = getUser()
+      const branchId = storedUserData?.branchId
 
-  // //setTotal
-  // const [searchValue, setSearchValue] = useState<string>('')
+      const res = await eventsApi.getPendingEventRequests({ branchId })
 
-  // const [paginationModel, setPaginationModel] = useState({
-  //   page: 0,
-  //   pageSize: 15
-  // })
+      setRows(res.data?.data || [])
+    } catch (err) {
+      setRows([])
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
-  // const query = useDebounce(searchValue, 1000)
+  useEffect(() => {
+    fetchTableData()
+  }, [fetchTableData])
 
-  // const fetchTableData = useCallback(
-  //   async () => {
-  //     try {
-  //       await PeopleApi.getAll({
-         
-  //       }).then(res => {
-  //         setTotal(res.data.data?.totalCount)
-  //         setRows(res.data.data?.peoples)
-  //       })
-  //       setRows(reqData)
-  //     } catch (err) {
-        // const axiosError = err as any
-        // if (axiosError.response && axiosError.response.status === 401) {
-        //   // toast.error('Access Token Expired')
-        //   router.push('/login')
-        // } else {
-        // }
-  //     }
-  //   },
-  //   [] // Dependency array added
-  // )
+  const approveRequest = async (id: number | string) => {
+    try {
+      const storedUserData = getUser()
+      const branchId = storedUserData?.branchId
+      const approvedBy = storedUserData?.employeeId
 
-  // useEffect(() => {
-  //   fetchTableData()
-  // }, [fetchTableData])
+      await eventsApi.approveEvent({ id, approvedBy, branchId })
+      toast.success('Event approved successfully')
+      fetchTableData()
+    } catch (err) {
+      toast.error('Failed to approve event')
+    }
+  }
 
-  // const handleSearch = (value: string) => {
-  //   setSearchValue(value)
-  // }
+  const openDeleteFlow = (id: any, name: any) => {
+    setOpenDeleteDialog(true)
+    setDialogId(id)
+    setDialogName(name)
+  }
 
-  // //Delete section
-  // const deletePeople = (id: any, name: any) => {
-  //   setOpenDeleteDialog(true)
-  //   setDialogId(id)
-  //   setDialogName(name)
-  // }
+  const deleteEventData = async (id: any) => {
+    if (buttonRef.current) buttonRef.current.disabled = true
 
-  // //People Delete function
-  // const deletePeopleData = async (id: any) => {
-  //   if (buttonRef.current) {
-  //     buttonRef.current.disabled = true
-  //   }
-
-  // try {
-  //   const response = await PeopleApi.delete(id)
-  //   // toast.success(response?.data?.message)
-  //   fetchTableData('asc', query)
-  // } catch (error) {
-  //   if (axios.isAxiosError(error)) {
-  //     if (error.response) {
-  //       // toast.error(error.response.data.message)
-  //     } else {
-  //       // toast.error('An error occurred.')
-  //     }
-  //   } else {
-  //     // toast.error('An unexpected error occurred.')
-  //   }
-  //   if (buttonRef.current) {
-  //     buttonRef.current.disabled = false
-  //   }
-  // } finally {
-  //   setOpenDeleteDialog(false)
-  // }
+    try {
+      await eventsApi.deleteEvent({ eventId: id })
+      toast.success('Request deleted successfully')
+      fetchTableData()
+    } catch (err) {
+      toast.error('Error deleting request')
+    } finally {
+      setOpenDeleteDialog(false)
+    }
+  }
 
   const columns: GridColDef<any>[] = [
     {
       flex: 0.275,
       minWidth: 190,
-      field: 'date',
+      field: 'eventDate',
       headerName: 'Date',
       sortable: false,
       disableColumnMenu: true,
-      renderCell: (params: any) => {
-        const { row } = params
-
-        return (
-          <Box sx={{ display: 'flex', alignItems: 'center', height: '100%' }}>
-            <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-              <Typography noWrap variant='body2' sx={{ color: 'text.primary', fontWeight: 600 }}>
-                {new Date(row.event_date).toLocaleDateString()}
-              </Typography>
-            </Box>
-          </Box>
-        )
-      }
+      renderCell: (params: any) => (
+        <Box sx={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+          <Typography noWrap variant='body2' sx={{ color: 'text.primary', fontWeight: 600 }}>
+            {params.row.eventDate ? new Date(params.row.eventDate).toLocaleDateString() : '—'}
+          </Typography>
+        </Box>
+      )
     },
     {
       flex: 0.275,
@@ -136,21 +105,14 @@ const ReqEventTable = () => {
       headerName: 'Event',
       sortable: false,
       disableColumnMenu: true,
-      renderCell: (params: any) => {
-        const { row } = params
-
-        return (
-          <Box sx={{ display: 'flex', alignItems: 'center', height: '100%' }}>
-            <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-              <Typography noWrap variant='body2' sx={{ color: 'text.primary', fontWeight: 600 }}>
-                {row.event}
-              </Typography>
-            </Box>
-          </Box>
-        )
-      }
+      renderCell: (params: any) => (
+        <Box sx={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+          <Typography noWrap variant='body2' sx={{ color: 'text.primary', fontWeight: 600 }}>
+            {params.row.event}
+          </Typography>
+        </Box>
+      )
     },
-
     {
       flex: 0.275,
       minWidth: 290,
@@ -158,21 +120,14 @@ const ReqEventTable = () => {
       headerName: 'Name',
       sortable: false,
       disableColumnMenu: true,
-      renderCell: (params: any) => {
-        const { row } = params
-
-        return (
-          <Box sx={{ display: 'flex', alignItems: 'center', height: '100%' }}>
-            <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-              <Typography noWrap variant='body2' sx={{ color: 'text.primary', fontWeight: 600 }}>
-                {row.name}
-              </Typography>
-            </Box>
-          </Box>
-        )
-      }
+      renderCell: (params: any) => (
+        <Box sx={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+          <Typography noWrap variant='body2' sx={{ color: 'text.primary', fontWeight: 600 }}>
+            {params.row.name}
+          </Typography>
+        </Box>
+      )
     },
-
     {
       flex: 0.2,
       minWidth: 140,
@@ -180,41 +135,37 @@ const ReqEventTable = () => {
       headerName: 'Phone',
       sortable: false,
       disableColumnMenu: true,
-      renderCell: (params: any) => {
-        const row = params.row
-
-        return (
-          <Box sx={{ display: 'flex', alignItems: 'center', height: '100%' }}>
-            <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-              <Typography noWrap variant='body2' sx={{ color: 'text.primary', fontWeight: 600 }}>
-                {row.phone}
-              </Typography>
-            </Box>
-          </Box>
-        )
-      }
+      renderCell: (params: any) => (
+        <Box sx={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+          <Typography noWrap variant='body2' sx={{ color: 'text.primary', fontWeight: 600 }}>
+            {params.row.phone}
+          </Typography>
+        </Box>
+      )
     },
-
     {
       flex: 0,
-      minWidth: 130,
+      minWidth: 170,
       sortable: false,
       field: 'actions',
       headerName: 'Actions',
       disableColumnMenu: true,
-
-      headerClassName: 'sticky-header', // Optional: if you want to style the header
-      cellClassName: 'sticky-cell', // Add this line
-
+      headerClassName: 'sticky-header',
+      cellClassName: 'sticky-cell',
       renderCell: ({ row }) => (
         <Box sx={{ display: 'flex', alignItems: 'center', height: '100%' }}>
-          <Tooltip title='Edit'>
-            <IconButton size='small' component={Link} href={`/admin/events/edit-event/${row._id}`}>
-              <Icon icon='tabler:edit' fontSize={20} />
+          <Tooltip title='View'>
+            <IconButton size='small' component={Link} href={`/admin/events/view-event/${row.id}`}>
+              <Icon icon='raphael:view' fontSize={20} />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title='Approve'>
+            <IconButton size='small' onClick={() => approveRequest(row.id)}>
+              <Icon icon='tabler:circle-check' fontSize={20} color='#10B981' />
             </IconButton>
           </Tooltip>
           <Tooltip title='Delete'>
-            <IconButton onClick={() => {}} size='small'>
+            <IconButton onClick={() => openDeleteFlow(row.id, row.name)} size='small'>
               <Icon icon='tabler:trash' fontSize={20} />
             </IconButton>
           </Tooltip>
@@ -223,15 +174,19 @@ const ReqEventTable = () => {
     }
   ]
 
+  const pending = rows.filter(r => r.status === 0 || r.status === 2).length
+  const approved = rows.filter(r => r.status === 1).length
+  const declined = rows.filter(r => r.status === 3).length
+
   return (
     <div className='max-w-6xl mx-auto px-2 sm:px-4 py-3 sm:py-6 min-h-[calc(100vh-64px)]'>
       {/* Status summary cards */}
       <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: { xs: 1.5, sm: 2 }, mb: { xs: 2, sm: 3 } }}>
         {[
           { label: 'Total Requests', value: rows.length, icon: 'tabler-inbox', color: '#523F99', bg: '#F0ECFA' },
-          { label: 'Pending', value: 0, icon: 'tabler-clock', color: '#F59E0B', bg: '#FFF7ED' },
-          { label: 'Approved', value: 0, icon: 'tabler-circle-check', color: '#10B981', bg: '#ECFDF5' },
-          { label: 'Declined', value: 0, icon: 'tabler-circle-x', color: '#EF4444', bg: '#FEF2F2' }
+          { label: 'Pending', value: pending, icon: 'tabler-clock', color: '#F59E0B', bg: '#FFF7ED' },
+          { label: 'Approved', value: approved, icon: 'tabler-circle-check', color: '#10B981', bg: '#ECFDF5' },
+          { label: 'Declined', value: declined, icon: 'tabler-circle-x', color: '#EF4444', bg: '#FEF2F2' }
         ].map((stat) => (
           <Box
             key={stat.label}
@@ -293,7 +248,8 @@ const ReqEventTable = () => {
             autoHeight
             rows={rows}
             columns={columns}
-            getRowId={row => row._id}
+            loading={loading}
+            getRowId={row => row.id}
             pagination
             sortingMode='server'
             sx={{
@@ -358,6 +314,17 @@ const ReqEventTable = () => {
           </Box>
         )}
       </div>
+
+      {openDeleteDialog && (
+        <DeleteConfirmationDialog
+          id={dialogId}
+          buttonRef={buttonRef}
+          name={dialogName}
+          open={true}
+          setOpen={setOpenDeleteDialog}
+          deleteFunction={deleteEventData}
+        />
+      )}
     </div>
   )
 }

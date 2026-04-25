@@ -1,22 +1,60 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 import { Button, MenuItem, TextField, Typography, Box } from '@mui/material'
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers'
+import { format } from 'date-fns'
+import toast from 'react-hot-toast'
+
+import { waiverApi } from '@/api/waiver-api'
 
 const ExportData = () => {
   const [startDate, setStartDate] = useState<Date | null>(null)
   const [endDate, setEndDate] = useState<Date | null>(null)
-  const [selectedWaiver, setSelectedWaiver] = useState('Test')
+  const [selectedWaiver, setSelectedWaiver] = useState<string>('')
+  const [waivers, setWaivers] = useState<any[]>([])
+  const [downloading, setDownloading] = useState(false)
 
-  const handleDownload = () => {
-    console.log('Downloading...', {
-      start: startDate,
-      end: endDate,
-      waiver: selectedWaiver
-    })
+  useEffect(() => {
+    waiverApi.waiverList().then(res => {
+      setWaivers(res.data?.data || [])
+    }).catch(() => setWaivers([]))
+  }, [])
+
+  const handleDownload = async () => {
+    if (!selectedWaiver || !startDate || !endDate) {
+      toast.error('Please select waiver and date range')
+
+      return
+    }
+
+    setDownloading(true)
+
+    try {
+      const from = format(startDate, 'MM-dd-yyyy')
+      const to = format(endDate, 'MM-dd-yyyy')
+
+      const response = await waiverApi.exportCheckInHistory({ waiverId: selectedWaiver, from, to })
+
+      const blob = new Blob([response.data], { type: 'application/pdf' })
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+
+      link.href = url
+      link.setAttribute('download', `waiver-export-${from}-to-${to}.pdf`)
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+
+      toast.success('Export downloaded')
+    } catch (err) {
+      toast.error('Failed to download export')
+    } finally {
+      setDownloading(false)
+    }
   }
 
   const fieldSx = {
@@ -95,9 +133,16 @@ const ExportData = () => {
                 onChange={e => setSelectedWaiver(e.target.value)}
                 sx={fieldSx}
               >
-                <MenuItem value='Test'>Test</MenuItem>
-                <MenuItem value='Test 2'>Test 2</MenuItem>
-                <MenuItem value='Test 3'>Test 3</MenuItem>
+                {waivers.length === 0 && (
+                  <MenuItem value='' disabled>
+                    No waivers available
+                  </MenuItem>
+                )}
+                {waivers.map((w: any) => (
+                  <MenuItem key={w.waverId ?? w.id} value={(w.waverId ?? w.id).toString()}>
+                    {w.titile ?? w.title ?? w.name ?? `Waiver ${w.waverId ?? w.id}`}
+                  </MenuItem>
+                ))}
               </TextField>
             </Box>
 
@@ -107,6 +152,7 @@ const ExportData = () => {
               variant='contained'
               disableElevation
               fullWidth
+              disabled={downloading}
               startIcon={<i className='tabler-download' style={{ fontSize: '1rem' }} />}
               sx={{
                 borderRadius: '10px',
@@ -121,7 +167,7 @@ const ExportData = () => {
                 '&:hover': { backgroundColor: '#6B52C4' }
               }}
             >
-              Download Export
+              {downloading ? 'Downloading…' : 'Download Export'}
             </Button>
           </Box>
         </div>

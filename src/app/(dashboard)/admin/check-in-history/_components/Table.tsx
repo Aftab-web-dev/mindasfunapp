@@ -1,138 +1,101 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
-
-import Link from 'next/link'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { format } from 'date-fns'
 
-
-// import { useRouter } from 'next/navigation'
-
-import { Box, Card, CardHeader, IconButton, TextField, Tooltip, Typography } from '@mui/material'
+import { Box, IconButton, TextField, Tooltip, Typography } from '@mui/material'
 
 import { DataGrid } from '@mui/x-data-grid'
 import type { GridColDef } from '@mui/x-data-grid'
 
-// import { useDebounce } from 'react-use'
 import { Icon } from '@iconify/react/dist/iconify.js'
+import toast from 'react-hot-toast'
 
-
-import { historyCheckIn } from '@/fake-db/apps/data'
-
-// import axios from 'axios'
-
-// type SortType = 'asc' | 'desc' | undefined | null
+import { waiverApi } from '@/api/waiver-api'
+import { getUser } from '@/utils/authStorage'
+import DeleteConfirmationDialog from '@/components/DeleteConfimationDialogBox'
 
 const CheckInHistoryTable = () => {
-  // const router = useRouter()
-
-  // const [total, setTotal] = useState<number>(0)
-  // const buttonRef = useRef<HTMLButtonElement>(null)
+  const buttonRef = useRef<HTMLButtonElement>(null)
 
   const [rows, setRows] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
 
-  // const [openDeleteDialog, setOpenDeleteDialog] = useState(false)
-  // const [dialogId, setDialogId] = useState('')
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false)
+  const [dialogId, setDialogId] = useState<number | string>('')
+  const [dialogName, setDialogName] = useState('')
 
-  // const [dialogName, setDialogName] = useState('')
+  const fetchTableData = useCallback(async () => {
+    setLoading(true)
 
-  // //setTotal
-  // const [searchValue, setSearchValue] = useState<string>('')
+    try {
+      const res = await waiverApi.getAllSignedWaiver()
 
-  // const [paginationModel, setPaginationModel] = useState({
-  //   page: 0,
-  //   pageSize: 15
-  // })
-
-  // const query = useDebounce(searchValue, 1000)
-
-  const fetchTableData = useCallback(
-    async () => {
-      try {
-        // await PeopleApi.getAll({
-        //   query: { sort, q, page: paginationModel.page + 1 }
-        // }).then(res => {
-        //   setTotal(res.data.data?.totalCount)
-        //   setRows(res.data.data?.peoples)
-        // })
-        setRows(historyCheckIn)
-      } catch (err) {
-        // const axiosError = err as any
-        // if (axiosError.response && axiosError.response.status === 401) {
-        //   // toast.error('Access Token Expired')
-        //   router.push('/login')
-        // } else {
-        // }
-      }
-    },
-    [] // Dependency array added
-  )
+      setRows(res.data?.data || [])
+    } catch (err) {
+      setRows([])
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
     fetchTableData()
   }, [fetchTableData])
 
-  // const handleSearch = (value: string) => {
-  //   setSearchValue(value)
-  // }
+  const openDeleteFlow = (id: number | string, name: string) => {
+    setDialogId(id)
+    setDialogName(name)
+    setOpenDeleteDialog(true)
+  }
 
-  // //Delete section
-  // const deletePeople = (id: any, name: any) => {
-  //   setOpenDeleteDialog(true)
-  //   setDialogId(id)
-  //   setDialogName(name)
-  // }
+  const deleteRecord = async (id: number | string) => {
+    if (buttonRef.current) buttonRef.current.disabled = true
 
-  // //People Delete function
-  // const deletePeopleData = async (id: any) => {
-  //   if (buttonRef.current) {
-  //     buttonRef.current.disabled = true
-  //   }
+    try {
+      const user = getUser()
 
-  // try {
-  //   const response = await PeopleApi.delete(id)
-  //   // toast.success(response?.data?.message)
-  //   fetchTableData('asc', query)
-  // } catch (error) {
-  //   if (axios.isAxiosError(error)) {
-  //     if (error.response) {
-  //       // toast.error(error.response.data.message)
-  //     } else {
-  //       // toast.error('An error occurred.')
-  //     }
-  //   } else {
-  //     // toast.error('An unexpected error occurred.')
-  //   }
-  //   if (buttonRef.current) {
-  //     buttonRef.current.disabled = false
-  //   }
-  // } finally {
-  //   setOpenDeleteDialog(false)
-  // }
+      await waiverApi.deleteSignedWaiver({ id: Number(id), empId: user?.employeeId })
+      toast.success('Record deleted')
+      fetchTableData()
+    } catch (err) {
+      toast.error('Failed to delete record')
+    } finally {
+      setOpenDeleteDialog(false)
+    }
+  }
 
-  // const [openModal, setOpenModal] = useState(false)
-  // const [selectedCheckIn, setSelectedCheckIn] = useState<any | null>(null)
+  const downloadPdf = async (ledgerId: number, waiverId: number, nameForFile?: string) => {
+    try {
+      const response = await waiverApi.downloadSignedWaiver({ ledgerId, waiverId })
+      const blob = new Blob([response.data], { type: 'application/pdf' })
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
 
-  // const handleViewCheckIn = (row: any) => {
-  //   setSelectedCheckIn(row)
-  //   setOpenModal(true)
-  // }
+      link.href = url
+      link.setAttribute('download', `${nameForFile || 'signed-waiver'}.pdf`)
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+    } catch (err) {
+      toast.error('Failed to download PDF')
+    }
+  }
 
   const columns: GridColDef<any>[] = [
     {
       flex: 1,
-      minWidth: 160,
+      minWidth: 180,
       field: 'date',
       headerName: 'Date & Time',
       sortable: false,
       disableColumnMenu: true,
       renderCell: (params: any) => {
-        const { row } = params
-
-        const rawDate = row.check_date
-        const date = rawDate ? new Date(rawDate) : null
-        const formatted = date ? format(date, 'MMM d yyyy h:mm a') : 'N/A'
+        const raw = params.row.createdOn || params.row.checkInDate || params.row.check_date
+        const d = raw ? new Date(raw) : null
+        const formatted = d ? format(d, 'MMM d yyyy h:mm a') : 'N/A'
 
         return (
           <Box sx={{ display: 'flex', alignItems: 'center', height: '100%' }}>
@@ -150,55 +113,52 @@ const CheckInHistoryTable = () => {
       headerName: 'Check-in By',
       sortable: false,
       disableColumnMenu: true,
-      renderCell: (params: any) => {
-        const { row } = params
-
-        return (
-          <Box sx={{ display: 'flex', alignItems: 'center', height: '100%' }}>
-            <Typography noWrap variant='body2' sx={{ color: 'text.primary', fontWeight: 600 }}>
-              {row.checker_email}
-            </Typography>
-          </Box>
-        )
-      }
+      renderCell: (params: any) => (
+        <Box sx={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+          <Typography noWrap variant='body2' sx={{ color: 'text.primary', fontWeight: 600 }}>
+            {params.row.checkInByName || params.row.createdByName || params.row.createdBy || '—'}
+          </Typography>
+        </Box>
+      )
     },
-
     {
       flex: 1,
-      minWidth: 130,
+      minWidth: 160,
       field: 'customer_name',
       headerName: 'Customer',
       sortable: false,
       disableColumnMenu: true,
-      renderCell: (params: any) => {
-        const { row } = params
-
-        return (
-          <Box sx={{ display: 'flex', alignItems: 'center', height: '100%' }}>
-            <Typography noWrap variant='body2' sx={{ color: 'text.primary', fontWeight: 600 }}>
-              {row.customer_details.name}
-            </Typography>
-          </Box>
-        )
-      }
+      renderCell: (params: any) => (
+        <Box sx={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+          <Typography noWrap variant='body2' sx={{ color: 'text.primary', fontWeight: 600 }}>
+            {params.row.name || params.row.customerName || params.row.ledgerName || '—'}
+          </Typography>
+        </Box>
+      )
     },
-
     {
       flex: 0,
-      minWidth: 50,
-      field: 'code',
+      minWidth: 80,
+      field: 'pdf',
       headerName: 'PDF',
       sortable: false,
       disableColumnMenu: true,
-      renderCell: () => {
-          return (
-            <Tooltip title='Click to download'>
-              <Box sx={{ display: 'flex', alignItems: 'center', height: '100%', cursor: 'pointer' }}>
-                <i className='tabler-file-type-pdf' />
-              </Box>
-            </Tooltip>
-          )
-        }
+      renderCell: ({ row }) => (
+        <Tooltip title='Download PDF'>
+          <IconButton
+            size='small'
+            onClick={() =>
+              downloadPdf(
+                Number(row.ledgerId),
+                Number(row.waverId ?? row.wId ?? row.waiverId),
+                row.name || row.customerName
+              )
+            }
+          >
+            <i className='tabler-file-type-pdf' style={{ fontSize: '1.125rem', color: '#EF4444' }} />
+          </IconButton>
+        </Tooltip>
+      )
     },
     {
       flex: 0,
@@ -207,16 +167,13 @@ const CheckInHistoryTable = () => {
       field: 'actions',
       headerName: 'Actions',
       disableColumnMenu: true,
-      renderCell: ({}) => (
+      renderCell: ({ row }) => (
         <Box sx={{ display: 'flex', alignItems: 'center', height: '100%' }}>
-          <Tooltip title='Edit'>
-            <IconButton size='small' component={Link} href={`#`}>
-              <Icon icon='tabler:edit' fontSize={20} />
-            </IconButton>
-          </Tooltip>
-
           <Tooltip title='Delete'>
-            <IconButton onClick={() => {}} size='small'>
+            <IconButton
+              onClick={() => openDeleteFlow(row.id, row.name || row.customerName || 'record')}
+              size='small'
+            >
               <Icon icon='tabler:trash' fontSize={20} />
             </IconButton>
           </Tooltip>
@@ -242,18 +199,25 @@ const CheckInHistoryTable = () => {
 
         {rows.length > 0 ? (
           <Box sx={{ overflow: 'auto', flex: 1 }}>
-          <DataGrid autoHeight rows={rows} columns={columns} getRowId={row => row._id} pagination sortingMode='server'
-            sx={{
-              border: 'none',
-              minWidth: 580,
-              '& .MuiDataGrid-columnHeaders': { backgroundColor: '#F8FAFC', borderTop: '1px solid rgba(0,0,0,0.06)', borderBottom: '1px solid rgba(0,0,0,0.06)' },
-              '& .MuiDataGrid-columnHeaderTitle': { fontSize: '0.75rem', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px' },
-              '& .MuiDataGrid-cell': { borderBottom: '1px solid rgba(0,0,0,0.04)', fontSize: '0.8125rem', py: 1.5 },
-              '& .MuiDataGrid-row:hover': { backgroundColor: 'rgba(82,63,153,0.02)' },
-              '& .MuiDataGrid-footerContainer': { borderTop: '1px solid rgba(0,0,0,0.06)' }
-            }}
-            slotProps={{ baseButton: { size: 'medium', variant: 'tonal' }, toolbar: { csvOptions: { disableToolbarButton: true }, printOptions: { disableToolbarButton: true }, showQuickFilter: true, quickFilterProps: { debounceMs: 1000 } } } as any}
-          />
+            <DataGrid
+              autoHeight
+              rows={rows}
+              columns={columns}
+              loading={loading}
+              getRowId={row => row.id ?? row._id ?? `${row.ledgerId}-${row.waverId}`}
+              pagination
+              sortingMode='server'
+              sx={{
+                border: 'none',
+                minWidth: 580,
+                '& .MuiDataGrid-columnHeaders': { backgroundColor: '#F8FAFC', borderTop: '1px solid rgba(0,0,0,0.06)', borderBottom: '1px solid rgba(0,0,0,0.06)' },
+                '& .MuiDataGrid-columnHeaderTitle': { fontSize: '0.75rem', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px' },
+                '& .MuiDataGrid-cell': { borderBottom: '1px solid rgba(0,0,0,0.04)', fontSize: '0.8125rem', py: 1.5 },
+                '& .MuiDataGrid-row:hover': { backgroundColor: 'rgba(82,63,153,0.02)' },
+                '& .MuiDataGrid-footerContainer': { borderTop: '1px solid rgba(0,0,0,0.06)' }
+              }}
+              slotProps={{ baseButton: { size: 'medium', variant: 'tonal' }, toolbar: { csvOptions: { disableToolbarButton: true }, printOptions: { disableToolbarButton: true }, showQuickFilter: true, quickFilterProps: { debounceMs: 1000 } } } as any}
+            />
           </Box>
         ) : (
           <Box sx={{ py: { xs: 5, sm: 8 }, px: { xs: 2, sm: 3 }, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderTop: '1px solid rgba(0,0,0,0.06)', flex: 1 }}>
@@ -267,6 +231,17 @@ const CheckInHistoryTable = () => {
           </Box>
         )}
       </div>
+
+      {openDeleteDialog && (
+        <DeleteConfirmationDialog
+          id={dialogId as any}
+          buttonRef={buttonRef}
+          name={dialogName}
+          open={true}
+          setOpen={setOpenDeleteDialog}
+          deleteFunction={deleteRecord}
+        />
+      )}
     </div>
   )
 }

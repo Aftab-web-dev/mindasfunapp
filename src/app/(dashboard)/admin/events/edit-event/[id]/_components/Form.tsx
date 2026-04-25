@@ -20,6 +20,8 @@ import { CustomizedDatePicker } from '@/components/CustomizedDatePicker'
 import Preview from './Preview'
 import Details from './Details'
 import EventDetail from './EventDetail'
+import { eventsApi } from '@/api/events-api'
+import { getUser } from '@/utils/authStorage'
 
 // Styles Imports
 import styles from '@views/apps/kanban/styles.module.css'
@@ -255,11 +257,83 @@ const EventAddForm = ({ data }: { data: any }) => {
 
   const router = useRouter()
 
-  const onSubmit = (data: EventFormValues) => {
-    console.log('Form Data:', data)
-    toast.success('Booking Edited Successfully')
+  const onSubmit = async (formValues: EventFormValues) => {
+    try {
+      const storedUser = getUser()
 
-    router.push('/admin/events')
+      const items = [
+        ...(formValues.food ?? []).map(item => ({ ...item, productType: 3 })),
+        ...(formValues.card ?? []).map(item => ({ ...item, productType: 2 })),
+        ...(formValues.gift ?? []).map(item => ({ ...item, productType: 6 }))
+      ]
+
+      // Backend treats `AddEditEventBooking` as both add (id=0) and edit (id=existing).
+      // Per the requirements sheet the team confirmed this behaviour relies on the Event Id being passed.
+      const existingId = (data as any)?.id
+
+      if (!existingId) {
+        toast.error('Missing event id — cannot update')
+
+        return
+      }
+
+      const formData: any = {
+        id: existingId,
+        name: formValues.name,
+        phone: formValues.phone,
+        email: formValues.email,
+        address: formValues.address,
+        eventDate: formValues.event_date,
+        event: formValues.event,
+        eventDescription: (formValues as any).eventDescription,
+        noOfAttendees: formValues.no_of_attendees,
+        venu: formValues.venue,
+        venuCost: formValues.venue_cost,
+        cakeKg: formValues.cake?.cake_weight,
+        cakePerKg: formValues.cake?.cake_per_kg,
+        cakeAmt: formValues.cake?.cake_amount,
+        writingsOnCake: formValues.cake?.writing_on_cake,
+        cateringMeanu: formValues.catering_food?.menu,
+        foodCostPerPlate: formValues.catering_food?.food_cost_per_plate,
+        noOfPlates: formValues.catering_food?.no_of_plates,
+        cateringFoodAmt: formValues.catering_food?.food_amount,
+        otherArrangement: formValues.other?.arrangement,
+        otherArrangementAmt: formValues.other?.amount,
+        remarks: (formValues as any).remarks,
+        netAmt: (formValues as any).net_amount,
+        status: 1,
+        branchId: storedUser?.branchId,
+        Item: items,
+        createdBy: (data as any)?.createdBy ?? storedUser?.employeeId,
+        modifiedBy: storedUser?.employeeId,
+        createdOn: (data as any)?.createdOn ?? new Date(),
+        modifiedOn: new Date(),
+        cake: (formValues.cake as any)?.cake_id,
+        cakeData: formValues.cake,
+        foodAmt: 0,
+        cardAmt: 0,
+        giftAmt: 0,
+        discountPer: 0,
+        discountAmt: 0,
+        otherAdd: 0,
+        otherAddDesc: '',
+        otherDed: 0,
+        otherDedDesc: '',
+        terms: '',
+        payId: 0,
+        advancePay: 0,
+        ledgerId: (data as any)?.ledgerId ?? 0
+      }
+
+      const response = await eventsApi.addEvent({ body: formData })
+
+      if (response.status === 200) {
+        toast.success('Booking Edited Successfully')
+        router.push('/admin/events')
+      }
+    } catch (err) {
+      toast.error('Error updating event')
+    }
   }
 
   return (

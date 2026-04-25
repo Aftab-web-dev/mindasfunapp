@@ -10,6 +10,10 @@ import { z } from 'zod'
 
 import { Box, Button, TextField, Typography } from '@mui/material'
 import { FaRegCreditCard } from 'react-icons/fa'
+import toast from 'react-hot-toast'
+
+import { customerModuleApi } from '@/api/customer-module-api'
+import { getUser } from '@/utils/authStorage'
 
 // ----------------- Zod Schema -----------------
 const rechargeSchema = z.object({
@@ -38,14 +42,29 @@ const Recharge = () => {
     }
   })
 
-  const onSubmit = (data: RechargeFormData) => {
-    console.log('recharge data:::', data)
-    setSuccess(true)
-    reset()
+  const onSubmit = async (data: RechargeFormData) => {
+    try {
+      const ledgerId = typeof window !== 'undefined' ? sessionStorage.getItem('cusLedgerId') : null
 
-    setTimeout(() => {
-      router.push('/customer/home')
-    }, 2000) // redirect after 2 seconds
+      if (!ledgerId) {
+        toast.error('Not logged in')
+
+        return
+      }
+
+      const user = getUser()
+      const branchId = user?.branchId
+
+      await customerModuleApi.recharge({ amount: data.amount, ledgerId, branchId })
+      setSuccess(true)
+      reset()
+
+      setTimeout(() => {
+        router.push('/customer/home')
+      }, 2000)
+    } catch (err) {
+      toast.error('Recharge failed')
+    }
   }
 
   const selectedAmount = watch('amount')

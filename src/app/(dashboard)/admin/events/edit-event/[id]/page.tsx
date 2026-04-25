@@ -1,19 +1,21 @@
 import React from 'react'
 
 import EventAddForm from './_components/Form'
-import { data, reqData } from '../../../../../../fake-db/apps/data'
+import { eventsApi } from '@/api/events-api'
 
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const editFile = data.find(item => item._id === id) || reqData.find(item => item._id === id)
 
-  if (!editFile) {
+  try {
+    const res = await eventsApi.getOneEvent({ eventId: id })
+    const editFile = res?.data?.data?.[0] || res?.data?.data || null
+
+    if (!editFile) {
+      return <div>Event not found</div>
+    }
+
+    return <EventAddForm data={editFile} />
+  } catch (err) {
     return <div>Event not found</div>
   }
-
-  return (
-    <>
-      <EventAddForm data={editFile} />
-    </>
-  )
 }

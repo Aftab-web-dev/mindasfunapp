@@ -32,6 +32,9 @@ export const dropdownApi = {
     venue: async function ({ branchId }: { branchId: number | undefined }) {
         return await axiosConfig.post(`DropDown/VenuDropDown?BranchId=${branchId}`)
     },
+    venueDetails: async function ({ branchId, gTypeSubId }: { branchId: number | undefined, gTypeSubId: number | string }) {
+        return await axiosConfig.post(`DropDown/VenuDropDownDetails?BranchId=${branchId}&GTypeSubId=${gTypeSubId}`)
+    },
     locationList: async function () {
         return await axiosConfig.post(`DropDown/LocationList`)
     },
@@ -46,5 +49,23 @@ export const dropdownApi = {
     },
     card: async function ({ branchId }: { branchId: number | undefined }) {
         return await axiosConfig.post(`Event/EventCardProduct?BranchId=${branchId}`)
+    },
+    gameList: async function ({ branchId }: { branchId: number | undefined }) {
+        return await axiosConfig.post(`DropDown/GameList?BranchId=${branchId}`)
+    },
+    productList: async function ({ branchId }: { branchId: number | undefined }) {
+        return await axiosConfig.post(`DropDown/ProductList?BranchId=${branchId}`)
+    },
+    redemptionProductList: async function ({ branchId }: { branchId: number | undefined }) {
+        return await axiosConfig.post(`DropDown/RedeemptionProductList?BranchId=${branchId}`)
+    },
+    fbProductList: async function ({ branchId }: { branchId: number | undefined }) {
+        return await axiosConfig.post(`DropDown/FBProductList?BranchId=${branchId}`)
+    },
+    trampolineProductList: async function ({ branchId }: { branchId: number | undefined }) {
+        return await axiosConfig.post(`DropDown/TramplineProductList?BranchId=${branchId}`)
+    },
+    bowlingProductList: async function ({ branchId }: { branchId: number | undefined }) {
+        return await axiosConfig.post(`DropDown/BowlingProductList?BranchId=${branchId}`)
     },
 }

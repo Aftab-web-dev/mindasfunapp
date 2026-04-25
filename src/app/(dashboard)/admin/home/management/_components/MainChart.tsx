@@ -1,47 +1,22 @@
 'use client'
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 
 import dynamic from 'next/dynamic'
 
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 import IconButton from '@mui/material/IconButton'
+import CircularProgress from '@mui/material/CircularProgress'
 import useMediaQuery from '@mui/material/useMediaQuery'
 import { useTheme } from '@mui/material/styles'
 
 import type { ApexOptions } from 'apexcharts'
 
+import { RANGES, formatTimeLabel, detectAllHours } from './ranges'
+import type { RangeKey } from './ranges'
+import { managementDashboardApi } from '@/api/management-dashboard'
+
 const AppReactApexCharts = dynamic(() => import('@/libs/styles/AppReactApexCharts'))
-
-type TStats = {
-  gameRevenue: number
-  cardRevenue: number
-  redemptionRevenue: number
-  eventRevenue: number
-  fbRevenue: number
-  trampolineRevenue: number
-  bowlingRevenue: number
-  ticket: number
-}
-
-// Distribute total revenue across hours using a weighted pattern
-function distributeRevenue(total: number, seed: number): number[] {
-  const patterns: number[][] = [
-    [0.03, 0.04, 0.05, 0.06, 0.08, 0.10, 0.12, 0.11, 0.10, 0.09, 0.08, 0.06, 0.04, 0.03, 0.01],
-    [0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.11, 0.12, 0.11, 0.09, 0.07, 0.04, 0.02],
-    [0.05, 0.06, 0.08, 0.10, 0.09, 0.07, 0.05, 0.06, 0.08, 0.10, 0.09, 0.07, 0.05, 0.03, 0.02],
-  ]
-
-  if (total === 0) return Array(15).fill(0)
-
-  const pattern = patterns[seed % patterns.length]
-  const variation = (i: number) => 1 + Math.sin(seed * 17 + i * 11) * 0.12
-  const raw = pattern.map((p, i) => Math.round(total * p * variation(i)))
-  const rawSum = raw.reduce((a, b) => a + b, 0)
-  const scale = total / (rawSum || 1)
-
-  return raw.map(v => Math.round(v * scale))
-}
 
 const formatValue = (val: number, short: boolean) => {
   if (!short) return `₹${val.toLocaleString()}`
@@ -51,32 +26,44 @@ const formatValue = (val: number, short: boolean) => {
   return `₹${val}`
 }
 
-const MainCart = ({ stats }: { stats: TStats }) => {
+const MainCart = ({ range }: { range: RangeKey }) => {
   const [showTable, setShowTable] = useState(false)
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
 
-  const timeCategories = [
-    '10 AM', '11 AM', '12 PM', '1 PM', '2 PM', '3 PM', '4 PM',
-    '5 PM', '6 PM', '7 PM', '8 PM', '9 PM', '10 PM', '11 PM', '12 AM'
-  ]
+  const [loading, setLoading] = useState(true)
+  const [categories, setCategories] = useState<string[]>([])
+  const [series, setSeries] = useState<{ name: string; data: number[] }[]>([])
 
-  const multiSeries = useMemo(() => [
-    {
-      name: 'Game Revenue',
-      data: distributeRevenue(stats.gameRevenue, 0)
-    },
-    {
-      name: 'Product Revenue',
-      data: distributeRevenue(stats.cardRevenue, 1)
-    },
-    {
-      name: 'Redemption Revenue',
-      data: distributeRevenue(stats.redemptionRevenue, 2)
-    }
-  ], [stats])
+  useEffect(() => {
+    setLoading(true)
+    const { day } = RANGES[range]
 
-  const lineOptions: ApexOptions = {
+    managementDashboardApi.mainGraph({ day }).then(res => {
+      const raw = res.data?.data
+
+      if (!Array.isArray(raw) || raw.length === 0) {
+        setCategories([])
+        setSeries([])
+
+        return
+      }
+
+      const allHours = detectAllHours(raw)
+
+      setCategories(raw.map((r: any) => formatTimeLabel(r.time ?? r.hour ?? r.label, allHours)))
+      setSeries([
+        { name: 'Game Revenue', data: raw.map((r: any) => Number(r.gameRevenue ?? 0)) },
+        { name: 'Product Revenue', data: raw.map((r: any) => Number(r.cardRevenue ?? r.productRevenue ?? 0)) },
+        { name: 'Redemption Revenue', data: raw.map((r: any) => Number(r.redemptionRevenue ?? 0)) }
+      ])
+    }).catch(() => {
+      setCategories([])
+      setSeries([])
+    }).finally(() => setLoading(false))
+  }, [range])
+
+  const lineOptions: ApexOptions = useMemo(() => ({
     chart: {
       parentHeightOffset: 0,
       toolbar: { show: false },
@@ -123,9 +110,7 @@ const MainCart = ({ stats }: { stats: TStats }) => {
       {
         show: false,
         min: 0,
-        labels: {
-          formatter: (val: number) => formatValue(val, isMobile)
-        }
+        labels: { formatter: (val: number) => formatValue(val, isMobile) }
       }
     ],
     xaxis: {
@@ -134,9 +119,9 @@ const MainCart = ({ stats }: { stats: TStats }) => {
       labels: {
         style: { colors: '#94A3B8', fontSize: isMobile ? '8px' : '11px', fontWeight: 500 },
         rotate: isMobile ? -45 : 0,
-        hideOverlappingLabels: true,
+        hideOverlappingLabels: true
       },
-      categories: timeCategories
+      categories
     },
     legend: {
       show: true,
@@ -148,7 +133,9 @@ const MainCart = ({ stats }: { stats: TStats }) => {
       itemMargin: { horizontal: 12 },
       labels: { colors: '#64748B' }
     }
-  }
+  }), [categories, isMobile])
+
+  const hasData = series.some(s => s.data.some(v => v > 0))
 
   return (
     <Box
@@ -172,6 +159,9 @@ const MainCart = ({ stats }: { stats: TStats }) => {
           <Typography sx={{ fontSize: '1rem', fontWeight: 700, color: '#1E293B' }}>
             Daily balance overview
           </Typography>
+          <Typography sx={{ fontSize: '0.8125rem', color: '#94A3B8', fontWeight: 500 }}>
+            {RANGES[range].label}
+          </Typography>
         </Box>
         <IconButton
           onClick={() => setShowTable(prev => !prev)}
@@ -188,17 +178,29 @@ const MainCart = ({ stats }: { stats: TStats }) => {
         </IconButton>
       </Box>
 
-      {/* Chart */}
-      <Box sx={{ px: { xs: 1, sm: 1.5 }, pb: 1.5 }}>
-        {!showTable ? (
-          <AppReactApexCharts type='line' width='100%' height={340} options={lineOptions} series={multiSeries} />
+      {/* Chart / Table / Empty state */}
+      <Box sx={{ px: { xs: 1, sm: 1.5 }, pb: 1.5, minHeight: 340 }}>
+        {loading ? (
+          <Box sx={{ height: 340, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <CircularProgress size={28} sx={{ color: '#523F99' }} />
+          </Box>
+        ) : !hasData || categories.length === 0 ? (
+          <Box sx={{ height: 340, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+            <Box sx={{ width: 56, height: 56, borderRadius: '50%', backgroundColor: '#F0ECFA', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <i className='tabler-chart-line' style={{ fontSize: '1.5rem', color: '#523F99' }} />
+            </Box>
+            <Typography sx={{ fontSize: '0.9375rem', fontWeight: 600, color: '#1E293B' }}>No revenue data</Typography>
+            <Typography sx={{ fontSize: '0.8125rem', color: '#94A3B8' }}>No transactions in this period.</Typography>
+          </Box>
+        ) : !showTable ? (
+          <AppReactApexCharts type='line' width='100%' height={340} options={lineOptions} series={series} />
         ) : (
           <Box sx={{ overflowX: 'auto', px: 1.5, pb: 1 }}>
             <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 2px', minWidth: 600 }}>
               <thead>
                 <tr>
                   <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: '0.75rem', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Time</th>
-                  {multiSeries.map(s => (
+                  {series.map(s => (
                     <th key={s.name} style={{ padding: '10px 14px', textAlign: 'right', fontSize: '0.75rem', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                       {s.name}
                     </th>
@@ -206,12 +208,12 @@ const MainCart = ({ stats }: { stats: TStats }) => {
                 </tr>
               </thead>
               <tbody>
-                {timeCategories.map((cat, idx) => (
-                  <tr key={cat} style={{ backgroundColor: idx % 2 === 0 ? '#FAFAFA' : 'transparent' }}>
+                {categories.map((cat, idx) => (
+                  <tr key={cat + idx} style={{ backgroundColor: idx % 2 === 0 ? '#FAFAFA' : 'transparent' }}>
                     <td style={{ padding: '8px 14px', borderRadius: '6px 0 0 6px', fontSize: '0.8125rem', fontWeight: 500, color: '#64748B' }}>{cat}</td>
-                    {multiSeries.map(s => (
+                    {series.map(s => (
                       <td key={s.name} style={{ padding: '8px 14px', textAlign: 'right', fontSize: '0.8125rem', fontWeight: 600, color: '#1E293B' }}>
-                        ₹{s.data[idx]?.toLocaleString()}
+                        ₹{s.data[idx]?.toLocaleString() ?? 0}
                       </td>
                     ))}
                   </tr>

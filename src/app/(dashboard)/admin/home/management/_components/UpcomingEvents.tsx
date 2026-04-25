@@ -1,6 +1,14 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 import Avatar from '@mui/material/Avatar'
+
+import { format } from 'date-fns'
+
+import { managementDashboardApi } from '@/api/management-dashboard'
 
 interface DataType {
   title: string
@@ -8,16 +16,25 @@ interface DataType {
   subTitle: string
 }
 
-const data: DataType[] = [
-  { title: 'John Doe', subTitle: 'Birthday Party', date: '22 Apr' },
-  { title: 'John Doe', subTitle: 'Birthday Party', date: '22 Apr' },
-  { title: 'John Doe', subTitle: 'Birthday Party', date: '22 Apr' },
-  { title: 'John Doe', subTitle: 'Birthday Party', date: '22 Apr' }
-]
-
 const eventColors = ['#523F99', '#3B82F6', '#10B981', '#F59E0B']
 
 const UpcomingEvents = () => {
+  const [data, setData] = useState<DataType[]>([])
+
+  useEffect(() => {
+    managementDashboardApi.upcomingEvent().then(res => {
+      const items: any[] = res.data?.data || []
+
+      const mapped = items.map((row: any) => ({
+        title: row.name || row.customerName || row.ledgerName || 'Event',
+        subTitle: row.event || row.eventName || row.eventDescription || 'Event',
+        date: row.eventDate ? format(new Date(row.eventDate), 'd MMM') : ''
+      }))
+
+      setData(mapped)
+    }).catch(() => setData([]))
+  }, [])
+
   return (
     <Box
       sx={{
@@ -38,6 +55,13 @@ const UpcomingEvents = () => {
       </Box>
 
       <Box sx={{ px: 2, pb: 2.5, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+        {data.length === 0 && (
+          <Box sx={{ px: 2, py: 3, textAlign: 'center' }}>
+            <Typography sx={{ fontSize: '0.8125rem', color: '#94A3B8', fontWeight: 500 }}>
+              No upcoming events
+            </Typography>
+          </Box>
+        )}
         {data.map((row, i) => (
           <Box
             key={i}

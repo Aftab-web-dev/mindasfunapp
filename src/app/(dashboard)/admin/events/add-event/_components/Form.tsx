@@ -162,8 +162,8 @@ const EventAddForm = () => {
       event_date: '',
       event: undefined,
       venue: undefined,
-      venue_cost: 0,
-      no_of_attendees: 1,
+      venue_cost: undefined as any,
+      no_of_attendees: undefined as any,
       food: [],
       card: [],
       gift: [],
@@ -515,15 +515,16 @@ const EventAddForm = () => {
                       fullWidth
                       variant='standard'
                       size='small'
+                      placeholder='0'
                       error={!!errors.venue_cost}
                       helperText={errors.venue_cost?.message}
                       onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
-                      value={field.value}
+                      value={field.value ?? ''}
                       inputProps={{
                         inputMode: 'numeric',
                         pattern: '[0-9]*',
                         onWheel: e => (e.currentTarget as HTMLInputElement).blur(),
-                        className: 'no-spinner' // custom class to remove spinners
+                        className: 'no-spinner'
                       }}
                     />
                   )}
@@ -539,15 +540,16 @@ const EventAddForm = () => {
                       fullWidth
                       variant='standard'
                       size='small'
+                      placeholder='1'
                       error={!!errors.no_of_attendees}
                       helperText={errors.no_of_attendees?.message}
                       onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
-                      value={field.value}
+                      value={field.value ?? ''}
                       inputProps={{
                         inputMode: 'numeric',
                         pattern: '[0-9]*',
                         onWheel: e => (e.currentTarget as HTMLInputElement).blur(),
-                        className: 'no-spinner' // custom class to remove spinners
+                        className: 'no-spinner'
                       }}
                     />
                   )}

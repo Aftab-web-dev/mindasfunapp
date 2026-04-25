@@ -14,6 +14,7 @@ import { format } from 'date-fns'
 import toast from 'react-hot-toast'
 
 import { waiverApi } from "@/api/waiver-api"
+import { getUser } from "@/utils/authStorage"
 
 
 
@@ -44,6 +45,30 @@ const SignedWaiverTable = () => {
   const handleViewCheckIn = (row: any) => {
     setSelectedCheckIn(row)
     setOpenModal(true)
+  }
+
+  const handleCheckIn = async (row: any) => {
+    try {
+      const user = getUser()
+
+      await waiverApi.checkInWaiver({ cusWaiverId: row.id, branchId: user?.branchId })
+      toast.success('Checked in successfully')
+      fetchTableData()
+    } catch (err) {
+      toast.error('Check-in failed')
+    }
+  }
+
+  const handleDelete = async (row: any) => {
+    try {
+      const user = getUser()
+
+      await waiverApi.deleteSignedWaiver({ id: Number(row.id), empId: user?.employeeId })
+      toast.success('Record deleted')
+      fetchTableData()
+    } catch (err) {
+      toast.error('Delete failed')
+    }
   }
 
   const handleDownload = async (row: any) => {
@@ -194,25 +219,15 @@ const SignedWaiverTable = () => {
       field: 'actions',
       headerName: 'Actions',
       disableColumnMenu: true,
-      renderCell: ({}) => (
+      renderCell: ({ row }) => (
         <Box sx={{ display: 'flex', alignItems: 'center', height: '100%' }}>
-          {/* <Tooltip title='View'>
-            <IconButton size='small' component={Link} href={`#`}>
-              <Icon icon='raphael:view' fontSize={20} />
-            </IconButton>
-          </Tooltip> */}
-          {/* <Tooltip title='Edit'>
-            <IconButton size='small' component={Link} href={`#`}>
-              <Icon icon='tabler:edit' fontSize={20} />
-            </IconButton>
-          </Tooltip> */}
           <Tooltip title='Check-In'>
-            <IconButton onClick={() => {}} size='small'>
+            <IconButton onClick={() => handleCheckIn(row)} size='small'>
               <Icon icon='tabler:checkbox' fontSize={20} />
             </IconButton>
           </Tooltip>
           <Tooltip title='Delete'>
-            <IconButton onClick={() => {}} size='small'>
+            <IconButton onClick={() => handleDelete(row)} size='small'>
               <Icon icon='tabler:trash' fontSize={20} />
             </IconButton>
           </Tooltip>

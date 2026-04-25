@@ -1,33 +1,39 @@
 'use client'
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 
 import { FaFileAlt } from 'react-icons/fa'
 import { MdOutlineAccessTime } from 'react-icons/md'
+import { format } from 'date-fns'
 
-const waiverForms = [
-  {
-    title: 'Parental Consent Waiver',
-    updated: 'June 10, 2025',
-    status: 'Active'
-  },
-  {
-    title: 'General Activity Waiver',
-    updated: 'June 8, 2025',
-    status: 'Active'
-  },
-  {
-    title: 'Photo & Media Release',
-    updated: 'June 2, 2025',
-    status: 'Inactive'
-  },
-  {
-    title: 'Health & Safety Waiver',
-    updated: 'May 28, 2025',
-    status: 'Active'
-  }
-]
+import { customerModuleApi } from '@/api/customer-module-api'
+
+type WaiverItem = {
+  title: string
+  updated: string
+  status: string
+}
 
 const Waiver = () => {
+  const [waiverForms, setWaiverForms] = useState<WaiverItem[]>([])
+
+  useEffect(() => {
+    customerModuleApi.waiverList().then(res => {
+      const rows: any[] = res.data?.data || []
+
+      const mapped = rows.map((r: any) => ({
+        title: r.titile ?? r.title ?? r.name ?? 'Waiver',
+        updated: r.modifiedOn
+          ? format(new Date(r.modifiedOn), 'MMMM d, yyyy')
+          : r.createdOn
+            ? format(new Date(r.createdOn), 'MMMM d, yyyy')
+            : '—',
+        status: r.active === 1 || r.active === true || r.status === 1 ? 'Active' : 'Inactive'
+      }))
+
+      setWaiverForms(mapped)
+    }).catch(() => setWaiverForms([]))
+  }, [])
+
   return (
     <div className='max-w-3xl mx-auto mt-10 p-6 bg-white border border-purple-100 rounded-xl shadow'>
       <h1 className='text-2xl font-bold text-purple-700 flex items-center gap-2 mb-6'>
@@ -36,6 +42,9 @@ const Waiver = () => {
       </h1>
 
       <div className='space-y-4'>
+        {waiverForms.length === 0 && (
+          <p className='text-sm text-gray-500'>No waivers available.</p>
+        )}
         {waiverForms.map((form, index) => (
           <div
             key={index}

@@ -5,9 +5,23 @@ import Link from 'next/link'
 
 import { FaGamepad, FaWallet, FaCalendarAlt, FaClock,  FaMoneyBillAlt, FaFileSignature } from 'react-icons/fa'
 
+import { customerModuleApi } from '@/api/customer-module-api'
+
 const Home = () => {
   const carouselRef = useRef<HTMLDivElement>(null)
   const [cardCount, setCardCount] = useState(1)
+  const [customer, setCustomer] = useState<any>(null)
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const ledgerId = sessionStorage.getItem('cusLedgerId')
+
+    if (!ledgerId) return
+
+    customerModuleApi.getCustomerData({ ledgerId }).then(res => {
+      setCustomer(res.data?.data ?? res.data)
+    }).catch(() => {})
+  }, [])
 
   useEffect(() => {
     const updateCardCount = () => {
@@ -85,7 +99,7 @@ const Home = () => {
       {/* Welcome Banner */}
       <div className='bg-gradient-to-r from-purple-600 to-blue-500 text-white p-6 rounded-xl flex justify-between items-center mb-6 shadow-md'>
         <div>
-          <p className='text-2xl max-md:text-lg font-bold mb-1'>Welcome back, Gamer123!</p>
+          <p className='text-2xl max-md:text-lg font-bold mb-1'>Welcome back, {customer?.ledgerName || customer?.name || 'Gamer'}!</p>
           <p className='text-sm max-md:text-xs'>Ready for your next gaming session?</p>
         </div>
         <FaGamepad className='text-4xl opacity-50' />
@@ -96,7 +110,7 @@ const Home = () => {
         <div className='bg-gradient-to-r from-emerald-500 to-green-600 text-white p-6 rounded-xl flex justify-between items-center shadow'>
           <div>
             <p className='text-sm'>Balance</p>
-            <h3 className='text-2xl font-bold'>$250</h3>
+            <h3 className='text-2xl font-bold'>₹{customer?.cashBalance ?? customer?.cardBalance ?? 0}</h3>
           </div>
           <FaWallet className='text-2xl max-sm:hidden' />
         </div>

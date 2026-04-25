@@ -1,3 +1,4 @@
+
 import axiosConfig from './api-config'
 
 export const waiverApi = {
@@ -26,6 +27,11 @@ export const waiverApi = {
 
         return await axiosConfig.post(`Waiver/WaverFormDateGet?${queryParams}`)
     },
+    getCloneSourceWaiver: async ({ waiverId }: { waiverId: number | string }) => {
+        const queryParams = `Id=${waiverId.toString()}`
+
+        return await axiosConfig.post(`Waiver/WaverFormCusDateGet?${queryParams}`)
+    },
     signWaiver: async ({ body }: { body: any }) => {
         return await axiosConfig.post(`Waiver/RegisterWaiverForm`, body, {
             headers: {
@@ -37,7 +43,7 @@ export const waiverApi = {
         return await axiosConfig.post(`Waiver/WaverFormCusDataList`)
     },
 
-    deleteSignedWaiver: async ({ id, empId }: { id: number, empId: number }) => {
+    deleteSignedWaiver: async ({ id, empId }: { id: number, empId: number | undefined }) => {
         const queryParams = `Id=${id}&EmpId=${empId}`
 
         return await axiosConfig.post(`Waiver/DeleteCustomerWaiver?${queryParams}`)
@@ -47,6 +53,20 @@ export const waiverApi = {
         const queryParams = `LedgerId=${ledgerId}&WaverId=${waiverId}`
 
         return await axiosConfig.post(`Waiver/DownloadCustomerWaiver?${queryParams}`, null, {
+            responseType: 'blob'
+        })
+    },
+
+    checkInWaiver: async ({ cusWaiverId, branchId }: { cusWaiverId: number | string, branchId: number | string | undefined }) => {
+        const queryParams = `CusWaiverId=${cusWaiverId}&BranchId=${branchId}`
+
+        return await axiosConfig.post(`Waiver/WaiverCheckIn?${queryParams}`)
+    },
+
+    exportCheckInHistory: async ({ waiverId, from, to }: { waiverId: number | string, from: string, to: string }) => {
+        const queryParams = `WaverId=${waiverId}&from=${from}&to=${to}`
+
+        return await axiosConfig.post(`Waiver/ExportCusWaiver?${queryParams}`, null, {
             responseType: 'blob'
         })
     }

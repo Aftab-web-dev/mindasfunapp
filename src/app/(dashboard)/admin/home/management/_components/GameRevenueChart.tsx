@@ -7,18 +7,11 @@ import ReactApexcharts from '@/@core/components/react-apexcharts'
 type Props = {
   chartData: number[]
   title: string
+  categories: string[]
 }
 
-const GameRevenueChart = ({ chartData, title }: Props) => {
-  const timeLabels = [
-    '10 AM', '11 AM', '12 PM', '1 PM', '2 PM', '3 PM', '4 PM',
-    '5 PM', '6 PM', '7 PM', '8 PM', '9 PM', '10 PM', '11 PM', '12 AM'
-  ]
-
-  // Aggregate hourly data into daily-style buckets for the bar chart
-  const barData = useMemo(() => {
-    return chartData.map(v => Math.max(v, 0))
-  }, [chartData])
+const GameRevenueChart = ({ chartData, title, categories }: Props) => {
+  const barData = useMemo(() => chartData.map(v => Math.max(v, 0)), [chartData])
 
   const options: ApexOptions = {
     chart: {
@@ -51,7 +44,7 @@ const GameRevenueChart = ({ chartData, title }: Props) => {
     xaxis: {
       axisBorder: { show: false },
       axisTicks: { show: false },
-      categories: timeLabels,
+      categories,
       labels: {
         style: { colors: '#94A3B8', fontSize: '11px', fontWeight: 500 }
       }

@@ -11,6 +11,8 @@ import toast from 'react-hot-toast'
 import { MdOutlineAccessTime } from 'react-icons/md'
 
 import AppReactDatepicker from '@/libs/styles/AppReactDatepicker'
+import { customerModuleApi } from '@/api/customer-module-api'
+import { getUser } from '@/utils/authStorage'
 
 const timeSlots = [
   { time: '10:00 AM - 11:00 AM', booked: false },
@@ -70,10 +72,39 @@ export default function AddBooking() {
 
   const router = useRouter()
 
-  const onSubmit = (data: BookingFormData) => {
-    console.log('Booking submitted:', data)
-    toast.success('Booking Submitted!')
-    router.push('/customer/home')
+  const onSubmit = async (data: BookingFormData) => {
+    try {
+      const ledgerId = typeof window !== 'undefined' ? Number(sessionStorage.getItem('cusLedgerId')) || 0 : 0
+      const user = getUser()
+
+      const payload = {
+        id: 0,
+        name: data.name,
+        phone: Number(data.phone),
+        email: data.email,
+        address: data.address,
+        eventDate: data.event_date,
+        event: Number(data.event) || 0,
+        eventDescription: '',
+        noOfAttendees: Number(data.number_of_attendees) || 0,
+        venu: Number(data.venue) || 0,
+        venuCost: Number(data.venue_cost) || 0,
+        ledgerId,
+        branchId: user?.branchId ?? 0,
+        status: 2, // pending request
+        createdBy: ledgerId,
+        modifiedBy: ledgerId,
+        createdOn: new Date(),
+        modifiedOn: new Date(),
+        items: []
+      }
+
+      await customerModuleApi.addOrEditEventBooking({ body: payload })
+      toast.success('Booking Request Submitted!')
+      router.push('/customer/home')
+    } catch (err) {
+      toast.error('Booking submission failed')
+    }
   }
 
   const handleSlotSelect = (slot: string) => {

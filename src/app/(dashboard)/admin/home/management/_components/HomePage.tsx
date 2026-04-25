@@ -1,7 +1,7 @@
 'use client'
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 
-import { Box, Button, Typography } from '@mui/material'
+import { Box, Button, CircularProgress, MenuItem, TextField, Typography } from '@mui/material'
 
 import ReactApexcharts from '@/@core/components/react-apexcharts'
 import StatsCard from './StatsCard'
@@ -10,6 +10,9 @@ import TopGameChart from './TopGameChart'
 import UpcomingEvents from './UpcomingEvents'
 import MainCart from './MainChart'
 import RevenueSummary from './RevenueSummary'
+import { RANGES, formatTimeLabel, detectAllHours } from './ranges'
+import type { RangeKey } from './ranges'
+import { managementDashboardApi } from '@/api/management-dashboard'
 
 type TStats = {
   gameRevenue: number
@@ -23,46 +26,94 @@ type TStats = {
   time: number
 }
 
-// Generate realistic hourly revenue distribution from a total amount
-// Each category gets a unique pattern based on its seed index
-function generateHourlyData(totalRevenue: number, seed: number): number[] {
-  const hours = 15 // 10 AM to 12 AM
+const CATEGORY_TO_GRAPH: Record<string, keyof typeof managementDashboardApi> = {
+  'Game Revenue': 'gameRevenueGraph',
+  'Product Revenue': 'productRevenueGraph',
+  'Redemption Revenue': 'redemptionRevenueGraph',
+  'Event Revenue': 'eventRevenueGraph',
+  'F&B Revenue': 'fbRevenueGraph',
+  'Bounzing Revenue': 'trampolineRevenueGraph',
+  'Bowling Revenue': 'bowlingRevenueGraph'
+}
 
-  if (totalRevenue === 0) {
-    return Array(hours).fill(0)
+// Build the { datas, data1, data2, chartData } shape TopGameChart expects
+// from the API category labels + values (top 6 by value, split 3/3).
+function buildTopStat(selectedStat: any, labels: string[], values: number[]) {
+  const indexed = values.map((val, idx) => ({ val, label: labels[idx] ?? '' }))
+  const top6 = [...indexed].sort((a, b) => b.val - a.val).slice(0, 6)
+  const topTotal = top6.reduce((s, t) => s + t.val, 0) || 1
+
+  const colors1 = ['text-primary', 'text-info', 'text-success']
+  const colors2 = ['text-secondary', 'text-error', 'text-warning']
+
+  return {
+    ...selectedStat,
+    datas: top6.map(t => t.label),
+    data1: top6.slice(0, 3).map((t, j) => ({
+      title: t.label,
+      value: Math.round((t.val / topTotal) * 100),
+      colorClass: colors1[j]
+    })),
+    data2: top6.slice(3, 6).map((t, j) => ({
+      title: t.label,
+      value: Math.round((t.val / topTotal) * 100),
+      colorClass: colors2[j]
+    })),
+    chartData: values
   }
-
-  // Different distribution patterns per seed
-  const patterns: number[][] = [
-    [0.03, 0.04, 0.05, 0.06, 0.08, 0.10, 0.12, 0.11, 0.10, 0.09, 0.08, 0.06, 0.04, 0.03, 0.01], // morning ramp
-    [0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.11, 0.12, 0.11, 0.09, 0.07, 0.04, 0.02], // evening peak
-    [0.05, 0.06, 0.08, 0.10, 0.09, 0.07, 0.05, 0.06, 0.08, 0.10, 0.09, 0.07, 0.05, 0.03, 0.02], // double peak
-    [0.04, 0.05, 0.06, 0.07, 0.07, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.07, 0.07, 0.05, 0.04], // steady
-    [0.02, 0.03, 0.04, 0.06, 0.08, 0.10, 0.11, 0.12, 0.11, 0.10, 0.08, 0.06, 0.04, 0.03, 0.02], // bell curve
-    [0.08, 0.09, 0.10, 0.09, 0.08, 0.06, 0.05, 0.05, 0.06, 0.07, 0.08, 0.07, 0.05, 0.04, 0.03], // morning heavy
-    [0.03, 0.04, 0.05, 0.05, 0.06, 0.07, 0.07, 0.08, 0.09, 0.10, 0.11, 0.10, 0.07, 0.05, 0.03], // late evening
-    [0.06, 0.07, 0.08, 0.07, 0.06, 0.05, 0.04, 0.05, 0.07, 0.09, 0.11, 0.10, 0.07, 0.05, 0.03], // bimodal
-  ]
-
-  const pattern = patterns[seed % patterns.length]
-
-  // Add slight randomness based on seed so same revenue amount still looks different per category
-  const variation = (i: number) => {
-    const v = Math.sin(seed * 13 + i * 7) * 0.15
-
-    return 1 + v
-  }
-
-  const raw = pattern.map((p, i) => Math.round(totalRevenue * p * variation(i)))
-
-  // Adjust so sum roughly matches total
-  const rawSum = raw.reduce((a, b) => a + b, 0)
-  const scale = totalRevenue / (rawSum || 1)
-
-  return raw.map(v => Math.round(v * scale))
 }
 
 const HomePage = ({ stats }: { stats: TStats }) => {
+  const [range, setRange] = useState<RangeKey>('today')
+  const [selectedStat, setSelectedStat] = useState<any | null>(null)
+  const [selectedButton, setSelectedButton] = useState<string>('total')
+
+  const [catLoading, setCatLoading] = useState(false)
+  const [catCategories, setCatCategories] = useState<string[]>([])
+  const [catData, setCatData] = useState<number[]>([])
+
+  // Fetch per-category graph when a card is selected OR range changes
+  useEffect(() => {
+    if (!selectedStat) {
+      setCatCategories([])
+      setCatData([])
+
+      return
+    }
+
+    const apiKey = CATEGORY_TO_GRAPH[selectedStat.title as string]
+
+    if (!apiKey) {
+      setCatCategories([])
+      setCatData([])
+
+      return
+    }
+
+    setCatLoading(true)
+    const { day } = RANGES[range]
+    const fn = managementDashboardApi[apiKey] as (args: any) => Promise<any>
+
+    fn({ day }).then(res => {
+      const raw = res.data?.data
+
+      if (!Array.isArray(raw) || raw.length === 0) {
+        setCatCategories([])
+        setCatData([])
+
+        return
+      }
+
+      const allHours = detectAllHours(raw)
+
+      setCatCategories(raw.map((r: any) => formatTimeLabel(r.time ?? r.hour, allHours)))
+      setCatData(raw.map((r: any) => Number(r.revenue ?? r.value ?? r.amount ?? 0)))
+    }).catch(() => {
+      setCatCategories([])
+      setCatData([])
+    }).finally(() => setCatLoading(false))
+  }, [selectedStat, range])
+
   const statsCardArray = useMemo(() => {
     const categories = [
       { title: 'Game Revenue', revenue: stats.gameRevenue, icon: 'tabler-coin-rupee' },
@@ -72,57 +123,24 @@ const HomePage = ({ stats }: { stats: TStats }) => {
       { title: 'F&B Revenue', revenue: stats.fbRevenue, icon: 'tabler-coffee' },
       { title: 'Bounzing Revenue', revenue: stats.trampolineRevenue, icon: 'tabler-confetti' },
       { title: 'Bowling Revenue', revenue: stats.bowlingRevenue, icon: 'tabler-ball-bowling' },
-      { title: 'Ticketing Revenue', revenue: stats.ticket, icon: 'tabler-cash' },
+      { title: 'Ticketing Revenue', revenue: stats.ticket, icon: 'tabler-cash' }
     ]
 
-    return categories.map((cat, i) => {
-      const hourlyData = generateHourlyData(cat.revenue, i)
-
-      // Top 6 time slots by revenue for the breakdown chart
-      const timeLabels = [
-        '10 AM', '11 AM', '12 PM', '1 PM', '2 PM', '3 PM', '4 PM',
-        '5 PM', '6 PM', '7 PM', '8 PM', '9 PM', '10 PM', '11 PM', '12 AM'
-      ]
-
-      const indexed = hourlyData.map((val, idx) => ({ val, label: timeLabels[idx] }))
-      const top6 = [...indexed].sort((a, b) => b.val - a.val).slice(0, 6)
-      const topTotal = top6.reduce((s, t) => s + t.val, 0) || 1
-
-      const colors1 = ['text-primary', 'text-info', 'text-success']
-      const colors2 = ['text-secondary', 'text-error', 'text-warning']
-
-      return {
-        title: cat.title,
-        datas: top6.map(t => t.label),
-        data1: top6.slice(0, 3).map((t, j) => ({
-          title: t.label,
-          value: Math.round((t.val / topTotal) * 100),
-          colorClass: colors1[j]
-        })),
-        data2: top6.slice(3, 6).map((t, j) => ({
-          title: t.label,
-          value: Math.round((t.val / topTotal) * 100),
-          colorClass: colors2[j]
-        })),
-        revenue: `₹${cat.revenue.toLocaleString()}`,
-        icon: cat.icon,
-        chartData: hourlyData
-      }
-    })
+    return categories.map(cat => ({
+      title: cat.title,
+      revenue: `₹${cat.revenue.toLocaleString()}`,
+      icon: cat.icon,
+      datas: [],
+      data1: [],
+      data2: [],
+      chartData: []
+    }))
   }, [stats])
-
-  const [selectedStat, setSelectedStat] = useState<any | null>(null)
-  const [selectedButton, setSelectedButton] = useState<string>('total')
 
   const totalRevenue =
     stats.gameRevenue + stats.cardRevenue + stats.redemptionRevenue +
     stats.eventRevenue + stats.fbRevenue + stats.trampolineRevenue +
     stats.bowlingRevenue + stats.ticket
-
-  const timeCategories = [
-    '10 AM', '11 AM', '12 PM', '1 PM', '2 PM', '3 PM', '4 PM',
-    '5 PM', '6 PM', '7 PM', '8 PM', '9 PM', '10 PM', '11 PM', '12 AM'
-  ]
 
   const options: ApexCharts.ApexOptions = {
     chart: {
@@ -140,17 +158,8 @@ const HomePage = ({ stats }: { stats: TStats }) => {
     },
     dataLabels: { enabled: false },
     xaxis: {
-      categories: timeCategories,
-      labels: {
-        style: { colors: '#94A3B8', fontSize: '11px' },
-        formatter: value => {
-          if (typeof window !== 'undefined' && window.innerWidth <= 768) {
-            return ['10 AM', '1 PM', '4 PM', '7 PM', '10 PM', '12 AM'].includes(value) ? value : ''
-          }
-
-          return value
-        }
-      },
+      categories: catCategories,
+      labels: { style: { colors: '#94A3B8', fontSize: '11px' } },
       axisBorder: { show: false },
       axisTicks: { show: false }
     },
@@ -166,19 +175,44 @@ const HomePage = ({ stats }: { stats: TStats }) => {
       strokeDashArray: 3,
       xaxis: { lines: { show: false } }
     },
-    tooltip: {
-      y: { formatter: (val: number) => `₹${val.toLocaleString()}` }
-    }
+    tooltip: { y: { formatter: (val: number) => `₹${val.toLocaleString()}` } }
   }
+
+  const categoryHasData = catData.some(v => v > 0)
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
 
-      {/* Row 1: Revenue Category Cards */}
-      <Box>
-        <Typography sx={{ fontSize: '1rem', fontWeight: 700, color: '#1E293B', mb: 2 }}>
+      {/* Header with range filter */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
+        <Typography sx={{ fontSize: '1rem', fontWeight: 700, color: '#1E293B' }}>
           Revenue Categories
         </Typography>
+        <TextField
+          select
+          size='small'
+          value={range}
+          onChange={e => setRange(e.target.value as RangeKey)}
+          sx={{
+            minWidth: 150,
+            '& .MuiOutlinedInput-root': {
+              borderRadius: '10px',
+              fontSize: '0.8125rem',
+              backgroundColor: '#FFFFFF',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+              height: 38
+            }
+          }}
+        >
+          <MenuItem value='today'>Today</MenuItem>
+          <MenuItem value='week'>This Week</MenuItem>
+          <MenuItem value='month'>This Month</MenuItem>
+          <MenuItem value='year'>This Year</MenuItem>
+        </TextField>
+      </Box>
+
+      {/* Row 1: Revenue Category Cards */}
+      <Box>
         <Box
           sx={{
             display: 'grid',
@@ -186,7 +220,7 @@ const HomePage = ({ stats }: { stats: TStats }) => {
               xs: 'repeat(2, 1fr)',
               md: 'repeat(3, 1fr)',
               lg: 'repeat(4, 1fr)',
-            xl: 'repeat(4, 1fr)'
+              xl: 'repeat(4, 1fr)'
             },
             gap: 2
           }}
@@ -202,7 +236,7 @@ const HomePage = ({ stats }: { stats: TStats }) => {
         </Box>
       </Box>
 
-      {/* Row 2: Daily Balance Overview + Revenue Statistic */}
+      {/* Row 2: Daily Balance Overview / Revenue Breakdown + Revenue Statistic */}
       <Box
         sx={{
           display: 'grid',
@@ -234,7 +268,7 @@ const HomePage = ({ stats }: { stats: TStats }) => {
                   Revenue Breakdown
                 </Typography>
                 <Typography sx={{ fontSize: '0.8125rem', color: '#94A3B8', fontWeight: 500 }}>
-                  {selectedStat.title} — Hourly trend
+                  {selectedStat.title} — {RANGES[range].label}
                 </Typography>
               </Box>
               <Button
@@ -252,25 +286,37 @@ const HomePage = ({ stats }: { stats: TStats }) => {
                   '&:hover': { backgroundColor: 'rgba(82, 63, 153, 0.1)' }
                 }}
               >
-                {selectedButton === 'total' ? 'Daily Revenue' : 'Category View'}
+                {selectedButton === 'total' ? 'Category View' : 'Total View'}
               </Button>
             </Box>
-            <Box sx={{ px: { xs: 1, sm: 1.5 }, pb: 1.5 }}>
-              {selectedButton === 'total' ? (
+            <Box sx={{ px: { xs: 1, sm: 1.5 }, pb: 1.5, minHeight: 340 }}>
+              {catLoading ? (
+                <Box sx={{ height: 340, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <CircularProgress size={28} sx={{ color: '#523F99' }} />
+                </Box>
+              ) : !categoryHasData ? (
+                <Box sx={{ height: 340, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+                  <Box sx={{ width: 56, height: 56, borderRadius: '50%', backgroundColor: '#F0ECFA', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <i className='tabler-chart-line' style={{ fontSize: '1.5rem', color: '#523F99' }} />
+                  </Box>
+                  <Typography sx={{ fontSize: '0.9375rem', fontWeight: 600, color: '#1E293B' }}>No revenue data</Typography>
+                  <Typography sx={{ fontSize: '0.8125rem', color: '#94A3B8' }}>No {selectedStat.title} transactions in this period.</Typography>
+                </Box>
+              ) : selectedButton === 'total' ? (
                 <ReactApexcharts
                   type='area'
                   height={340}
                   width='100%'
                   options={options}
-                  series={[{ name: selectedStat.title, data: selectedStat.chartData }]}
+                  series={[{ name: selectedStat.title, data: catData }]}
                 />
               ) : (
-                <GameRevenueChart chartData={selectedStat.chartData} title={selectedStat.title} />
+                <GameRevenueChart chartData={catData} title={selectedStat.title} categories={catCategories} />
               )}
             </Box>
           </Box>
         ) : (
-          <MainCart stats={stats} />
+          <MainCart range={range} />
         )}
         <RevenueSummary
           totalRevenue={totalRevenue}
@@ -282,13 +328,13 @@ const HomePage = ({ stats }: { stats: TStats }) => {
             { label: 'F&B Revenue', amount: stats.fbRevenue, color: '#10B981' },
             { label: 'Bounzing Revenue', amount: stats.trampolineRevenue, color: '#8B5CF6' },
             { label: 'Bowling Revenue', amount: stats.bowlingRevenue, color: '#F97316' },
-            { label: 'Ticketing Revenue', amount: stats.ticket, color: '#EC4899' },
+            { label: 'Ticketing Revenue', amount: stats.ticket, color: '#EC4899' }
           ]}
         />
       </Box>
 
       {/* Row 3: Category Breakdown + Upcoming Events (shown when card selected) */}
-      {selectedStat && (
+      {selectedStat && categoryHasData && (
         <Box
           sx={{
             display: 'grid',
@@ -296,7 +342,19 @@ const HomePage = ({ stats }: { stats: TStats }) => {
             gap: 3
           }}
         >
-          <TopGameChart selectedStat={selectedStat} />
+          <TopGameChart selectedStat={buildTopStat(selectedStat, catCategories, catData)} />
+          <UpcomingEvents />
+        </Box>
+      )}
+      {selectedStat && !categoryHasData && !catLoading && (
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', xl: '2fr 1fr' },
+            gap: 3
+          }}
+        >
+          <Box />
           <UpcomingEvents />
         </Box>
       )}

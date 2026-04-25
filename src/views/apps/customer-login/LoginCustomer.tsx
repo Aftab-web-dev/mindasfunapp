@@ -13,8 +13,7 @@ import { MobileNumberInput } from './MobileNumberInput'
 import { OTPInput } from './OtpInput'
 import RegisterForm from './RegisterForm'
 import MidasLogoText from '../../../../public/svgs/MidasLogoText'
-
-// import RegisterForm from './RegisterForm'
+import { customerModuleApi } from '@/api/customer-module-api'
 
 type VerificationStep = 'mobile' | 'otp' | 'register'
 
@@ -27,23 +26,47 @@ const LoginV2 = () => {
 
   const [isError, setIsError] = useState(false)
 
-  const handleMobileSubmit = (mobile: string) => {
-    setMobileNumber(mobile)
-    setStep('otp')
-    toast.success(`OTP Sent to ${mobile}`)
-  }
+  const [isRegistered, setIsRegistered] = useState<boolean>(false)
+  const [ledgerId, setLedgerId] = useState<number | null>(null)
 
   const router = useRouter()
 
-  const handleOTPVerify = (otp: string) => {
-    // Simulate OTP verification
+  const handleMobileSubmit = async (mobile: string) => {
+    setMobileNumber(mobile)
 
+    try {
+      const res = await customerModuleApi.login({ phone: mobile })
+      const data = res.data?.data
+
+      // Backend shape varies: accept { isRegistered, ledgerId } or boolean fields
+      const registered = Boolean(data?.isRegistered ?? data?.registered ?? (data?.ledgerId && data.ledgerId > 0))
+
+      setIsRegistered(registered)
+
+      if (data?.ledgerId) setLedgerId(Number(data.ledgerId))
+
+      setStep('otp')
+      toast.success(`OTP Sent to ${mobile}`)
+    } catch (err) {
+      toast.error('Failed to send OTP')
+    }
+  }
+
+  const handleOTPVerify = (otp: string) => {
+    // TODO(backend): no dedicated OTP-verify endpoint exists in the API spec.
+    // Replace this mock check with a real call once `CusModule/VerifyOtp` (or equivalent) is available.
+    // Until then, `123456` is accepted as a development placeholder — DO NOT ship as-is.
     if (otp === '123456') {
-      if (mobileNumber == '9876543210') {
-        setOtpVerified(true)
+      setOtpVerified(true)
+
+      if (isRegistered && ledgerId) {
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem('cusLedgerId', String(ledgerId))
+          sessionStorage.setItem('cusPhone', mobileNumber)
+        }
+
         router.push('/customer/home')
       } else {
-        setOtpVerified(true)
         setStep('register')
       }
     } else {

@@ -17,8 +17,22 @@ export const rechargeAndBalanceApi = {
         return await axiosConfig.post(`Recharge/GetTaxDetails?${queryParams}`, {})
     },
     recharge: async ({ body }: { body: any }) => {
-        const queryParams = `Amount=${body.amount}&Discount=${body.discount}&${body.taxPercentage && `TaxPercentage=${body.taxPercentage}&`}TaxAmount=${body.tax_amount}&LedgerId=${body.ledgerId}&NetAmount=${body.net_amount}&GNote=${body.g_note}&Remark=${body.remarks}&BranchId=${body.branchId}`
+        const params = new URLSearchParams()
 
-        return await axiosConfig.post(`Recharge/Recharge?${queryParams}`, {})
+        params.set('Amount', String(body.amount ?? 0))
+        params.set('Discount', String(body.discount ?? 0))
+
+        if (body.taxPercentage !== undefined && body.taxPercentage !== null) {
+            params.set('TaxPercentage', String(body.taxPercentage))
+        }
+
+        params.set('TaxAmount', String(body.tax_amount ?? 0))
+        params.set('LedgerId', String(body.ledgerId ?? ''))
+        params.set('NetAmount', String(body.net_amount ?? 0))
+        params.set('GNote', String(body.g_note ?? ''))
+        params.set('Remark', String(body.remarks ?? ''))
+        params.set('BranchId', String(body.branchId ?? ''))
+
+        return await axiosConfig.post(`Recharge/Recharge?${params.toString()}`, {})
     }
 }

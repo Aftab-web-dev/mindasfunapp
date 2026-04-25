@@ -13,6 +13,7 @@ import AppReactDatepicker from '@/libs/styles/AppReactDatepicker'
 import CleavePhone from './CleavePhone'
 import CleaveProofId from './CleaveProofId'
 import CleaveZipCode from './CleaveZipCode'
+import { customerModuleApi } from '@/api/customer-module-api'
 
 const steps = ['', '', '']
 
@@ -77,10 +78,43 @@ const RegisterForm = () => {
 
   const router = useRouter()
 
-  const onSubmit = (data: EventFormValues) => {
-    console.log(data)
-    toast.success('Successfully Registered...')
-    router.push('/customer/home')
+  const onSubmit = async (data: EventFormValues) => {
+    try {
+      const payload = {
+        ledgerId: 0,
+        ledgerName: data.name,
+        mobile: data.phone,
+        emailId: data.email || '',
+        dob: data.dob,
+        age: Number(data.age),
+        gender: Number(data.gender) || 0,
+        country: Number(data.country) || 0,
+        state: Number(data.state) || 0,
+        city: Number(data.city) || 0,
+        address: data.address,
+        zipCode: Number(data.zip_code) || 0,
+        emergencyNo: data.emergency_contact || '',
+        proof: Number(data.proof) || 0,
+        proofId: data.proof_id,
+        occupation: data.occupation || '',
+        institute: data.institute || '',
+        remark: data.remark || '',
+        status: 1
+      }
+
+      const res = await customerModuleApi.register({ body: payload })
+      const returnedId = res.data?.data?.ledgerId ?? res.data?.data?.id
+
+      if (typeof window !== 'undefined' && returnedId) {
+        sessionStorage.setItem('cusLedgerId', String(returnedId))
+        sessionStorage.setItem('cusPhone', data.phone)
+      }
+
+      toast.success('Successfully Registered')
+      router.push('/customer/home')
+    } catch (err) {
+      toast.error('Registration failed')
+    }
   }
 
   const [isMobile, setIsMobile] = useState(false)
