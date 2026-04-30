@@ -8,6 +8,8 @@ import LinearProgress, { linearProgressClasses } from '@mui/material/LinearProgr
 
 import type { ApexOptions } from 'apexcharts'
 
+import AnimatedNumber from './AnimatedNumber'
+
 const AppReactApexCharts = dynamic(() => import('@/libs/styles/AppReactApexCharts'))
 
 type RevenueItem = {
@@ -77,22 +79,24 @@ const RevenueSummary = ({ totalRevenue, categories }: Props) => {
       sx={{
         borderRadius: '16px',
         background: '#FFFFFF',
-        boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-        p: 3,
+        boxShadow: '0 1px 4px rgba(15, 23, 42, 0.04)',
+        border: '1px solid rgba(15, 23, 42, 0.04)',
+        p: { xs: 2, sm: 2.5 },
         display: 'flex',
         flexDirection: 'column',
-        height: '100%'
+        height: '100%',
+        minWidth: 0
       }}
     >
-      <Typography sx={{ fontSize: '1rem', fontWeight: 700, color: '#1E293B', mb: 0.5 }}>
+      <Typography sx={{ fontSize: { xs: '0.9375rem', sm: '1rem' }, fontWeight: 700, color: '#0F172A', mb: 0.25 }}>
         Revenue Statistic
       </Typography>
-      <Typography sx={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 500, mb: 1 }}>
+      <Typography sx={{ fontSize: { xs: '0.6875rem', sm: '0.75rem' }, color: '#94A3B8', fontWeight: 500, mb: 1 }}>
         Category breakdown
       </Typography>
 
       {/* Radial chart + center label */}
-      <Box sx={{ position: 'relative', display: 'flex', justifyContent: 'center', overflow: 'hidden', height: 130, mb: 1 }}>
+      <Box sx={{ position: 'relative', display: 'flex', justifyContent: 'center', overflow: 'hidden', height: { xs: 110, sm: 130 }, mb: 1 }}>
         <Box sx={{ mt: -2 }}>
           <AppReactApexCharts type='radialBar' height={200} width={200} options={radialOptions} series={series} />
         </Box>
@@ -102,51 +106,56 @@ const RevenueSummary = ({ totalRevenue, categories }: Props) => {
             top: '45%',
             left: '50%',
             transform: 'translate(-50%, -50%)',
-            textAlign: 'center'
+            textAlign: 'center',
+            width: '70%'
           }}
         >
-          <Typography sx={{ fontSize: '1.25rem', fontWeight: 800, color: '#1E293B', lineHeight: 1.1 }}>
-            ₹{totalRevenue.toLocaleString()}
+          <Typography noWrap sx={{ fontSize: { xs: '1rem', sm: '1.125rem', md: '1.25rem' }, fontWeight: 800, color: '#0F172A', lineHeight: 1.1, letterSpacing: '-0.02em' }}>
+            <AnimatedNumber value={totalRevenue} prefix='₹' />
           </Typography>
-          <Typography sx={{ fontSize: '0.625rem', color: '#94A3B8', fontWeight: 600, mt: 0.25 }}>
+          <Typography sx={{ fontSize: '0.5625rem', color: '#94A3B8', fontWeight: 700, mt: 0.25, letterSpacing: '0.5px' }}>
             TOTAL REVENUE
           </Typography>
         </Box>
       </Box>
 
       {/* Breakdown list with progress bars */}
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mt: 1, overflowY: 'auto' }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 1.25, sm: 1.5 }, mt: 1, overflowY: 'auto', maxHeight: { xs: 320, sm: 'none' }, pr: 0.5 }}>
         {enriched.map((item) => (
           <Box key={item.label}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Box sx={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: item.color, flexShrink: 0 }} />
-                <Typography sx={{ fontSize: '0.75rem', fontWeight: 600, color: '#475569' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5, gap: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0, flex: 1 }}>
+                <Box sx={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: item.color, flexShrink: 0, boxShadow: `0 0 0 2px ${item.color}25` }} />
+                <Typography noWrap sx={{ fontSize: { xs: '0.6875rem', sm: '0.75rem' }, fontWeight: 600, color: '#475569' }}>
                   {item.label}
                 </Typography>
               </Box>
-              <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#1E293B' }}>
-                ₹{item.amount.toLocaleString()}
+              <Typography sx={{ fontSize: { xs: '0.6875rem', sm: '0.75rem' }, fontWeight: 700, color: '#0F172A', flexShrink: 0 }}>
+                <AnimatedNumber value={item.amount} prefix='₹' />
               </Typography>
             </Box>
-            <LinearProgress
-              variant='determinate'
-              value={item.pct}
-              sx={{
-                height: 6,
-                borderRadius: 3,
-                [`&.${linearProgressClasses.colorPrimary}`]: {
-                  backgroundColor: '#F1F5F9'
-                },
-                [`& .${linearProgressClasses.bar}`]: {
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <LinearProgress
+                variant='determinate'
+                value={item.pct}
+                sx={{
+                  height: 5,
                   borderRadius: 3,
-                  backgroundColor: item.color
-                }
-              }}
-            />
-            <Typography sx={{ fontSize: '0.625rem', color: '#94A3B8', fontWeight: 500, mt: 0.25, textAlign: 'right' }}>
-              {item.pct}%
-            </Typography>
+                  flex: 1,
+                  [`&.${linearProgressClasses.colorPrimary}`]: {
+                    backgroundColor: '#F1F5F9'
+                  },
+                  [`& .${linearProgressClasses.bar}`]: {
+                    borderRadius: 3,
+                    backgroundColor: item.color,
+                    transition: 'transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)'
+                  }
+                }}
+              />
+              <Typography sx={{ fontSize: '0.625rem', color: '#94A3B8', fontWeight: 600, minWidth: 28, textAlign: 'right' }}>
+                {item.pct}%
+              </Typography>
+            </Box>
           </Box>
         ))}
       </Box>

@@ -1,10 +1,41 @@
-export type RangeKey = 'today' | 'week' | 'month' | 'year'
+export type RangeKey = 'daily' | 'weekly' | 'monthly' | 'annually' | 'custom' | 'average'
+export type AveragePeriod = 'weekly' | 'monthly' | 'annually'
 
 export const RANGES: Record<RangeKey, { label: string; day: number }> = {
-  today: { label: 'Today', day: 0 },
-  week: { label: 'This Week', day: 7 },
-  month: { label: 'This Month', day: 30 },
-  year: { label: 'This Year', day: 365 }
+  daily: { label: 'Daily', day: 0 },
+  weekly: { label: 'Weekly', day: 7 },
+  monthly: { label: 'Monthly', day: 30 },
+  annually: { label: 'Annually', day: 365 },
+  custom: { label: 'Custom', day: 30 },
+  average: { label: 'Average', day: 7 }
+}
+
+export const AVERAGE_PERIODS: Record<AveragePeriod, { label: string; day: number }> = {
+  weekly: { label: 'Weekly', day: 7 },
+  monthly: { label: 'Monthly', day: 30 },
+  annually: { label: 'Annually', day: 365 }
+}
+
+// Compute the effective `day` value to send to the API for any range,
+// taking into account custom from/till dates and the average period when provided.
+export function resolveDay(
+  range: RangeKey,
+  fromDate?: Date | null,
+  toDate?: Date | null,
+  averagePeriod?: AveragePeriod
+): number {
+  if (range === 'custom' && fromDate && toDate) {
+    const ms = toDate.getTime() - fromDate.getTime()
+    const days = Math.max(1, Math.ceil(ms / (1000 * 60 * 60 * 24)))
+
+    return days
+  }
+
+  if (range === 'average' && averagePeriod) {
+    return AVERAGE_PERIODS[averagePeriod].day
+  }
+
+  return RANGES[range].day
 }
 
 // Format the `time` field returned by the backend.

@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import dynamic from 'next/dynamic'
 
 import Box from '@mui/material/Box'
+import Chip from '@mui/material/Chip'
 import Typography from '@mui/material/Typography'
 import IconButton from '@mui/material/IconButton'
 import CircularProgress from '@mui/material/CircularProgress'
@@ -12,9 +13,16 @@ import { useTheme } from '@mui/material/styles'
 
 import type { ApexOptions } from 'apexcharts'
 
-import { RANGES, formatTimeLabel, detectAllHours } from './ranges'
-import type { RangeKey } from './ranges'
-import { managementDashboardApi } from '@/api/management-dashboard'
+import { AVERAGE_PERIODS, RANGES, formatTimeLabel, detectAllHours, resolveDay } from './ranges'
+import type { AveragePeriod, RangeKey } from './ranges'
+import { managementDashboardMockApi as managementDashboardApi } from './mockData'
+import { getCategoryColor } from './categoryColors'
+
+const SERIES_COLORS = [
+  getCategoryColor('Game Revenue'),
+  getCategoryColor('Product Revenue'),
+  getCategoryColor('Redemption Revenue')
+]
 
 const AppReactApexCharts = dynamic(() => import('@/libs/styles/AppReactApexCharts'))
 
@@ -26,8 +34,23 @@ const formatValue = (val: number, short: boolean) => {
   return `₹${val}`
 }
 
-const MainCart = ({ range }: { range: RangeKey }) => {
+type MainCartProps = {
+  range: RangeKey
+  fromDate?: Date | null
+  toDate?: Date | null
+  averagePeriod?: AveragePeriod
+}
+
+type FilterMode = 'all' | 'top10' | 'low10'
+
+const MainCart = ({
+  range,
+  fromDate = null,
+  toDate = null,
+  averagePeriod = 'weekly'
+}: MainCartProps) => {
   const [showTable, setShowTable] = useState(false)
+  const [filter, setFilter] = useState<FilterMode>('all')
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
 
@@ -36,8 +59,16 @@ const MainCart = ({ range }: { range: RangeKey }) => {
   const [series, setSeries] = useState<{ name: string; data: number[] }[]>([])
 
   useEffect(() => {
+    if (range === 'custom' && (!fromDate || !toDate)) {
+      setLoading(false)
+      setCategories([])
+      setSeries([])
+
+      return
+    }
+
     setLoading(true)
-    const { day } = RANGES[range]
+    const day = resolveDay(range, fromDate, toDate, averagePeriod)
 
     managementDashboardApi.mainGraph({ day }).then(res => {
       const raw = res.data?.data
@@ -50,18 +81,51 @@ const MainCart = ({ range }: { range: RangeKey }) => {
       }
 
       const allHours = detectAllHours(raw)
+      const cats = raw.map((r: any) => formatTimeLabel(r.time ?? r.hour ?? r.label, allHours))
+      const game = raw.map((r: any) => Number(r.gameRevenue ?? 0))
+      const product = raw.map((r: any) => Number(r.cardRevenue ?? r.productRevenue ?? 0))
+      const redemption = raw.map((r: any) => Number(r.redemptionRevenue ?? 0))
 
-      setCategories(raw.map((r: any) => formatTimeLabel(r.time ?? r.hour ?? r.label, allHours)))
+      const flatten = (arr: number[]) => {
+        if (range !== 'average' || arr.length === 0) return arr
+        const avg = arr.reduce((s, v) => s + v, 0) / arr.length
+
+        return arr.map(() => Math.round(avg))
+      }
+
+      setCategories(cats)
       setSeries([
-        { name: 'Game Revenue', data: raw.map((r: any) => Number(r.gameRevenue ?? 0)) },
-        { name: 'Product Revenue', data: raw.map((r: any) => Number(r.cardRevenue ?? r.productRevenue ?? 0)) },
-        { name: 'Redemption Revenue', data: raw.map((r: any) => Number(r.redemptionRevenue ?? 0)) }
+        { name: range === 'average' ? 'Game Revenue (Avg)' : 'Game Revenue', data: flatten(game) },
+        { name: range === 'average' ? 'Product Revenue (Avg)' : 'Product Revenue', data: flatten(product) },
+        { name: range === 'average' ? 'Redemption Revenue (Avg)' : 'Redemption Revenue', data: flatten(redemption) }
       ])
     }).catch(() => {
       setCategories([])
       setSeries([])
     }).finally(() => setLoading(false))
-  }, [range])
+  }, [range, fromDate, toDate, averagePeriod])
+
+  // Apply Top 10 / Low 10 filter by ranking time buckets on summed revenue
+  // across all three series, then preserving original chronological order.
+  const { filteredCategories, filteredSeries } = useMemo(() => {
+    if (filter === 'all' || categories.length <= 10) {
+      return { filteredCategories: categories, filteredSeries: series }
+    }
+
+    const totals = categories.map((_, i) =>
+      series.reduce((sum, s) => sum + (s.data[i] ?? 0), 0)
+    )
+    const indexed = totals.map((total, i) => ({ total, i }))
+
+    indexed.sort((a, b) => filter === 'top10' ? b.total - a.total : a.total - b.total)
+
+    const keepIdx = indexed.slice(0, 10).map(x => x.i).sort((a, b) => a - b)
+
+    return {
+      filteredCategories: keepIdx.map(i => categories[i]),
+      filteredSeries: series.map(s => ({ name: s.name, data: keepIdx.map(i => s.data[i]) }))
+    }
+  }, [filter, categories, series])
 
   const lineOptions: ApexOptions = useMemo(() => ({
     chart: {
@@ -70,14 +134,14 @@ const MainCart = ({ range }: { range: RangeKey }) => {
       fontFamily: 'inherit',
       zoom: { enabled: false }
     },
-    colors: ['#523F99', '#DC2626', '#059669'],
+    colors: SERIES_COLORS,
     stroke: { curve: 'straight', width: isMobile ? 2 : 2.5 },
     dataLabels: { enabled: false },
     markers: {
       size: isMobile ? 2 : 4,
       strokeWidth: isMobile ? 1 : 2,
       strokeOpacity: 1,
-      colors: ['#523F99', '#DC2626', '#059669'],
+      colors: SERIES_COLORS,
       strokeColors: '#fff'
     },
     grid: {
@@ -93,17 +157,17 @@ const MainCart = ({ range }: { range: RangeKey }) => {
     },
     yaxis: [
       {
-        title: { text: isMobile ? '' : 'Game Revenue', style: { color: '#523F99', fontSize: '11px', fontWeight: 600 } },
+        title: { text: isMobile ? '' : 'Game Revenue', style: { color: SERIES_COLORS[0], fontSize: '11px', fontWeight: 600 } },
         labels: {
-          style: { colors: '#523F99', fontSize: isMobile ? '9px' : '11px', fontWeight: 500 },
+          style: { colors: SERIES_COLORS[0], fontSize: isMobile ? '9px' : '11px', fontWeight: 500 },
           formatter: (val: number) => formatValue(val, isMobile)
         }
       },
       {
         opposite: true,
-        title: { text: isMobile ? '' : 'Product Revenue', style: { color: '#DC2626', fontSize: '11px', fontWeight: 600 } },
+        title: { text: isMobile ? '' : 'Product Revenue', style: { color: SERIES_COLORS[1], fontSize: '11px', fontWeight: 600 } },
         labels: {
-          style: { colors: '#DC2626', fontSize: isMobile ? '9px' : '11px', fontWeight: 500 },
+          style: { colors: SERIES_COLORS[1], fontSize: isMobile ? '9px' : '11px', fontWeight: 500 },
           formatter: (val: number) => formatValue(val, isMobile)
         }
       },
@@ -116,12 +180,15 @@ const MainCart = ({ range }: { range: RangeKey }) => {
     xaxis: {
       axisBorder: { show: false },
       axisTicks: { show: false },
+      tickAmount: isMobile ? 6 : Math.min(filteredCategories.length, 12),
       labels: {
         style: { colors: '#94A3B8', fontSize: isMobile ? '8px' : '11px', fontWeight: 500 },
         rotate: isMobile ? -45 : 0,
-        hideOverlappingLabels: true
+        rotateAlways: false,
+        hideOverlappingLabels: true,
+        trim: true
       },
-      categories
+      categories: filteredCategories
     },
     legend: {
       show: true,
@@ -133,74 +200,126 @@ const MainCart = ({ range }: { range: RangeKey }) => {
       itemMargin: { horizontal: 12 },
       labels: { colors: '#64748B' }
     }
-  }), [categories, isMobile])
+  }), [filteredCategories, isMobile])
 
-  const hasData = series.some(s => s.data.some(v => v > 0))
+  const hasData = filteredSeries.some(s => s.data.some(v => v > 0))
+
+  const chartHeight = isMobile ? 280 : 340
 
   return (
     <Box
       sx={{
         borderRadius: '16px',
         background: '#FFFFFF',
-        boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-        overflow: 'hidden'
+        boxShadow: '0 1px 4px rgba(15, 23, 42, 0.04)',
+        border: '1px solid rgba(15, 23, 42, 0.04)',
+        overflow: 'hidden',
+        minWidth: 0
       }}
     >
       {/* Header */}
       <Box sx={{
-        px: { xs: 2.5, sm: 3 },
-        pt: 2.5,
-        pb: 0.5,
+        px: { xs: 2, sm: 3 },
+        pt: { xs: 2, sm: 2.5 },
+        pb: 1,
         display: 'flex',
         justifyContent: 'space-between',
-        alignItems: 'center'
+        alignItems: 'center',
+        gap: 1
       }}>
-        <Box>
-          <Typography sx={{ fontSize: '1rem', fontWeight: 700, color: '#1E293B' }}>
-            Daily balance overview
+        <Box sx={{ minWidth: 0, flex: 1 }}>
+          <Typography sx={{ fontSize: { xs: '0.9375rem', sm: '1rem' }, fontWeight: 700, color: '#0F172A' }}>
+            Revenue overview
           </Typography>
-          <Typography sx={{ fontSize: '0.8125rem', color: '#94A3B8', fontWeight: 500 }}>
-            {RANGES[range].label}
+          <Typography noWrap sx={{ fontSize: { xs: '0.6875rem', sm: '0.75rem' }, color: '#94A3B8', fontWeight: 500 }}>
+            {range === 'custom' && fromDate && toDate
+              ? `${fromDate.toLocaleDateString()} → ${toDate.toLocaleDateString()}`
+              : range === 'average'
+                ? `${AVERAGE_PERIODS[averagePeriod].label} Average`
+                : RANGES[range].label}
           </Typography>
         </Box>
-        <IconButton
-          onClick={() => setShowTable(prev => !prev)}
-          size='small'
-          sx={{
-            borderRadius: '8px',
-            width: 34,
-            height: 34,
-            color: '#94A3B8',
-            '&:hover': { backgroundColor: 'rgba(82, 63, 153, 0.06)', color: '#523F99' }
-          }}
-        >
-          <i className={showTable ? 'tabler-chart-bar' : 'tabler-table'} style={{ fontSize: '1.125rem' }} />
-        </IconButton>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexShrink: 0 }}>
+          {(['all', 'top10', 'low10'] as FilterMode[]).map(f => {
+            const active = filter === f
+            const label = f === 'all' ? 'All' : f === 'top10' ? 'Top 10' : 'Low 10'
+            const icon = f === 'all' ? 'tabler-list' : f === 'top10' ? 'tabler-trending-up' : 'tabler-trending-down'
+
+            return (
+              <Chip
+                key={f}
+                label={label}
+                onClick={() => setFilter(f)}
+                size='small'
+                icon={<i className={icon} style={{ fontSize: '0.875rem', marginLeft: 6 }} />}
+                sx={{
+                  borderRadius: '8px',
+                  fontSize: { xs: '0.6875rem', sm: '0.75rem' },
+                  fontWeight: 600,
+                  height: 30,
+                  px: 0.25,
+                  cursor: 'pointer',
+                  display: { xs: f === 'all' ? 'none' : 'inline-flex', sm: 'inline-flex' },
+                  backgroundColor: active ? `${SERIES_COLORS[0]}14` : '#F8FAFC',
+                  color: active ? SERIES_COLORS[0] : '#64748B',
+                  border: active ? `1px solid ${SERIES_COLORS[0]}30` : '1px solid transparent',
+                  transition: 'all 0.2s ease',
+                  '& .MuiChip-icon': { color: 'inherit' },
+                  '&:hover': {
+                    backgroundColor: active ? `${SERIES_COLORS[0]}1F` : `${SERIES_COLORS[0]}0A`,
+                    color: SERIES_COLORS[0]
+                  }
+                }}
+              />
+            )
+          })}
+          <IconButton
+            onClick={() => setShowTable(prev => !prev)}
+            size='small'
+            sx={{
+              borderRadius: '8px',
+              width: { xs: 30, sm: 32 },
+              height: { xs: 30, sm: 32 },
+              color: '#94A3B8',
+              '&:hover': { backgroundColor: `${SERIES_COLORS[0]}10`, color: SERIES_COLORS[0] }
+            }}
+          >
+            <i className={showTable ? 'tabler-chart-bar' : 'tabler-table'} style={{ fontSize: '1.125rem' }} />
+          </IconButton>
+        </Box>
       </Box>
 
       {/* Chart / Table / Empty state */}
-      <Box sx={{ px: { xs: 1, sm: 1.5 }, pb: 1.5, minHeight: 340 }}>
+      <Box sx={{ px: { xs: 0.5, sm: 1.5 }, pb: { xs: 1, sm: 1.5 }, minHeight: chartHeight }}>
         {loading ? (
-          <Box sx={{ height: 340, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <CircularProgress size={28} sx={{ color: '#523F99' }} />
+          <Box sx={{ height: chartHeight, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <CircularProgress size={28} sx={{ color: SERIES_COLORS[0] }} />
           </Box>
-        ) : !hasData || categories.length === 0 ? (
-          <Box sx={{ height: 340, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+        ) : range === 'custom' && (!fromDate || !toDate) ? (
+          <Box sx={{ height: chartHeight, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1, px: 2, textAlign: 'center' }}>
             <Box sx={{ width: 56, height: 56, borderRadius: '50%', backgroundColor: '#F0ECFA', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <i className='tabler-chart-line' style={{ fontSize: '1.5rem', color: '#523F99' }} />
+              <i className='tabler-calendar-time' style={{ fontSize: '1.5rem', color: SERIES_COLORS[0] }} />
             </Box>
-            <Typography sx={{ fontSize: '0.9375rem', fontWeight: 600, color: '#1E293B' }}>No revenue data</Typography>
+            <Typography sx={{ fontSize: '0.9375rem', fontWeight: 600, color: '#0F172A' }}>Select a date range</Typography>
+            <Typography sx={{ fontSize: '0.8125rem', color: '#94A3B8' }}>Choose &quot;From&quot; and &quot;Till&quot; to view custom revenue.</Typography>
+          </Box>
+        ) : !hasData || filteredCategories.length === 0 ? (
+          <Box sx={{ height: chartHeight, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1, px: 2, textAlign: 'center' }}>
+            <Box sx={{ width: 56, height: 56, borderRadius: '50%', backgroundColor: '#F0ECFA', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <i className='tabler-chart-line' style={{ fontSize: '1.5rem', color: SERIES_COLORS[0] }} />
+            </Box>
+            <Typography sx={{ fontSize: '0.9375rem', fontWeight: 600, color: '#0F172A' }}>No revenue data</Typography>
             <Typography sx={{ fontSize: '0.8125rem', color: '#94A3B8' }}>No transactions in this period.</Typography>
           </Box>
         ) : !showTable ? (
-          <AppReactApexCharts type='line' width='100%' height={340} options={lineOptions} series={series} />
+          <AppReactApexCharts type='line' width='100%' height={chartHeight} options={lineOptions} series={filteredSeries} />
         ) : (
           <Box sx={{ overflowX: 'auto', px: 1.5, pb: 1 }}>
             <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 2px', minWidth: 600 }}>
               <thead>
                 <tr>
                   <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: '0.75rem', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Time</th>
-                  {series.map(s => (
+                  {filteredSeries.map(s => (
                     <th key={s.name} style={{ padding: '10px 14px', textAlign: 'right', fontSize: '0.75rem', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                       {s.name}
                     </th>
@@ -208,10 +327,10 @@ const MainCart = ({ range }: { range: RangeKey }) => {
                 </tr>
               </thead>
               <tbody>
-                {categories.map((cat, idx) => (
+                {filteredCategories.map((cat, idx) => (
                   <tr key={cat + idx} style={{ backgroundColor: idx % 2 === 0 ? '#FAFAFA' : 'transparent' }}>
                     <td style={{ padding: '8px 14px', borderRadius: '6px 0 0 6px', fontSize: '0.8125rem', fontWeight: 500, color: '#64748B' }}>{cat}</td>
-                    {series.map(s => (
+                    {filteredSeries.map(s => (
                       <td key={s.name} style={{ padding: '8px 14px', textAlign: 'right', fontSize: '0.8125rem', fontWeight: 600, color: '#1E293B' }}>
                         ₹{s.data[idx]?.toLocaleString() ?? 0}
                       </td>

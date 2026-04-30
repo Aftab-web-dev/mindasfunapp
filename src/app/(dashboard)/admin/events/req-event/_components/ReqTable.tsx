@@ -246,10 +246,14 @@ const ReqEventTable = () => {
         {rows.length > 0 ? (
           <DataGrid
             autoHeight
+            density='compact'
             rows={rows}
             columns={columns}
             loading={loading}
             getRowId={row => row.id}
+            getRowHeight={() => 32}
+            rowHeight={32}
+            columnHeaderHeight={38}
             pagination
             sortingMode='server'
             sx={{
@@ -259,6 +263,7 @@ const ReqEventTable = () => {
                 borderTop: '1px solid rgba(0,0,0,0.06)',
                 borderBottom: '1px solid rgba(0,0,0,0.06)'
               },
+              '& .MuiDataGrid-columnHeader': { py: 0 },
               '& .MuiDataGrid-columnHeaderTitle': {
                 fontSize: '0.75rem',
                 fontWeight: 600,
@@ -268,11 +273,23 @@ const ReqEventTable = () => {
               },
               '& .MuiDataGrid-cell': {
                 borderBottom: '1px solid rgba(0,0,0,0.04)',
-                fontSize: '0.8125rem'
+                fontSize: '0.8125rem',
+                paddingTop: '0 !important',
+                paddingBottom: '0 !important',
+                display: 'flex',
+                alignItems: 'center',
+                lineHeight: 1.2
               },
+              '& .MuiDataGrid-row': { maxHeight: '32px !important', minHeight: '32px !important' },
               '& .MuiDataGrid-row:hover': {
                 backgroundColor: 'rgba(245,158,11,0.03)'
-              }
+              },
+              '& .MuiDataGrid-virtualScrollerContent': { minHeight: '0 !important' },
+              '& .MuiDataGrid-footerContainer': { minHeight: 40, borderTop: '1px solid rgba(0,0,0,0.06)' },
+              '& .MuiTablePagination-root': { fontSize: '0.75rem' },
+              '& .MuiTablePagination-toolbar': { minHeight: 40, paddingLeft: '8px', paddingRight: '8px' },
+              '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': { fontSize: '0.75rem', margin: 0 },
+              '& .MuiTablePagination-actions button': { padding: '4px' }
             }}
             slotProps={{
               baseButton: { size: 'medium', variant: 'tonal' },

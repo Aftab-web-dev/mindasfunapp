@@ -448,7 +448,7 @@ const ReportsTable = () => {
 
           {/* Data Grid or Empty State */}
           {selectedReport ? (
-            <Box sx={{ p: { xs: 1, sm: 2 }, flex: 1, overflow: 'auto' }}>
+            <Box sx={{ p: { xs: 1, sm: 1.5 }, flex: 1, overflow: 'auto' }}>
             {selectedReport === 'salesDetailsReport' ? (
                 <TableContainer>
                   <Table>
@@ -470,22 +470,22 @@ const ReportsTable = () => {
                       {rows.map((row, idx) => (
                         <React.Fragment key={row.uniqueId}>
                           <TableRow sx={{ '&:hover': { backgroundColor: 'rgba(82,63,153,0.02)' } }}>
-                            <TableCell sx={{ fontSize: '0.8125rem', color: '#475569', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>{idx + 1}</TableCell>
-                            <TableCell sx={{ borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
+                            <TableCell sx={{ fontSize: '0.8125rem', color: '#475569', borderBottom: '1px solid rgba(0,0,0,0.04)', py: 0.5 }}>{idx + 1}</TableCell>
+                            <TableCell sx={{ borderBottom: '1px solid rgba(0,0,0,0.04)', py: 0 }}>
                               {row.children && row.children.length > 0 && (
                                 <IconButton size='small' onClick={() => handleToggleDetailPanel(row.uniqueId)} sx={{ color: '#523F99' }}>
                                   <Icon icon={expandedRows[row.uniqueId] ? 'mdi:chevron-up' : 'mdi:chevron-down'} />
                                 </IconButton>
                               )}
                             </TableCell>
-                            <TableCell sx={{ fontSize: '0.8125rem', color: '#1E293B', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>{row.entryDate}</TableCell>
-                            <TableCell sx={{ fontSize: '0.8125rem', color: '#1E293B', fontWeight: 500, borderBottom: '1px solid rgba(0,0,0,0.04)' }}>{row.invoice}</TableCell>
-                            <TableCell sx={{ fontSize: '0.8125rem', color: '#1E293B', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>{row.cusName}</TableCell>
-                            <TableCell sx={{ fontSize: '0.8125rem', color: '#475569', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>{row.mobile}</TableCell>
-                            <TableCell align='right' sx={{ fontSize: '0.8125rem', color: '#1E293B', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>{row.totalQuantity}</TableCell>
-                            <TableCell align='right' sx={{ fontSize: '0.8125rem', color: '#1E293B', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>{row.totalTax}</TableCell>
-                            <TableCell align='right' sx={{ fontSize: '0.8125rem', color: '#1E293B', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>{row.totalDiscountAmount}</TableCell>
-                            <TableCell align='right' sx={{ fontSize: '0.8125rem', fontWeight: 600, color: '#1E293B', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>{row.totalNetAmount}</TableCell>
+                            <TableCell sx={{ fontSize: '0.8125rem', color: '#1E293B', borderBottom: '1px solid rgba(0,0,0,0.04)', py: 0.5 }}>{row.entryDate}</TableCell>
+                            <TableCell sx={{ fontSize: '0.8125rem', color: '#1E293B', fontWeight: 500, borderBottom: '1px solid rgba(0,0,0,0.04)', py: 0.5 }}>{row.invoice}</TableCell>
+                            <TableCell sx={{ fontSize: '0.8125rem', color: '#1E293B', borderBottom: '1px solid rgba(0,0,0,0.04)', py: 0.5 }}>{row.cusName}</TableCell>
+                            <TableCell sx={{ fontSize: '0.8125rem', color: '#475569', borderBottom: '1px solid rgba(0,0,0,0.04)', py: 0.5 }}>{row.mobile}</TableCell>
+                            <TableCell align='right' sx={{ fontSize: '0.8125rem', color: '#1E293B', borderBottom: '1px solid rgba(0,0,0,0.04)', py: 0.5 }}>{row.totalQuantity}</TableCell>
+                            <TableCell align='right' sx={{ fontSize: '0.8125rem', color: '#1E293B', borderBottom: '1px solid rgba(0,0,0,0.04)', py: 0.5 }}>{row.totalTax}</TableCell>
+                            <TableCell align='right' sx={{ fontSize: '0.8125rem', color: '#1E293B', borderBottom: '1px solid rgba(0,0,0,0.04)', py: 0.5 }}>{row.totalDiscountAmount}</TableCell>
+                            <TableCell align='right' sx={{ fontSize: '0.8125rem', fontWeight: 600, color: '#1E293B', borderBottom: '1px solid rgba(0,0,0,0.04)', py: 0.5 }}>{row.totalNetAmount}</TableCell>
                           </TableRow>
                           {row.children && row.children.length > 0 && (
                             <TableRow>
@@ -505,42 +505,62 @@ const ReportsTable = () => {
             ) : (
               <DataGrid
                 autoHeight
+                density='compact'
                 loading={loading}
                 rows={rows}
                 columns={columns}
                 getRowId={row => row.uniqueId || row.id || Math.random()}
+                getRowHeight={() => 32}
                 disableRowSelectionOnClick
                 pagination
                 pageSizeOptions={[10, 25, 50, 100]}
+                rowHeight={32}
+                columnHeaderHeight={38}
                 initialState={{
                   pagination: { paginationModel: { pageSize: 25 } }
                 }}
                 sx={{
                   border: 'none',
                   '& .MuiDataGrid-columnHeaders': { backgroundColor: '#F8FAFC', borderBottom: '1px solid rgba(0,0,0,0.06)' },
+                  '& .MuiDataGrid-columnHeader': { py: 0 },
                   '& .MuiDataGrid-columnHeaderTitle': { fontSize: '0.75rem', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px' },
-                  '& .MuiDataGrid-cell': { borderBottom: '1px solid rgba(0,0,0,0.04)', fontSize: '0.8125rem', py: 1 },
-                  '& .MuiDataGrid-row:hover': { backgroundColor: 'rgba(82,63,153,0.02)' }
+                  '& .MuiDataGrid-cell': {
+                    borderBottom: '1px solid rgba(0,0,0,0.04)',
+                    fontSize: '0.8125rem',
+                    paddingTop: '0 !important',
+                    paddingBottom: '0 !important',
+                    display: 'flex',
+                    alignItems: 'center',
+                    lineHeight: 1.2
+                  },
+                  '& .MuiDataGrid-row': { maxHeight: '32px !important', minHeight: '32px !important' },
+                  '& .MuiDataGrid-row:hover': { backgroundColor: 'rgba(82,63,153,0.02)' },
+                  '& .MuiDataGrid-virtualScrollerContent': { minHeight: '0 !important' },
+                  '& .MuiDataGrid-footerContainer': { minHeight: 40, borderTop: '1px solid rgba(0,0,0,0.04)' },
+                  '& .MuiTablePagination-root': { fontSize: '0.75rem' },
+                  '& .MuiTablePagination-toolbar': { minHeight: 40, paddingLeft: '8px', paddingRight: '8px' },
+                  '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': { fontSize: '0.75rem', margin: 0 },
+                  '& .MuiTablePagination-actions button': { padding: '4px' }
                 }}
               />
             )}
 
             {/* Totals Section */}
             {rows.length > 0 && Object.keys(totals).length > 0 && (
-              <Box sx={{ mt: 3, p: 3, backgroundColor: '#F8FAFC', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.06)' }}>
-                <Typography sx={{ fontSize: '0.875rem', fontWeight: 700, color: '#1E293B', mb: 2 }}>
+              <Box sx={{ mt: 1.5, p: 1.5, backgroundColor: '#F8FAFC', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.06)' }}>
+                <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#1E293B', mb: 1, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                   Summary Totals
                 </Typography>
-                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(auto-fit, minmax(180px, 1fr))' }, gap: 2 }}>
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(auto-fit, minmax(160px, 1fr))' }, gap: 1 }}>
                   {Object.entries(totals).map(([key, value]) => {
                     const column = getReportColumns(selectedReport, cashRevenueOption).find(col => col.field === key)
 
                     return (
-                      <Box key={key} sx={{ p: 2, backgroundColor: '#FFFFFF', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.04)' }}>
-                        <Typography sx={{ fontSize: '0.6875rem', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px', mb: 0.5 }}>
+                      <Box key={key} sx={{ px: 1.25, py: 1, backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.04)' }}>
+                        <Typography sx={{ fontSize: '0.625rem', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px', mb: 0.25, lineHeight: 1.2 }}>
                           {column?.headerName || key}
                         </Typography>
-                        <Typography sx={{ fontSize: '1.125rem', fontWeight: 700, color: '#1E293B' }}>
+                        <Typography sx={{ fontSize: '0.9375rem', fontWeight: 700, color: '#1E293B', lineHeight: 1.2 }}>
                           {typeof value === 'number' ? value.toFixed(2) : value}
                         </Typography>
                       </Box>

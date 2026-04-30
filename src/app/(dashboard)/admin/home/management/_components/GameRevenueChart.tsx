@@ -8,9 +8,10 @@ type Props = {
   chartData: number[]
   title: string
   categories: string[]
+  color?: string
 }
 
-const GameRevenueChart = ({ chartData, title, categories }: Props) => {
+const GameRevenueChart = ({ chartData, title, categories, color = '#523F99' }: Props) => {
   const barData = useMemo(() => chartData.map(v => Math.max(v, 0)), [chartData])
 
   const options: ApexOptions = {
@@ -19,14 +20,14 @@ const GameRevenueChart = ({ chartData, title, categories }: Props) => {
       toolbar: { show: false },
       fontFamily: 'inherit'
     },
-    colors: ['#523F99'],
+    colors: [color],
     dataLabels: { enabled: false },
     plotOptions: {
       bar: {
         borderRadius: 6,
         borderRadiusApplication: 'end',
         barHeight: '30%',
-        columnWidth: '24px'
+        columnWidth: '60%'
       }
     },
     grid: {
@@ -45,8 +46,13 @@ const GameRevenueChart = ({ chartData, title, categories }: Props) => {
       axisBorder: { show: false },
       axisTicks: { show: false },
       categories,
+      tickAmount: Math.min(categories.length, 12),
       labels: {
-        style: { colors: '#94A3B8', fontSize: '11px', fontWeight: 500 }
+        style: { colors: '#94A3B8', fontSize: '11px', fontWeight: 500 },
+        rotate: 0,
+        rotateAlways: false,
+        hideOverlappingLabels: true,
+        trim: true
       }
     },
     tooltip: {

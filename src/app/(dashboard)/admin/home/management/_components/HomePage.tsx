@@ -1,7 +1,7 @@
 'use client'
 import React, { useEffect, useMemo, useState } from 'react'
 
-import { Box, Button, CircularProgress, MenuItem, TextField, Typography } from '@mui/material'
+import { Box, Button, CircularProgress, Skeleton, Stack, Typography } from '@mui/material'
 
 import ReactApexcharts from '@/@core/components/react-apexcharts'
 import StatsCard from './StatsCard'
@@ -10,9 +10,12 @@ import TopGameChart from './TopGameChart'
 import UpcomingEvents from './UpcomingEvents'
 import MainCart from './MainChart'
 import RevenueSummary from './RevenueSummary'
-import { RANGES, formatTimeLabel, detectAllHours } from './ranges'
-import type { RangeKey } from './ranges'
-import { managementDashboardApi } from '@/api/management-dashboard'
+import RangeTabs from './RangeTabs'
+import { AVERAGE_PERIODS, RANGES, formatTimeLabel, detectAllHours, resolveDay } from './ranges'
+import type { AveragePeriod, RangeKey } from './ranges'
+import { managementDashboardMockApi as managementDashboardApi } from './mockData'
+import { CATEGORY_COLORS, getCategoryColor, getCategoryPalette } from './categoryColors'
+import AnimatedNumber from './AnimatedNumber'
 
 type TStats = {
   gameRevenue: number
@@ -63,18 +66,43 @@ function buildTopStat(selectedStat: any, labels: string[], values: number[]) {
   }
 }
 
-const HomePage = ({ stats }: { stats: TStats }) => {
-  const [range, setRange] = useState<RangeKey>('today')
+const HomePage = () => {
+  const [range, setRange] = useState<RangeKey>('daily')
+  const [fromDate, setFromDate] = useState<Date | null>(null)
+  const [toDate, setToDate] = useState<Date | null>(null)
+  const [averagePeriod, setAveragePeriod] = useState<AveragePeriod>('weekly')
   const [selectedStat, setSelectedStat] = useState<any | null>(null)
   const [selectedButton, setSelectedButton] = useState<string>('total')
+
+  const [stats, setStats] = useState<TStats | null>(null)
 
   const [catLoading, setCatLoading] = useState(false)
   const [catCategories, setCatCategories] = useState<string[]>([])
   const [catData, setCatData] = useState<number[]>([])
 
+  // Fetch range-aware widget totals whenever the active range changes.
+  useEffect(() => {
+    if (range === 'custom' && (!fromDate || !toDate)) return
+
+    const day = resolveDay(range, fromDate, toDate, averagePeriod)
+
+    managementDashboardApi.widgetValues({ day }).then(res => {
+      const next = res.data?.data?.[0]
+
+      if (next) setStats(next)
+    }).catch(() => {})
+  }, [range, fromDate, toDate, averagePeriod])
+
   // Fetch per-category graph when a card is selected OR range changes
   useEffect(() => {
     if (!selectedStat) {
+      setCatCategories([])
+      setCatData([])
+
+      return
+    }
+
+    if (range === 'custom' && (!fromDate || !toDate)) {
       setCatCategories([])
       setCatData([])
 
@@ -91,7 +119,7 @@ const HomePage = ({ stats }: { stats: TStats }) => {
     }
 
     setCatLoading(true)
-    const { day } = RANGES[range]
+    const day = resolveDay(range, fromDate, toDate, averagePeriod)
     const fn = managementDashboardApi[apiKey] as (args: any) => Promise<any>
 
     fn({ day }).then(res => {
@@ -105,16 +133,27 @@ const HomePage = ({ stats }: { stats: TStats }) => {
       }
 
       const allHours = detectAllHours(raw)
+      const cats = raw.map((r: any) => formatTimeLabel(r.time ?? r.hour, allHours))
+      const vals = raw.map((r: any) => Number(r.revenue ?? r.value ?? r.amount ?? 0))
 
-      setCatCategories(raw.map((r: any) => formatTimeLabel(r.time ?? r.hour, allHours)))
-      setCatData(raw.map((r: any) => Number(r.revenue ?? r.value ?? r.amount ?? 0)))
+      if (range === 'average' && vals.length > 0) {
+        const avg = vals.reduce((s: number, v: number) => s + v, 0) / vals.length
+
+        setCatCategories(cats)
+        setCatData(vals.map(() => Math.round(avg)))
+      } else {
+        setCatCategories(cats)
+        setCatData(vals)
+      }
     }).catch(() => {
       setCatCategories([])
       setCatData([])
     }).finally(() => setCatLoading(false))
-  }, [selectedStat, range])
+  }, [selectedStat, range, fromDate, toDate, averagePeriod])
 
   const statsCardArray = useMemo(() => {
+    if (!stats) return []
+
     const categories = [
       { title: 'Game Revenue', revenue: stats.gameRevenue, icon: 'tabler-coin-rupee' },
       { title: 'Product Revenue', revenue: stats.cardRevenue, icon: 'tabler-cash' },
@@ -129,6 +168,7 @@ const HomePage = ({ stats }: { stats: TStats }) => {
     return categories.map(cat => ({
       title: cat.title,
       revenue: `₹${cat.revenue.toLocaleString()}`,
+      amount: cat.revenue,
       icon: cat.icon,
       datas: [],
       data1: [],
@@ -137,10 +177,13 @@ const HomePage = ({ stats }: { stats: TStats }) => {
     }))
   }, [stats])
 
-  const totalRevenue =
-    stats.gameRevenue + stats.cardRevenue + stats.redemptionRevenue +
-    stats.eventRevenue + stats.fbRevenue + stats.trampolineRevenue +
-    stats.bowlingRevenue + stats.ticket
+  const totalRevenue = stats
+    ? stats.gameRevenue + stats.cardRevenue + stats.redemptionRevenue +
+      stats.eventRevenue + stats.fbRevenue + stats.trampolineRevenue +
+      stats.bowlingRevenue + stats.ticket
+    : 0
+
+  const breakdownColor = selectedStat ? getCategoryColor(selectedStat.title) : '#523F99'
 
   const options: ApexCharts.ApexOptions = {
     chart: {
@@ -150,7 +193,7 @@ const HomePage = ({ stats }: { stats: TStats }) => {
       toolbar: { show: false },
       fontFamily: 'inherit'
     },
-    colors: ['#523F99'],
+    colors: [breakdownColor],
     stroke: { curve: 'smooth', width: 2.5 },
     fill: {
       type: 'gradient',
@@ -159,7 +202,14 @@ const HomePage = ({ stats }: { stats: TStats }) => {
     dataLabels: { enabled: false },
     xaxis: {
       categories: catCategories,
-      labels: { style: { colors: '#94A3B8', fontSize: '11px' } },
+      tickAmount: Math.min(catCategories.length, 12),
+      labels: {
+        style: { colors: '#94A3B8', fontSize: '11px' },
+        rotate: 0,
+        rotateAlways: false,
+        hideOverlappingLabels: true,
+        trim: true
+      },
       axisBorder: { show: false },
       axisTicks: { show: false }
     },
@@ -180,35 +230,96 @@ const HomePage = ({ stats }: { stats: TStats }) => {
 
   const categoryHasData = catData.some(v => v > 0)
 
-  return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+  // Initial load: render skeleton placeholders so the layout doesn't jump.
+  if (!stats) {
+    return (
+      <Stack spacing={{ xs: 2, sm: 3 }} sx={{ p: { xs: 1.5, sm: 2.5, md: 3 } }}>
+        <Skeleton variant='rounded' height={64} sx={{ borderRadius: '14px' }} />
+        <Skeleton variant='rounded' height={56} sx={{ borderRadius: '14px' }} />
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(4, 1fr)' }, gap: { xs: 1.25, sm: 2 } }}>
+          {[...Array(8)].map((_, i) => (
+            <Skeleton key={i} variant='rounded' height={85} sx={{ borderRadius: '14px' }} />
+          ))}
+        </Box>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 340px' }, gap: { xs: 2, sm: 3 } }}>
+          <Skeleton variant='rounded' height={400} sx={{ borderRadius: '16px' }} />
+          <Skeleton variant='rounded' height={400} sx={{ borderRadius: '16px' }} />
+        </Box>
+      </Stack>
+    )
+  }
 
-      {/* Header with range filter */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
-        <Typography sx={{ fontSize: '1rem', fontWeight: 700, color: '#1E293B' }}>
-          Revenue Categories
-        </Typography>
-        <TextField
-          select
-          size='small'
-          value={range}
-          onChange={e => setRange(e.target.value as RangeKey)}
-          sx={{
-            minWidth: 150,
-            '& .MuiOutlinedInput-root': {
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: { xs: 2, sm: 2.5, md: 3 },
+        p: { xs: 1.5, sm: 2.5, md: 3 },
+        maxWidth: 1600,
+        mx: 'auto',
+        width: '100%'
+      }}
+    >
+
+      {/* Header with range tabs */}
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 1.25, sm: 1.5 } }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 1.5 }}>
+          <Box sx={{ minWidth: 0, flex: 1 }}>
+            <Typography
+              sx={{
+                fontSize: { xs: '1.125rem', sm: '1.25rem', md: '1.375rem' },
+                fontWeight: 800,
+                color: '#0F172A',
+                letterSpacing: '-0.02em',
+                lineHeight: 1.2
+              }}
+            >
+              Revenue Dashboard
+            </Typography>
+            <Typography sx={{ fontSize: { xs: '0.75rem', sm: '0.8125rem' }, color: '#64748B', fontWeight: 500, mt: 0.25 }}>
+              {RANGES[range].label}
+              {range === 'custom' && fromDate && toDate
+                ? ` · ${fromDate.toLocaleDateString()} → ${toDate.toLocaleDateString()}`
+                : ''}
+              {range === 'average'
+                ? ` · ${AVERAGE_PERIODS[averagePeriod].label} average`
+                : ''}
+            </Typography>
+          </Box>
+          <Box
+            sx={{
+              display: { xs: 'none', sm: 'flex' },
+              alignItems: 'center',
+              gap: 1,
+              px: 1.5,
+              py: 0.75,
               borderRadius: '10px',
-              fontSize: '0.8125rem',
-              backgroundColor: '#FFFFFF',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-              height: 38
-            }
-          }}
-        >
-          <MenuItem value='today'>Today</MenuItem>
-          <MenuItem value='week'>This Week</MenuItem>
-          <MenuItem value='month'>This Month</MenuItem>
-          <MenuItem value='year'>This Year</MenuItem>
-        </TextField>
+              background: `linear-gradient(135deg, ${CATEGORY_COLORS['Game Revenue'].primary}10 0%, ${CATEGORY_COLORS['Game Revenue'].primary}05 100%)`,
+              border: `1px solid ${CATEGORY_COLORS['Game Revenue'].primary}20`
+            }}
+          >
+            <i className='tabler-trending-up' style={{ fontSize: '1.125rem', color: CATEGORY_COLORS['Game Revenue'].primary }} />
+            <Box>
+              <Typography sx={{ fontSize: '0.625rem', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px', lineHeight: 1 }}>
+                Total
+              </Typography>
+              <Typography sx={{ fontSize: '0.875rem', fontWeight: 800, color: '#0F172A', lineHeight: 1.1, mt: 0.25 }}>
+                <AnimatedNumber value={totalRevenue} prefix='₹' />
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
+        <RangeTabs
+          range={range}
+          onRangeChange={setRange}
+          fromDate={fromDate}
+          toDate={toDate}
+          onFromDateChange={setFromDate}
+          onToDateChange={setToDate}
+          averagePeriod={averagePeriod}
+          onAveragePeriodChange={setAveragePeriod}
+        />
       </Box>
 
       {/* Row 1: Revenue Category Cards */}
@@ -218,11 +329,11 @@ const HomePage = ({ stats }: { stats: TStats }) => {
             display: 'grid',
             gridTemplateColumns: {
               xs: 'repeat(2, 1fr)',
-              md: 'repeat(3, 1fr)',
-              lg: 'repeat(4, 1fr)',
+              sm: 'repeat(3, 1fr)',
+              md: 'repeat(4, 1fr)',
               xl: 'repeat(4, 1fr)'
             },
-            gap: 2
+            gap: { xs: 1.25, sm: 1.5, md: 2 }
           }}
         >
           {statsCardArray.map((item, i) => (
@@ -240,8 +351,8 @@ const HomePage = ({ stats }: { stats: TStats }) => {
       <Box
         sx={{
           display: 'grid',
-          gridTemplateColumns: { xs: '1fr', lg: '1fr 320px' },
-          gap: 3
+          gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 1fr) 340px' },
+          gap: { xs: 2, sm: 2.5, md: 3 }
         }}
       >
         {selectedStat ? (
@@ -249,55 +360,78 @@ const HomePage = ({ stats }: { stats: TStats }) => {
             sx={{
               borderRadius: '16px',
               background: '#FFFFFF',
-              boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-              overflow: 'hidden'
+              boxShadow: '0 1px 4px rgba(15, 23, 42, 0.04)',
+              border: '1px solid rgba(15, 23, 42, 0.04)',
+              overflow: 'hidden',
+              minWidth: 0
             }}
           >
             <Box sx={{
-              px: { xs: 2.5, sm: 3 },
-              pt: 2.5,
-              pb: 0.5,
+              px: { xs: 2, sm: 3 },
+              pt: { xs: 2, sm: 2.5 },
+              pb: 1,
               display: 'flex',
               justifyContent: 'space-between',
-              alignItems: 'center',
+              alignItems: { xs: 'flex-start', sm: 'center' },
+              flexDirection: { xs: 'column', sm: 'row' },
               flexWrap: 'wrap',
-              gap: 2
+              gap: { xs: 1.25, sm: 2 }
             }}>
-              <Box>
-                <Typography sx={{ fontSize: '1rem', fontWeight: 700, color: '#1E293B' }}>
-                  Revenue Breakdown
-                </Typography>
-                <Typography sx={{ fontSize: '0.8125rem', color: '#94A3B8', fontWeight: 500 }}>
-                  {selectedStat.title} — {RANGES[range].label}
-                </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, minWidth: 0, flex: 1 }}>
+                <Box
+                  sx={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: '10px',
+                    backgroundColor: getCategoryPalette(selectedStat.title).bg,
+                    display: { xs: 'none', sm: 'flex' },
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0
+                  }}
+                >
+                  <i className={selectedStat.icon} style={{ fontSize: '1.125rem', color: breakdownColor }} />
+                </Box>
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography noWrap sx={{ fontSize: { xs: '0.9375rem', sm: '1rem' }, fontWeight: 700, color: '#0F172A' }}>
+                    {selectedStat.title}
+                  </Typography>
+                  <Typography sx={{ fontSize: { xs: '0.6875rem', sm: '0.75rem' }, color: '#94A3B8', fontWeight: 500 }}>
+                    {range === 'average'
+                      ? `${AVERAGE_PERIODS[averagePeriod].label} Average`
+                      : RANGES[range].label}
+                  </Typography>
+                </Box>
               </Box>
               <Button
                 onClick={() => setSelectedButton(selectedButton === 'total' ? 'category' : 'total')}
                 size='small'
                 sx={{
                   borderRadius: '8px',
-                  px: 2,
+                  px: { xs: 1.5, sm: 2 },
                   py: 0.5,
-                  fontSize: '0.8125rem',
+                  fontSize: { xs: '0.75rem', sm: '0.8125rem' },
                   fontWeight: 600,
                   textTransform: 'none',
-                  backgroundColor: 'rgba(82, 63, 153, 0.06)',
-                  color: '#523F99',
-                  '&:hover': { backgroundColor: 'rgba(82, 63, 153, 0.1)' }
+                  backgroundColor: `${breakdownColor}12`,
+                  color: breakdownColor,
+                  alignSelf: { xs: 'flex-end', sm: 'auto' },
+                  '&:hover': { backgroundColor: `${breakdownColor}22` }
                 }}
+                startIcon={<i className={selectedButton === 'total' ? 'tabler-chart-bar' : 'tabler-chart-area'} style={{ fontSize: '1rem' }} />}
               >
                 {selectedButton === 'total' ? 'Category View' : 'Total View'}
               </Button>
             </Box>
-            <Box sx={{ px: { xs: 1, sm: 1.5 }, pb: 1.5, minHeight: 340 }}>
+            <Box sx={{ px: { xs: 0.5, sm: 1.5 }, pb: { xs: 1, sm: 1.5 }, minHeight: { xs: 280, sm: 340 } }}>
               {catLoading ? (
                 <Box sx={{ height: 340, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <CircularProgress size={28} sx={{ color: '#523F99' }} />
+                  <CircularProgress size={28} sx={{ color: breakdownColor }} />
                 </Box>
               ) : !categoryHasData ? (
                 <Box sx={{ height: 340, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
-                  <Box sx={{ width: 56, height: 56, borderRadius: '50%', backgroundColor: '#F0ECFA', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <i className='tabler-chart-line' style={{ fontSize: '1.5rem', color: '#523F99' }} />
+                  <Box sx={{ width: 56, height: 56, borderRadius: '50%', backgroundColor: getCategoryPalette(selectedStat.title).bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <i className='tabler-chart-line' style={{ fontSize: '1.5rem', color: breakdownColor }} />
                   </Box>
                   <Typography sx={{ fontSize: '0.9375rem', fontWeight: 600, color: '#1E293B' }}>No revenue data</Typography>
                   <Typography sx={{ fontSize: '0.8125rem', color: '#94A3B8' }}>No {selectedStat.title} transactions in this period.</Typography>
@@ -311,24 +445,24 @@ const HomePage = ({ stats }: { stats: TStats }) => {
                   series={[{ name: selectedStat.title, data: catData }]}
                 />
               ) : (
-                <GameRevenueChart chartData={catData} title={selectedStat.title} categories={catCategories} />
+                <GameRevenueChart chartData={catData} title={selectedStat.title} categories={catCategories} color={breakdownColor} />
               )}
             </Box>
           </Box>
         ) : (
-          <MainCart range={range} />
+          <MainCart range={range} fromDate={fromDate} toDate={toDate} averagePeriod={averagePeriod} />
         )}
         <RevenueSummary
           totalRevenue={totalRevenue}
           categories={[
-            { label: 'Game Revenue', amount: stats.gameRevenue, color: '#523F99' },
-            { label: 'Product Revenue', amount: stats.cardRevenue, color: '#06B6D4' },
-            { label: 'Redemption Revenue', amount: stats.redemptionRevenue, color: '#F59E0B' },
-            { label: 'Event Revenue', amount: stats.eventRevenue, color: '#EF4444' },
-            { label: 'F&B Revenue', amount: stats.fbRevenue, color: '#10B981' },
-            { label: 'Bounzing Revenue', amount: stats.trampolineRevenue, color: '#8B5CF6' },
-            { label: 'Bowling Revenue', amount: stats.bowlingRevenue, color: '#F97316' },
-            { label: 'Ticketing Revenue', amount: stats.ticket, color: '#EC4899' }
+            { label: 'Game Revenue', amount: stats.gameRevenue, color: CATEGORY_COLORS['Game Revenue'].primary },
+            { label: 'Product Revenue', amount: stats.cardRevenue, color: CATEGORY_COLORS['Product Revenue'].primary },
+            { label: 'Redemption Revenue', amount: stats.redemptionRevenue, color: CATEGORY_COLORS['Redemption Revenue'].primary },
+            { label: 'Event Revenue', amount: stats.eventRevenue, color: CATEGORY_COLORS['Event Revenue'].primary },
+            { label: 'F&B Revenue', amount: stats.fbRevenue, color: CATEGORY_COLORS['F&B Revenue'].primary },
+            { label: 'Bounzing Revenue', amount: stats.trampolineRevenue, color: CATEGORY_COLORS['Bounzing Revenue'].primary },
+            { label: 'Bowling Revenue', amount: stats.bowlingRevenue, color: CATEGORY_COLORS['Bowling Revenue'].primary },
+            { label: 'Ticketing Revenue', amount: stats.ticket, color: CATEGORY_COLORS['Ticketing Revenue'].primary }
           ]}
         />
       </Box>

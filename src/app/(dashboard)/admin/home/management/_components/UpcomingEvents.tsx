@@ -8,7 +8,7 @@ import Avatar from '@mui/material/Avatar'
 
 import { format } from 'date-fns'
 
-import { managementDashboardApi } from '@/api/management-dashboard'
+import { managementDashboardMockApi as managementDashboardApi } from './mockData'
 
 interface DataType {
   title: string
@@ -40,16 +40,18 @@ const UpcomingEvents = () => {
       sx={{
         borderRadius: '16px',
         background: '#FFFFFF',
-        boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+        boxShadow: '0 1px 4px rgba(15, 23, 42, 0.04)',
+        border: '1px solid rgba(15, 23, 42, 0.04)',
         overflow: 'hidden',
-        height: '100%'
+        height: '100%',
+        minWidth: 0
       }}
     >
-      <Box sx={{ px: 3, pt: 2.5, pb: 1.5 }}>
-        <Typography sx={{ fontSize: '1rem', fontWeight: 700, color: '#1E293B' }}>
+      <Box sx={{ px: { xs: 2, sm: 3 }, pt: { xs: 2, sm: 2.5 }, pb: 1.5 }}>
+        <Typography sx={{ fontSize: { xs: '0.9375rem', sm: '1rem' }, fontWeight: 700, color: '#0F172A' }}>
           Upcoming Events
         </Typography>
-        <Typography sx={{ fontSize: '0.8125rem', color: '#94A3B8', fontWeight: 500 }}>
+        <Typography sx={{ fontSize: { xs: '0.6875rem', sm: '0.75rem' }, color: '#94A3B8', fontWeight: 500 }}>
           {data.length} events scheduled
         </Typography>
       </Box>

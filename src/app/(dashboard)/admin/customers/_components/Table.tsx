@@ -199,9 +199,13 @@ const CustomerTable = () => {
         {rows.length > 0 ? (
           <DataGrid
             autoHeight
+            density='compact'
             rows={rows}
             columns={columns}
             getRowId={row => row.ledgerId}
+            getRowHeight={() => 32}
+            rowHeight={32}
+            columnHeaderHeight={38}
             pagination
             sortingMode='server'
             disableRowSelectionOnClick
@@ -210,42 +214,50 @@ const CustomerTable = () => {
               border: 'none',
               borderRadius: '12px',
               overflow: 'hidden',
-              '& .MuiDataGrid-columnHeaders': { 
-                backgroundColor: '#F8FAFC', 
-                borderBottom: '1px solid rgba(0,0,0,0.08)' 
-              },
-              '& .MuiDataGrid-columnHeaderTitle': { 
-                fontSize: '0.75rem', 
-                fontWeight: 600, 
-                color: '#64748B', 
-                textTransform: 'uppercase', 
-                letterSpacing: '0.5px' 
+              '& .MuiDataGrid-columnHeaders': {
+                backgroundColor: '#F8FAFC',
+                borderBottom: '1px solid rgba(0,0,0,0.08)'
               },
               '& .MuiDataGrid-columnHeader': {
-                '&:focus, &:focus-within': {
-                  outline: 'none'
-                }
+                py: 0,
+                '&:focus, &:focus-within': { outline: 'none' }
               },
-              '& .MuiDataGrid-cell': { 
-                borderBottom: '1px solid rgba(0,0,0,0.06)', 
-                fontSize: '0.875rem',
-                py: 1.5
+              '& .MuiDataGrid-columnHeaderTitle': {
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                color: '#64748B',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px'
+              },
+              '& .MuiDataGrid-cell': {
+                borderBottom: '1px solid rgba(0,0,0,0.06)',
+                fontSize: '0.8125rem',
+                paddingTop: '0 !important',
+                paddingBottom: '0 !important',
+                display: 'flex',
+                alignItems: 'center',
+                lineHeight: 1.2
               },
               '& .MuiDataGrid-row': {
-                '&:hover': { 
-                  backgroundColor: alpha('#523F99', 0.04) 
+                maxHeight: '32px !important',
+                minHeight: '32px !important',
+                '&:hover': {
+                  backgroundColor: alpha('#523F99', 0.04)
                 },
                 '&:focus, &:focus-within': {
                   outline: 'none',
                   backgroundColor: alpha('#523F99', 0.04)
                 }
               },
+              '& .MuiDataGrid-virtualScrollerContent': { minHeight: '0 !important' },
               '& .MuiDataGrid-footerContainer': {
-                borderTop: '1px solid rgba(0,0,0,0.08)'
+                borderTop: '1px solid rgba(0,0,0,0.08)',
+                minHeight: 40
               },
-              '& .MuiTablePagination-root': {
-                fontSize: '0.8125rem'
-              },
+              '& .MuiTablePagination-root': { fontSize: '0.75rem' },
+              '& .MuiTablePagination-toolbar': { minHeight: 40, paddingLeft: '8px', paddingRight: '8px' },
+              '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': { fontSize: '0.75rem', margin: 0 },
+              '& .MuiTablePagination-actions button': { padding: '4px' },
               '& .MuiDataGrid-virtualScroller': {
                 minHeight: '300px'
               }

@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import { Box, Typography, Select, MenuItem } from '@mui/material'
 
 type MaintenanceRow = {
@@ -36,6 +36,38 @@ const getStatusStyles = (label: string) => {
     default:
       return { bg: '#F8FAFC', color: '#64748B', border: '#E2E8F0' }
   }
+}
+
+const StatusSelect = ({ initial }: { initial: string }) => {
+  const [value, setValue] = useState(initial)
+  const styles = getStatusStyles(value)
+
+  return (
+    <Select
+      size='small'
+      value={value}
+      onChange={e => setValue(e.target.value)}
+      sx={{
+        fontSize: '0.75rem',
+        fontWeight: 600,
+        backgroundColor: styles.bg,
+        color: styles.color,
+        borderRadius: '8px',
+        height: '32px',
+        minWidth: '120px',
+        '.MuiOutlinedInput-notchedOutline': { borderColor: styles.border },
+        '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: styles.color },
+        '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: styles.color },
+        '.MuiSelect-icon': { color: styles.color, fontSize: '1.1rem' }
+      }}
+    >
+      {statusOptions.map(opt => (
+        <MenuItem key={opt} value={opt} sx={{ fontSize: '0.8125rem' }}>
+          {opt}
+        </MenuItem>
+      ))}
+    </Select>
+  )
 }
 
 const DataTable = ({ maintenanceData, title }: { maintenanceData: MaintenanceRow[]; title: string }) => {
@@ -107,43 +139,7 @@ const DataTable = ({ maintenanceData, title }: { maintenanceData: MaintenanceRow
                   {row.eta}
                 </td>
                 <td style={{ padding: '14px 0 14px 12px' }}>
-                  {(() => {
-                    const styles = getStatusStyles(row.status.label)
-                    return (
-                      <Select
-                        size='small'
-                        defaultValue={row.status.label}
-                        sx={{
-                          fontSize: '0.75rem',
-                          fontWeight: 600,
-                          backgroundColor: styles.bg,
-                          color: styles.color,
-                          borderRadius: '8px',
-                          height: '32px',
-                          minWidth: '120px',
-                          '.MuiOutlinedInput-notchedOutline': {
-                            borderColor: styles.border,
-                          },
-                          '&:hover .MuiOutlinedInput-notchedOutline': {
-                            borderColor: styles.color,
-                          },
-                          '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                            borderColor: styles.color,
-                          },
-                          '.MuiSelect-icon': {
-                            color: styles.color,
-                            fontSize: '1.1rem',
-                          },
-                        }}
-                      >
-                        {statusOptions.map((opt) => (
-                          <MenuItem key={opt} value={opt} sx={{ fontSize: '0.8125rem' }}>
-                            {opt}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    )
-                  })()}
+                  <StatusSelect key={`${row.equipment}-${row.status.label}`} initial={row.status.label} />
                 </td>
               </tr>
             ))}
