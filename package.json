@@ -79,6 +79,7 @@
     "@iconify/types": "2.0.0",
     "@iconify/utils": "2.2.1",
     "@types/crypto-js": "^4.2.2",
+    "@types/js-cookie": "^3.0.6",
     "@types/node": "^22.19.15",
     "@types/react": "^18.3.28",
     "@types/react-datepicker": "^6.2.0",
