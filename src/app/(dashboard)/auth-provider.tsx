@@ -51,6 +51,15 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
   const isLoginPage = pathname === '/login'
   const [authChecked, setAuthChecked] = useState(isLoginPage)
 
+  // Render nothing on the SSR pass so DOM-mutating browser extensions
+  // (ad blockers, content scripts) can't trigger hydration mismatches on
+  // the auth skeleton. Flips to true on first client effect.
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   useEffect(() => {
     if (isLoginPage) {
       setAuthChecked(true)
@@ -73,6 +82,8 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
 
     checkAuth()
   }, [router, pathname, isLoginPage])
+
+  if (!mounted) return null
 
   if (!authChecked) {
     return <AppSkeleton />

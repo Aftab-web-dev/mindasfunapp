@@ -35,6 +35,7 @@ const TopGameChart = ({
   const data1 = selectedStat.data1
   const data2 = selectedStat.data2
   const theme = useTheme()
+  const topCount = data1.length + data2.length
 
   // Bar chart series = top 6 percentage values derived from API data
   const percentages = [...data1, ...data2].map(d => d.value)
@@ -113,13 +114,30 @@ const TopGameChart = ({
         height: '100%'
       }}
     >
-      <Box sx={{ px: 3, pt: 2.5, pb: 0.5 }}>
-        <Typography sx={{ fontSize: '1rem', fontWeight: 700, color: '#1E293B' }}>
-          {selectedStat.title || 'Breakdown'}
-        </Typography>
-        <Typography sx={{ fontSize: '0.8125rem', color: '#94A3B8', fontWeight: 500 }}>
-          Category distribution
-        </Typography>
+      <Box sx={{ px: 3, pt: 2.5, pb: 0.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1.5, flexWrap: 'wrap' }}>
+        <Box sx={{ minWidth: 0 }}>
+          <Typography sx={{ fontSize: '1rem', fontWeight: 700, color: '#1E293B' }}>
+            {`Top ${topCount} ${selectedStat.title || 'Categories'}`}
+          </Typography>
+          <Typography sx={{ fontSize: '0.8125rem', color: '#94A3B8', fontWeight: 500 }}>
+            {`Top ${topCount} categories by share`}
+          </Typography>
+        </Box>
+        <Box
+          sx={{
+            px: 1.25,
+            py: 0.5,
+            borderRadius: '999px',
+            backgroundColor: '#523F9912',
+            color: '#523F99',
+            fontSize: '0.6875rem',
+            fontWeight: 700,
+            letterSpacing: '0.4px',
+            textTransform: 'uppercase'
+          }}
+        >
+          {`Top ${topCount}`}
+        </Box>
       </Box>
 
       <Box sx={{ px: 1.5 }}>

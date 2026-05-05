@@ -4,7 +4,7 @@ import React from 'react'
 import { Box, Chip, Tabs, Tab, Typography, useMediaQuery } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
-import { LocalizationProvider, DateTimePicker } from '@mui/x-date-pickers'
+import { LocalizationProvider, DateTimePicker, MobileDateTimePicker } from '@mui/x-date-pickers'
 
 import { AVERAGE_PERIODS } from './ranges'
 import type { AveragePeriod, RangeKey } from './ranges'
@@ -41,6 +41,7 @@ const RangeTabs = ({
 }: Props) => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
+  const PickerComponent = isMobile ? MobileDateTimePicker : DateTimePicker
 
   const dateFieldSx = {
     minWidth: { xs: '100%', sm: 220 },
@@ -77,13 +78,20 @@ const RangeTabs = ({
           TabIndicatorProps={{ style: { display: 'none' } }}
           sx={{
             minHeight: 44,
-            overflow: 'visible',
             border: 'none',
             boxShadow: 'none',
             '&::before, &::after': { display: 'none' },
-            '& .MuiTabs-scroller': { overflow: 'visible !important', borderBottom: 'none' },
+            // Scroller must keep its native overflow on mobile so tabs scroll;
+            // on desktop (fullWidth variant) we can let it render visibly.
+            '& .MuiTabs-scroller': {
+              borderBottom: 'none',
+              overflow: { xs: 'auto !important', md: 'visible !important' },
+              scrollbarWidth: 'none',
+              '&::-webkit-scrollbar': { display: 'none' }
+            },
             '& .MuiTabs-flexContainer': { gap: { xs: 0.5, sm: 0.75 }, borderBottom: 'none' },
             '& .MuiTabs-indicator': { display: 'none' },
+            '& .MuiTabs-scrollButtons.Mui-disabled': { opacity: 0.3 },
             '& .MuiTab-root': {
               position: 'relative',
               minHeight: 44,
@@ -92,7 +100,7 @@ const RangeTabs = ({
               fontWeight: 600,
               color: '#64748B',
               borderRadius: '10px',
-              px: { xs: 1.25, sm: 1.5 },
+              px: { xs: 1, sm: 1.5 },
               py: 1,
               minWidth: { xs: 'auto', sm: 0 },
               flex: { xs: '0 0 auto', sm: 1 },
@@ -116,7 +124,11 @@ const RangeTabs = ({
               icon={
                 <i
                   className={opt.icon}
-                  style={{ fontSize: '1rem', marginRight: 4 }}
+                  style={{
+                    fontSize: '1rem',
+                    marginRight: 4,
+                    display: isMobile ? 'none' : 'inline-flex'
+                  }}
                 />
               }
               label={opt.label}
@@ -139,13 +151,31 @@ const RangeTabs = ({
               px: { xs: 0.5, sm: 1 }
             }}
           >
-            <DateTimePicker
+            <PickerComponent
               label='From'
               value={fromDate}
               onChange={onFromDateChange}
               maxDateTime={toDate ?? undefined}
               slotProps={{
-                textField: { size: 'small', sx: dateFieldSx }
+                textField: { size: 'small', sx: dateFieldSx },
+                dialog: {
+                  fullScreen: isMobile,
+                  sx: {
+                    '& .MuiPaper-root': {
+                      borderRadius: isMobile ? 0 : '16px',
+                      maxWidth: '100%',
+                      overflow: 'auto'
+                    },
+                    '& .MuiPickersLayout-root': {
+                      maxWidth: '100%',
+                      overflow: 'auto'
+                    },
+                    '& .MuiPickersLayout-contentWrapper': {
+                      maxWidth: '100%',
+                      overflow: 'auto'
+                    }
+                  }
+                }
               }}
             />
             <Box
@@ -159,14 +189,32 @@ const RangeTabs = ({
             >
               <i className='tabler-arrow-right' style={{ fontSize: '1rem' }} />
             </Box>
-            <DateTimePicker
+            <PickerComponent
               label='Till'
               value={toDate}
               onChange={onToDateChange}
               minDateTime={fromDate ?? undefined}
               maxDateTime={new Date()}
               slotProps={{
-                textField: { size: 'small', sx: dateFieldSx }
+                textField: { size: 'small', sx: dateFieldSx },
+                dialog: {
+                  fullScreen: isMobile,
+                  sx: {
+                    '& .MuiPaper-root': {
+                      borderRadius: isMobile ? 0 : '16px',
+                      maxWidth: '100%',
+                      overflow: 'auto'
+                    },
+                    '& .MuiPickersLayout-root': {
+                      maxWidth: '100%',
+                      overflow: 'auto'
+                    },
+                    '& .MuiPickersLayout-contentWrapper': {
+                      maxWidth: '100%',
+                      overflow: 'auto'
+                    }
+                  }
+                }
               }}
             />
           </Box>

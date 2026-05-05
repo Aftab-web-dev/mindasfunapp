@@ -7,8 +7,6 @@ import InitColorSchemeScript from '@mui/material/InitColorSchemeScript'
 // Third-party Imports
 import 'react-perfect-scrollbar/dist/css/styles.css'
 
-import { Toaster } from 'react-hot-toast'
-
 // Type Imports
 import type { ChildrenType } from '@core/types'
 
@@ -21,6 +19,7 @@ import '@/app/globals.css'
 // Generated Icon CSS Imports
 import '@assets/iconify-icons/generated-icons.css'
 import ProgressProvider from '@/components/ProgressBar'
+import ClientToaster from '@/components/ClientToaster'
 import RegisterSW from './register-sw';
 
 export const metadata: Metadata = {
@@ -54,7 +53,7 @@ const RootLayout = async (props: ChildrenType) => {
         <RegisterSW />
         <ProgressProvider>
           <InitColorSchemeScript attribute='data' defaultMode={systemMode} />
-          <Toaster position='top-right' toastOptions={{ className: 'react-hot-toast' }} />
+          <ClientToaster />
           {children}
         </ProgressProvider>
       </body>

@@ -144,10 +144,48 @@ const CATEGORY_DAILY: Record<string, number> = {
   bowling: DAILY_STATS.bowlingRevenue
 }
 
-function categoryGraph(category: string, day: number | string) {
+// Per-game mock daily revenue (in ₹). Keys must match GAMES[].id below so the
+// dropdown selection can resolve to a baseline.
+export const GAME_DAILY: Record<string, number> = {
+  bumper_car: 3_240,
+  shooting: 2_180,
+  deal_or_no_deal: 2_870,
+  bouncing: 1_960,
+  bowling: 2_540,
+  kids_play: 1_720,
+  redemption: 2_410,
+  car_race: 3_050,
+  hover: 1_580,
+  cinema_3d: 2_690,
+  kiddy_rides: 1_340,
+  basket_ball: 1_810,
+  snooker: 2_050,
+  vr_game_1: 2_770,
+  vr_game_2: 2_330
+}
+
+export const GAMES: { id: string; name: string }[] = [
+  { id: 'bumper_car', name: 'Bumper Car' },
+  { id: 'shooting', name: 'Shooting' },
+  { id: 'deal_or_no_deal', name: 'Deal or No Deal' },
+  { id: 'bouncing', name: 'Bouncing' },
+  { id: 'bowling', name: 'Bowling' },
+  { id: 'kids_play', name: 'Kids Play' },
+  { id: 'redemption', name: 'Redemption' },
+  { id: 'car_race', name: 'Car Race' },
+  { id: 'hover', name: 'Hover' },
+  { id: 'cinema_3d', name: '3D Cinema' },
+  { id: 'kiddy_rides', name: 'Kiddy Rides' },
+  { id: 'basket_ball', name: 'Basket Ball' },
+  { id: 'snooker', name: 'Snooker' },
+  { id: 'vr_game_1', name: 'VR Game 1' },
+  { id: 'vr_game_2', name: 'VR Game 2' }
+]
+
+function categoryGraph(category: string, day: number | string, baseOverride?: number, saltExtra = 0) {
   const dayNum = Number(day) || 0
-  const dailyBase = CATEGORY_DAILY[category] ?? DAILY_STATS.gameRevenue
-  const salt = category.length * 17
+  const dailyBase = baseOverride ?? CATEGORY_DAILY[category] ?? DAILY_STATS.gameRevenue
+  const salt = category.length * 17 + saltExtra
   const resolution = chooseResolution(dayNum)
 
   if (resolution === 'hourly') {
@@ -276,8 +314,18 @@ export const managementDashboardMockApi = {
 
     return wrap([scaleStats(span <= 0 ? 1 : span)])
   },
-  gameRevenueGraph: async ({ day = 0 }: { game?: number | string; day?: number | string } = {}) =>
-    categoryGraph('game', day),
+  gameRevenueGraph: async ({ day = 0, game }: { game?: number | string; day?: number | string } = {}) => {
+    const gameId = typeof game === 'string' ? game : ''
+
+    if (gameId && gameId !== 'all' && GAME_DAILY[gameId] != null) {
+      // Salt with index so different games get visibly different curves.
+      const saltExtra = (Object.keys(GAME_DAILY).indexOf(gameId) + 1) * 7
+
+      return categoryGraph('game', day, GAME_DAILY[gameId], saltExtra)
+    }
+
+    return categoryGraph('game', day)
+  },
   productRevenueGraph: async ({ day = 0 }: { product?: number | string; day?: number | string } = {}) =>
     categoryGraph('product', day),
   redemptionRevenueGraph: async ({ day = 0 }: { product?: number | string; day?: number | string } = {}) =>

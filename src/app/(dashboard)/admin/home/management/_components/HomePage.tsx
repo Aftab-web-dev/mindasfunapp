@@ -1,7 +1,8 @@
 'use client'
 import React, { useEffect, useMemo, useState } from 'react'
 
-import { Box, Button, CircularProgress, Skeleton, Stack, Typography } from '@mui/material'
+import { Box, Button, CircularProgress, FormControl, MenuItem, Select, Skeleton, Stack, Typography } from '@mui/material'
+import type { SelectChangeEvent } from '@mui/material/Select'
 
 import ReactApexcharts from '@/@core/components/react-apexcharts'
 import StatsCard from './StatsCard'
@@ -13,7 +14,7 @@ import RevenueSummary from './RevenueSummary'
 import RangeTabs from './RangeTabs'
 import { AVERAGE_PERIODS, RANGES, formatTimeLabel, detectAllHours, resolveDay } from './ranges'
 import type { AveragePeriod, RangeKey } from './ranges'
-import { managementDashboardMockApi as managementDashboardApi } from './mockData'
+import { managementDashboardMockApi as managementDashboardApi, GAMES, GAME_DAILY } from './mockData'
 import { CATEGORY_COLORS, getCategoryColor, getCategoryPalette } from './categoryColors'
 import AnimatedNumber from './AnimatedNumber'
 
@@ -66,6 +67,36 @@ function buildTopStat(selectedStat: any, labels: string[], values: number[]) {
   }
 }
 
+// Game-revenue specific: rank the actual games (not time slots) so the Top 6
+// breakdown reads "Bumper Car / Shooting / …" instead of "6 PM / 7 PM / …".
+function buildTopGameStat(selectedStat: any) {
+  const ranked = GAMES
+    .map(g => ({ id: g.id, name: g.name, val: GAME_DAILY[g.id] ?? 0 }))
+    .sort((a, b) => b.val - a.val)
+
+  const top6 = ranked.slice(0, 6)
+  const topTotal = top6.reduce((s, t) => s + t.val, 0) || 1
+
+  const colors1 = ['text-primary', 'text-info', 'text-success']
+  const colors2 = ['text-secondary', 'text-error', 'text-warning']
+
+  return {
+    ...selectedStat,
+    datas: top6.map(t => t.name),
+    data1: top6.slice(0, 3).map((t, j) => ({
+      title: t.name,
+      value: Math.round((t.val / topTotal) * 100),
+      colorClass: colors1[j]
+    })),
+    data2: top6.slice(3, 6).map((t, j) => ({
+      title: t.name,
+      value: Math.round((t.val / topTotal) * 100),
+      colorClass: colors2[j]
+    })),
+    chartData: top6.map(t => t.val)
+  }
+}
+
 const HomePage = () => {
   const [range, setRange] = useState<RangeKey>('daily')
   const [fromDate, setFromDate] = useState<Date | null>(null)
@@ -73,6 +104,7 @@ const HomePage = () => {
   const [averagePeriod, setAveragePeriod] = useState<AveragePeriod>('weekly')
   const [selectedStat, setSelectedStat] = useState<any | null>(null)
   const [selectedButton, setSelectedButton] = useState<string>('total')
+  const [selectedGame, setSelectedGame] = useState<string>('all')
 
   const [stats, setStats] = useState<TStats | null>(null)
 
@@ -122,7 +154,13 @@ const HomePage = () => {
     const day = resolveDay(range, fromDate, toDate, averagePeriod)
     const fn = managementDashboardApi[apiKey] as (args: any) => Promise<any>
 
-    fn({ day }).then(res => {
+    const args: any = { day }
+
+    if (selectedStat.title === 'Game Revenue' && selectedGame && selectedGame !== 'all') {
+      args.game = selectedGame
+    }
+
+    fn(args).then(res => {
       const raw = res.data?.data
 
       if (!Array.isArray(raw) || raw.length === 0) {
@@ -149,7 +187,7 @@ const HomePage = () => {
       setCatCategories([])
       setCatData([])
     }).finally(() => setCatLoading(false))
-  }, [selectedStat, range, fromDate, toDate, averagePeriod])
+  }, [selectedStat, range, fromDate, toDate, averagePeriod, selectedGame])
 
   const statsCardArray = useMemo(() => {
     if (!stats) return []
@@ -236,12 +274,12 @@ const HomePage = () => {
       <Stack spacing={{ xs: 2, sm: 3 }} sx={{ p: { xs: 1.5, sm: 2.5, md: 3 } }}>
         <Skeleton variant='rounded' height={64} sx={{ borderRadius: '14px' }} />
         <Skeleton variant='rounded' height={56} sx={{ borderRadius: '14px' }} />
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(4, 1fr)' }, gap: { xs: 1.25, sm: 2 } }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', sm: 'repeat(3, minmax(0, 1fr))', md: 'repeat(4, minmax(0, 1fr))' }, gap: { xs: 1.25, sm: 2 } }}>
           {[...Array(8)].map((_, i) => (
             <Skeleton key={i} variant='rounded' height={85} sx={{ borderRadius: '14px' }} />
           ))}
         </Box>
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 340px' }, gap: { xs: 2, sm: 3 } }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', lg: 'minmax(0, 1fr) 340px' }, gap: { xs: 2, sm: 3 } }}>
           <Skeleton variant='rounded' height={400} sx={{ borderRadius: '16px' }} />
           <Skeleton variant='rounded' height={400} sx={{ borderRadius: '16px' }} />
         </Box>
@@ -258,7 +296,9 @@ const HomePage = () => {
         p: { xs: 1.5, sm: 2.5, md: 3 },
         maxWidth: 1600,
         mx: 'auto',
-        width: '100%'
+        width: '100%',
+        minWidth: 0,
+        overflowX: 'clip'
       }}
     >
 
@@ -323,15 +363,15 @@ const HomePage = () => {
       </Box>
 
       {/* Row 1: Revenue Category Cards */}
-      <Box>
+      <Box sx={{ minWidth: 0 }}>
         <Box
           sx={{
             display: 'grid',
             gridTemplateColumns: {
-              xs: 'repeat(2, 1fr)',
-              sm: 'repeat(3, 1fr)',
-              md: 'repeat(4, 1fr)',
-              xl: 'repeat(4, 1fr)'
+              xs: 'repeat(2, minmax(0, 1fr))',
+              sm: 'repeat(3, minmax(0, 1fr))',
+              md: 'repeat(4, minmax(0, 1fr))',
+              xl: 'repeat(4, minmax(0, 1fr))'
             },
             gap: { xs: 1.25, sm: 1.5, md: 2 }
           }}
@@ -339,7 +379,10 @@ const HomePage = () => {
           {statsCardArray.map((item, i) => (
             <Box
               key={i}
-              onClick={() => setSelectedStat(selectedStat?.title === item.title ? null : item)}
+              onClick={() => {
+                setSelectedGame('all')
+                setSelectedStat(selectedStat?.title === item.title ? null : item)
+              }}
             >
               <StatsCard item={item} selected={selectedStat?.title === item.title} index={i} />
             </Box>
@@ -351,8 +394,9 @@ const HomePage = () => {
       <Box
         sx={{
           display: 'grid',
-          gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 1fr) 340px' },
-          gap: { xs: 2, sm: 2.5, md: 3 }
+          gridTemplateColumns: { xs: 'minmax(0, 1fr)', lg: 'minmax(0, 1fr) 340px' },
+          gap: { xs: 2, sm: 2.5, md: 3 },
+          minWidth: 0
         }}
       >
         {selectedStat ? (
@@ -394,7 +438,9 @@ const HomePage = () => {
                 </Box>
                 <Box sx={{ minWidth: 0 }}>
                   <Typography noWrap sx={{ fontSize: { xs: '0.9375rem', sm: '1rem' }, fontWeight: 700, color: '#0F172A' }}>
-                    {selectedStat.title}
+                    {selectedStat.title === 'Game Revenue' && selectedGame !== 'all'
+                      ? `${GAMES.find(g => g.id === selectedGame)?.name ?? ''} Revenue`
+                      : selectedStat.title}
                   </Typography>
                   <Typography sx={{ fontSize: { xs: '0.6875rem', sm: '0.75rem' }, color: '#94A3B8', fontWeight: 500 }}>
                     {range === 'average'
@@ -403,25 +449,51 @@ const HomePage = () => {
                   </Typography>
                 </Box>
               </Box>
-              <Button
-                onClick={() => setSelectedButton(selectedButton === 'total' ? 'category' : 'total')}
-                size='small'
-                sx={{
-                  borderRadius: '8px',
-                  px: { xs: 1.5, sm: 2 },
-                  py: 0.5,
-                  fontSize: { xs: '0.75rem', sm: '0.8125rem' },
-                  fontWeight: 600,
-                  textTransform: 'none',
-                  backgroundColor: `${breakdownColor}12`,
-                  color: breakdownColor,
-                  alignSelf: { xs: 'flex-end', sm: 'auto' },
-                  '&:hover': { backgroundColor: `${breakdownColor}22` }
-                }}
-                startIcon={<i className={selectedButton === 'total' ? 'tabler-chart-bar' : 'tabler-chart-area'} style={{ fontSize: '1rem' }} />}
-              >
-                {selectedButton === 'total' ? 'Category View' : 'Total View'}
-              </Button>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, alignSelf: { xs: 'flex-end', sm: 'auto' }, flexWrap: 'wrap' }}>
+                {selectedStat.title === 'Game Revenue' && (
+                  <FormControl size='small' sx={{ minWidth: 160 }}>
+                    <Select
+                      value={selectedGame}
+                      onChange={(e: SelectChangeEvent) => setSelectedGame(e.target.value)}
+                      displayEmpty
+                      sx={{
+                        borderRadius: '8px',
+                        fontSize: { xs: '0.75rem', sm: '0.8125rem' },
+                        fontWeight: 600,
+                        backgroundColor: `${breakdownColor}0A`,
+                        color: '#0F172A',
+                        '& .MuiOutlinedInput-notchedOutline': { borderColor: `${breakdownColor}33` },
+                        '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: `${breakdownColor}66` },
+                        '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: breakdownColor },
+                        '& .MuiSelect-select': { py: 0.75 }
+                      }}
+                    >
+                      <MenuItem value='all'>All Games</MenuItem>
+                      {GAMES.map(g => (
+                        <MenuItem key={g.id} value={g.id}>{g.name}</MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                )}
+                <Button
+                  onClick={() => setSelectedButton(selectedButton === 'total' ? 'category' : 'total')}
+                  size='small'
+                  sx={{
+                    borderRadius: '8px',
+                    px: { xs: 1.5, sm: 2 },
+                    py: 0.5,
+                    fontSize: { xs: '0.75rem', sm: '0.8125rem' },
+                    fontWeight: 600,
+                    textTransform: 'none',
+                    backgroundColor: `${breakdownColor}12`,
+                    color: breakdownColor,
+                    '&:hover': { backgroundColor: `${breakdownColor}22` }
+                  }}
+                  startIcon={<i className={selectedButton === 'total' ? 'tabler-chart-bar' : 'tabler-chart-area'} style={{ fontSize: '1rem' }} />}
+                >
+                  {selectedButton === 'total' ? 'Category View' : 'Total View'}
+                </Button>
+              </Box>
             </Box>
             <Box sx={{ px: { xs: 0.5, sm: 1.5 }, pb: { xs: 1, sm: 1.5 }, minHeight: { xs: 280, sm: 340 } }}>
               {catLoading ? (
@@ -472,11 +544,18 @@ const HomePage = () => {
         <Box
           sx={{
             display: 'grid',
-            gridTemplateColumns: { xs: '1fr', xl: '2fr 1fr' },
-            gap: 3
+            gridTemplateColumns: { xs: 'minmax(0, 1fr)', xl: 'minmax(0, 2fr) minmax(0, 1fr)' },
+            gap: 3,
+            minWidth: 0
           }}
         >
-          <TopGameChart selectedStat={buildTopStat(selectedStat, catCategories, catData)} />
+          <TopGameChart
+            selectedStat={
+              selectedStat.title === 'Game Revenue'
+                ? buildTopGameStat(selectedStat)
+                : buildTopStat(selectedStat, catCategories, catData)
+            }
+          />
           <UpcomingEvents />
         </Box>
       )}
@@ -484,8 +563,9 @@ const HomePage = () => {
         <Box
           sx={{
             display: 'grid',
-            gridTemplateColumns: { xs: '1fr', xl: '2fr 1fr' },
-            gap: 3
+            gridTemplateColumns: { xs: 'minmax(0, 1fr)', xl: 'minmax(0, 2fr) minmax(0, 1fr)' },
+            gap: 3,
+            minWidth: 0
           }}
         >
           <Box />
