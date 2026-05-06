@@ -450,7 +450,7 @@ const HomePage = () => {
                 </Box>
               </Box>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, alignSelf: { xs: 'flex-end', sm: 'auto' }, flexWrap: 'wrap' }}>
-                {/* {selectedStat.title === 'Game Revenue' && (
+                {selectedStat.title === 'Game Revenue' && (
                   <FormControl size='small' sx={{ minWidth: 160 }}>
                     <Select
                       value={selectedGame}
@@ -474,7 +474,7 @@ const HomePage = () => {
                       ))}
                     </Select>
                   </FormControl>
-                )} */}
+                )}
                 <Button
                   onClick={() => setSelectedButton(selectedButton === 'total' ? 'category' : 'total')}
                   size='small'
