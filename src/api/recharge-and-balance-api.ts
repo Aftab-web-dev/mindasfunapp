@@ -34,5 +34,10 @@ export const rechargeAndBalanceApi = {
         params.set('BranchId', String(body.branchId ?? ''))
 
         return await axiosConfig.post(`Recharge/Recharge?${params.toString()}`, {})
+    },
+    verifyOtp: async ({ otp }: { otp: string }) => {
+        const queryParams = `Otp=${otp}`
+
+        return await axiosConfig.post(`Recharge/VerifyOtp?${queryParams}`, {})
     }
 }

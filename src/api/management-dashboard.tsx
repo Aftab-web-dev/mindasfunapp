@@ -6,6 +6,7 @@ export const managementDashboardApi = {
   widgetValues: async function () {
     return await axiosConfig.post(`MangementDashBoard/ManagementValues`)
   },
+  
   gameRevenueGraph: async function ({ game = 0, day = 0 }: { game?: number | string, day?: number | string }) {
     return await axiosConfig.post(`MangementDashBoard/GameRevenueGraph?Game=${game}&Day=${day}`)
   },
