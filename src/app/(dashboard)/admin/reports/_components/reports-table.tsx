@@ -1,13 +1,10 @@
 'use client'
 
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 
 import {
   Box,
   Button,
-  Card,
-  CardHeader,
-  TextField,
   Typography,
   Collapse,
   IconButton,
@@ -17,12 +14,14 @@ import {
   TableHead,
   TableRow,
   TableContainer,
-  Autocomplete,
   RadioGroup,
   FormControlLabel,
   Radio,
   FormControl,
-  FormLabel
+  FormLabel,
+  Drawer,
+  useMediaQuery,
+  useTheme
 } from '@mui/material'
 import { DataGrid } from '@mui/x-data-grid'
 import type { GridColDef } from '@mui/x-data-grid'
@@ -31,12 +30,14 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers'
 
 import toast from 'react-hot-toast'
+import { useSearchParams } from 'next/navigation'
 
-import { reportTypes, getReportColumns } from './reportConfig'
+import { reportCategories, getReportColumns } from './reportConfig'
 import { reportsApi } from '@/api/reports-api'
 import { getUser } from '@/utils/authStorage'
 
 const ReportsTable = () => {
+  const searchParams = useSearchParams()
   const [selectedReport, setSelectedReport] = useState<string>('')
   const [cashRevenueOption, setCashRevenueOption] = useState<'0' | '1'>('0')
 
@@ -55,6 +56,22 @@ const ReportsTable = () => {
   const [rows, setRows] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({})
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false)
+  const [mobileExpandedCategories, setMobileExpandedCategories] = useState<Record<string, boolean>>({})
+
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
+
+  useEffect(() => {
+    const type = searchParams.get('type')
+
+    if (type) {
+      setSelectedReport(type)
+      setRows([])
+      setExpandedRows({})
+      setCashRevenueOption('0')
+    }
+  }, [searchParams])
 
   const formatDate = (date: Date) => {
     const yyyy = date.getFullYear()
@@ -62,6 +79,22 @@ const ReportsTable = () => {
     const dd = String(date.getDate()).padStart(2, '0')
 
     return `${yyyy}-${mm}-${dd}`
+  }
+
+  const selectedReportLabel = reportCategories
+    .flatMap(c => c.reports)
+    .find(r => r.value === selectedReport)?.label
+
+  const handleMobileSelectReport = (value: string) => {
+    setSelectedReport(value)
+    setRows([])
+    setExpandedRows({})
+    setCashRevenueOption('0')
+    setMobileDrawerOpen(false)
+  }
+
+  const toggleMobileCategory = (label: string) => {
+    setMobileExpandedCategories(prev => ({ ...prev, [label]: !prev[label] }))
   }
 
   const handleApplyFilters = useCallback(async () => {
@@ -115,11 +148,80 @@ const ReportsTable = () => {
         response = await reportsApi.topPlayedGameReport(params)
       } else if (selectedReport === 'cardVoidReport') {
         response = await reportsApi.cardVoidReport(params)
+      } else if (selectedReport === 'cardSummaryReport') {
+        response = await reportsApi.cardSummaryReport(params)
+      } else if (selectedReport === 'creditCardActivityReport') {
+        response = await reportsApi.creditCardActivityReport(params)
+      } else if (selectedReport === 'customerTrafficReport') {
+        response = await reportsApi.customerTrafficReport(params)
+      } else if (selectedReport === 'detailedEmployeeGamePlayReport') {
+        response = await reportsApi.detailedEmployeeGamePlayReport(params)
+      } else if (selectedReport === 'drawerAccessReport') {
+        response = await reportsApi.drawerAccessReport(params)
+      } else if (selectedReport === 'employeeListReport') {
+        response = await reportsApi.employeeListReport(branchId)
+      } else if (selectedReport === 'employeePaymentAdjustments') {
+        response = await reportsApi.employeePaymentAdjustments(params)
+      } else if (selectedReport === 'familyCardReport') {
+        response = await reportsApi.familyCardReport(params)
+      } else if (selectedReport === 'groupSaleReport') {
+        response = await reportsApi.groupSaleReport(params)
+      } else if (selectedReport === 'happyHourReport') {
+        response = await reportsApi.happyHourReport(branchId)
+      } else if (selectedReport === 'inventoryReport') {
+        response = await reportsApi.inventoryReport({ branchId, producttype: 0 })
+      } else if (selectedReport === 'memberActivityReport') {
+        response = await reportsApi.memberActivityReport(branchId)
+      } else if (selectedReport === 'membershipReport') {
+        response = await reportsApi.membershipReport()
+      } else if (selectedReport === 'newCardCountReport') {
+        response = await reportsApi.newCardCountReport(params)
+      } else if (selectedReport === 'newCustomerRegisterReport') {
+        response = await reportsApi.newCustomerRegisterReport(params)
+      } else if (selectedReport === 'offersListReport') {
+        response = await reportsApi.offersListReport(params)
+      } else if (selectedReport === 'partyBookingDetailReport') {
+        response = await reportsApi.partyBookingDetailReport(params)
+      } else if (selectedReport === 'partyBookingPaymentDetailsReport') {
+        response = await reportsApi.partyBookingPaymentDetailsReport(params)
+      } else if (selectedReport === 'partyBookingReport') {
+        response = await reportsApi.partyBookingReport(params)
+      } else if (selectedReport === 'partyPackListReport') {
+        response = await reportsApi.partyPackListReport(branchId)
+      } else if (selectedReport === 'purchaseReport') {
+        response = await reportsApi.purchaseReport(params)
+      } else if (selectedReport === 'purchaseReturnReport') {
+        response = await reportsApi.purchaseReturnReport(params)
+      } else if (selectedReport === 'qtyAdjustmentReport') {
+        response = await reportsApi.qtyAdjustmentReport(params)
+      } else if (selectedReport === 'redemptionComplementaryReport') {
+        response = await reportsApi.redemptionComplementaryReport(params)
+      } else if (selectedReport === 'redemptionDamagedProductsReport') {
+        response = await reportsApi.redemptionDamagedProductsReport(params)
+      } else if (selectedReport === 'redemptionRedeemReport') {
+        response = await reportsApi.redemptionRedeemReport(params)
+      } else if (selectedReport === 'redemptionSalesReportNew') {
+        response = await reportsApi.redemptionSalesReportNew(params)
+      } else if (selectedReport === 'refundReport') {
+        response = await reportsApi.refundReport(params)
+      } else if (selectedReport === 'reorderReport') {
+        response = await reportsApi.reorderReport({ branchId })
+      } else if (selectedReport === 'requestPointReport') {
+        response = await reportsApi.requestPointReport(params)
+      } else if (selectedReport === 'salesComplementaryDetailReport') {
+        response = await reportsApi.salesComplementaryDetailReport(params)
+      } else if (selectedReport === 'salesComplementaryReport') {
+        response = await reportsApi.salesComplementaryReport(params)
+      } else if (selectedReport === 'salesReturnReport') {
+        response = await reportsApi.salesReturnReport(params)
+      } else if (selectedReport === 'salesVoidReport') {
+        response = await reportsApi.salesVoidReport(params)
+      } else if (selectedReport === 'thirdPartyCardTransReport') {
+        response = await reportsApi.thirdPartyCardTransReport({ fTime: formatDate(startDate), tTime: formatDate(endDate), status: 1 })
       } else {
         throw new Error('Invalid report type')
       }
 
-      // For SalesDetailsReport, group by id
       if (selectedReport === 'salesDetailsReport') {
         const grouped = groupSalesDetails(response.data || response)
 
@@ -352,32 +454,49 @@ const ReportsTable = () => {
           {/* Header */}
           <Box sx={{ px: { xs: 2, sm: 4, md: 5 }, pt: { xs: 2.5, sm: 3, md: 4 }, pb: 1.5 }}>
             <Typography sx={{ fontSize: { xs: '1.125rem', sm: '1.25rem' }, fontWeight: 700, color: '#1E293B' }}>Reports</Typography>
-            <Typography sx={{ fontSize: { xs: '0.6875rem', sm: '0.8125rem' }, color: '#94A3B8', fontWeight: 500, mt: 0.25 }}>Generate and view business reports</Typography>
+            <Typography sx={{ fontSize: { xs: '0.6875rem', sm: '0.8125rem' }, color: '#94A3B8', fontWeight: 500, mt: 0.25 }}>
+              {selectedReportLabel || 'Select a report from the sidebar'}
+            </Typography>
           </Box>
 
           {/* Filters Section */}
           <Box sx={{ px: { xs: 2, sm: 4, md: 5 }, pb: 2.5, borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
             <Box sx={{ display: 'flex', gap: 2, flexDirection: 'column' }}>
-              <Autocomplete
-                sx={{
-                  width: '100%',
-                  '& .MuiOutlinedInput-root': {
+              {isMobile ? (
+                <Button
+                  fullWidth
+                  onClick={() => setMobileDrawerOpen(true)}
+                  variant='outlined'
+                  disableElevation
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
                     borderRadius: '12px',
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    fontSize: '0.875rem',
+                    color: selectedReportLabel ? '#1E293B' : '#94A3B8',
+                    borderColor: 'rgba(0,0,0,0.12)',
                     backgroundColor: '#F8FAFC',
-                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#523F99' }
-                  }
-                }}
-                options={reportTypes}
-                getOptionLabel={option => option.label}
-                value={reportTypes.find(r => r.value === selectedReport) || null}
-                onChange={(_, newValue) => {
-                  setSelectedReport(newValue?.value || '')
-                  setRows([])
-                  setExpandedRows({})
-                  setCashRevenueOption('0')
-                }}
-                renderInput={params => <TextField {...params} label='Select Report' size='small' />}
-              />
+                    px: 1.5,
+                    py: 1,
+                    '&:hover': { borderColor: '#523F99', backgroundColor: '#F0ECFA' }
+                  }}
+                  endIcon={<Icon icon='mdi:chevron-down' style={{ fontSize: '1.2rem', color: '#94A3B8' }} />}
+                >
+                  {selectedReportLabel || 'Select Report'}
+                </Button>
+              ) : (
+                selectedReportLabel && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1.5, py: 1, backgroundColor: '#F0ECFA', borderRadius: '10px' }}>
+                    <Icon icon='mdi:file-document-outline' style={{ fontSize: '1.1rem', color: '#523F99' }} />
+                    <Typography sx={{ fontSize: '0.8125rem', fontWeight: 600, color: '#523F99' }}>
+                      {selectedReportLabel}
+                    </Typography>
+                  </Box>
+                )
+              )}
 
               {selectedReport === 'cashRevenueReport' && (
                 <FormControl component='fieldset'>
@@ -501,7 +620,7 @@ const ReportsTable = () => {
                     </TableBody>
                   </Table>
                 </TableContainer>
-              
+
             ) : (
               <DataGrid
                 autoHeight
@@ -584,7 +703,7 @@ const ReportsTable = () => {
               </Box>
               <Typography sx={{ fontSize: '1.125rem', fontWeight: 700, color: '#1E293B', mb: 1 }}>Select a report to get started</Typography>
               <Typography sx={{ fontSize: '0.875rem', color: '#94A3B8', textAlign: 'center', maxWidth: 340, lineHeight: 1.6 }}>
-                Choose a report type from the dropdown above, set your date range, and click Generate Report.
+                Choose a report category from the sidebar, then select a report type, set your date range, and click Generate Report.
               </Typography>
               <Box sx={{ display: 'flex', gap: 4, mt: 5, pt: 4, borderTop: '1px solid rgba(0,0,0,0.04)' }}>
                 {[
@@ -604,6 +723,107 @@ const ReportsTable = () => {
           )}
         </div>
       </div>
+
+      {/* Mobile Report Selector Drawer */}
+      <Drawer
+        anchor='bottom'
+        open={mobileDrawerOpen}
+        onClose={() => setMobileDrawerOpen(false)}
+        PaperProps={{
+          sx: {
+            maxHeight: '70vh',
+            borderTopLeftRadius: '16px',
+            borderTopRightRadius: '16px',
+            backgroundColor: '#FAFBFC'
+          }
+        }}
+      >
+        <Box sx={{ px: 2, pt: 2.5, pb: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Typography sx={{ fontSize: '0.875rem', fontWeight: 700, color: '#1E293B' }}>Select Report</Typography>
+          <IconButton size='small' onClick={() => setMobileDrawerOpen(false)} sx={{ color: '#64748B' }}>
+            <Icon icon='mdi:close' style={{ fontSize: '1.25rem' }} />
+          </IconButton>
+        </Box>
+        <Box sx={{ px: 1, pb: 3, overflow: 'auto' }}>
+          {reportCategories.map(category => {
+            const isExpanded = mobileExpandedCategories[category.label]
+
+            return (
+              <Box key={category.label}>
+                <Box
+                  onClick={() => toggleMobileCategory(category.label)}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1.5,
+                    px: 1.5,
+                    py: 1.25,
+                    cursor: 'pointer',
+                    borderRadius: '10px',
+                    '&:hover': { backgroundColor: 'rgba(82,63,153,0.04)' },
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  <Icon icon={category.icon} style={{ fontSize: '1.1rem', color: '#64748B' }} />
+                  <Typography sx={{ flex: 1, fontSize: '0.8125rem', fontWeight: 600, color: '#334155' }}>
+                    {category.label}
+                  </Typography>
+                  <Typography sx={{ fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 500, mr: 1 }}>
+                    {category.reports.length}
+                  </Typography>
+                  <Icon
+                    icon={isExpanded ? 'mdi:chevron-up' : 'mdi:chevron-down'}
+                    style={{ fontSize: '1rem', color: '#94A3B8' }}
+                  />
+                </Box>
+                <Collapse in={isExpanded}>
+                  <Box sx={{ ml: 1, mb: 0.5 }}>
+                    {category.reports.map(report => {
+                      const isActive = selectedReport === report.value
+
+                      return (
+                        <Box
+                          key={report.value}
+                          onClick={() => handleMobileSelectReport(report.value)}
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1.5,
+                            px: 1.5,
+                            py: 1,
+                            ml: 2.5,
+                            cursor: 'pointer',
+                            borderRadius: '8px',
+                            backgroundColor: isActive ? 'rgba(82,63,153,0.08)' : 'transparent',
+                            '&:hover': { backgroundColor: isActive ? 'rgba(82,63,153,0.08)' : 'rgba(82,63,153,0.03)' },
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              width: 6,
+                              height: 6,
+                              borderRadius: '50%',
+                              backgroundColor: isActive ? '#523F99' : '#CBD5E1',
+                              flexShrink: 0
+                            }}
+                          />
+                          <Typography sx={{ fontSize: '0.8125rem', fontWeight: isActive ? 600 : 400, color: isActive ? '#523F99' : '#475569' }}>
+                            {report.label}
+                          </Typography>
+                          {isActive && (
+                            <Icon icon='mdi:check' style={{ fontSize: '1rem', color: '#523F99', marginLeft: 'auto' }} />
+                          )}
+                        </Box>
+                      )
+                    })}
+                  </Box>
+                </Collapse>
+              </Box>
+            )
+          })}
+        </Box>
+      </Drawer>
     </LocalizationProvider>
   )
 }

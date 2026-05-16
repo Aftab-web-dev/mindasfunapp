@@ -9,6 +9,7 @@ import type { VerticalMenuContextProps } from '@menu/components/vertical-menu/Me
 
 // Component Imports
 import { Menu, MenuItem, SubMenu } from '@menu/vertical-menu'
+import { reportCategories } from '@/app/(dashboard)/admin/reports/_components/reportConfig'
 
 // Hook Imports
 import useVerticalNav from '@menu/hooks/useVerticalNav'
@@ -81,7 +82,7 @@ const VerticalMenu = ({ scrollMenu }: Props) => {
               fontWeight: 600,
               textTransform: 'uppercase',
               letterSpacing: '0.8px',
-              color: 'rgba(255,255,255,0.4)',
+              color: 'rgba(255,255,255,0.4)'
             }}
           >
             Manage
@@ -108,7 +109,15 @@ const VerticalMenu = ({ scrollMenu }: Props) => {
           <MenuItem href='/admin/export-waiver-data'>Export Data</MenuItem>
         </SubMenu>
         <SubMenu label='Reports' icon={<i className='tabler-file-text' />}>
-          <MenuItem href='/admin/reports'>List</MenuItem>
+          {reportCategories.map(category => (
+            <SubMenu key={category.label} label={category.label}>
+              {category.reports.map(report => (
+                <MenuItem key={report.value} href={`/admin/reports?type=${report.value}`}>
+                  {report.label}
+                </MenuItem>
+              ))}
+            </SubMenu>
+          ))}
         </SubMenu>
       </Menu>
     </ScrollWrapper>

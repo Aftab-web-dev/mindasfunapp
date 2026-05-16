@@ -1,9 +1,9 @@
-import axios from "axios";
+import { create } from "axios";
 
 import { baseUrl } from "@/utils/base-url";
 import { clearAuthData, getToken } from "@/utils/authStorage";
 
-const axiosConfig = axios.create({
+const axiosConfig = create({
     baseURL: baseUrl,
     headers: { "Content-Type": "application/json" },
 });

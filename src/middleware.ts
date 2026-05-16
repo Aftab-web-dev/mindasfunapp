@@ -37,6 +37,6 @@ export const config = {
      * - favicon.ico, icons, images, svgs (public assets)
      * - api routes (handled by route handlers)
      */
-    '/((?!_next/static|_next/image|favicon.ico|icons|images|svgs|sw.js|manifest.json|api).*)',
-  ],
+    '/((?!_next/static|_next/image|favicon.ico|icons|images|svgs|sw.js|manifest.json|api).*)'
+  ]
 }
