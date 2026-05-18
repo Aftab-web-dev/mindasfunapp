@@ -19,7 +19,6 @@ import {
   Radio,
   FormControl,
   FormLabel,
-  Drawer,
   useMediaQuery,
   useTheme
 } from '@mui/material'
@@ -56,8 +55,6 @@ const ReportsTable = () => {
   const [rows, setRows] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({})
-  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false)
-  const [mobileExpandedCategories, setMobileExpandedCategories] = useState<Record<string, boolean>>({})
 
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
@@ -78,28 +75,16 @@ const ReportsTable = () => {
     const mm = String(date.getMonth() + 1).padStart(2, '0')
     const dd = String(date.getDate()).padStart(2, '0')
 
-    return `${yyyy}-${mm}-${dd}`
+    return `${dd}-${mm}-${yyyy}`
   }
 
   const selectedReportLabel = reportCategories
     .flatMap(c => c.reports)
     .find(r => r.value === selectedReport)?.label
 
-  const handleMobileSelectReport = (value: string) => {
-    setSelectedReport(value)
-    setRows([])
-    setExpandedRows({})
-    setCashRevenueOption('0')
-    setMobileDrawerOpen(false)
-  }
-
-  const toggleMobileCategory = (label: string) => {
-    setMobileExpandedCategories(prev => ({ ...prev, [label]: !prev[label] }))
-  }
-
   const handleApplyFilters = useCallback(async () => {
     if (!selectedReport) {
-      toast.error('Please select a report type')
+      toast.error('Please select a report from the main menu')
 
       return
     }
@@ -218,6 +203,18 @@ const ReportsTable = () => {
         response = await reportsApi.salesVoidReport(params)
       } else if (selectedReport === 'thirdPartyCardTransReport') {
         response = await reportsApi.thirdPartyCardTransReport({ fTime: formatDate(startDate), tTime: formatDate(endDate), status: 1 })
+      } else if (selectedReport === 'consolidateReport') {
+        response = await reportsApi.consolidateReport(params)
+      } else if (selectedReport === 'cardSummaryInDetailedReport') {
+        response = await reportsApi.cardSummaryInDetailedReport(params)
+      } else if (selectedReport === 'annualGameRevenueReport') {
+        response = await reportsApi.annualGameRevenueReport(params)
+      } else if (selectedReport === 'detailedGameRevenueReport') {
+        response = await reportsApi.detailedGameRevenueReport(params)
+      } else if (selectedReport === 'gameDetailsListReport') {
+        response = await reportsApi.gameDetailsListReport(params)
+      } else if (selectedReport === 'topPlayerReport') {
+        response = await reportsApi.topPlayerReport(params)
       } else {
         throw new Error('Invalid report type')
       }
@@ -449,381 +446,206 @@ const ReportsTable = () => {
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <div className='max-w-6xl mx-auto px-2 sm:px-4 py-3 sm:py-6 min-h-[calc(100vh-64px)]'>
-        <div className='rounded-none sm:rounded-2xl border-0 sm:border sm:border-[rgba(0,0,0,0.06)] bg-white min-h-[calc(100vh-120px)] flex flex-col overflow-hidden'>
-          {/* Header */}
-          <Box sx={{ px: { xs: 2, sm: 4, md: 5 }, pt: { xs: 2.5, sm: 3, md: 4 }, pb: 1.5 }}>
-            <Typography sx={{ fontSize: { xs: '1.125rem', sm: '1.25rem' }, fontWeight: 700, color: '#1E293B' }}>Reports</Typography>
-            <Typography sx={{ fontSize: { xs: '0.6875rem', sm: '0.8125rem' }, color: '#94A3B8', fontWeight: 500, mt: 0.25 }}>
-              {selectedReportLabel || 'Select a report from the sidebar'}
-            </Typography>
-          </Box>
+      <div className='max-w-[1600px] mx-auto px-2 sm:px-4 py-3 sm:py-6'>
+        <div className='flex flex-col gap-6 min-h-[calc(100vh-120px)]'>
+          {/* Main Content Area */}
+          <div className='flex-1 rounded-2xl border border-[rgba(0,0,0,0.06)] bg-white flex flex-col overflow-hidden'>
+            {/* Header */}
+            <Box sx={{ px: { xs: 2, sm: 4, md: 5 }, pt: { xs: 2.5, sm: 3, md: 4 }, pb: 1.5, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <Box>
+                <Typography sx={{ fontSize: { xs: '1.125rem', sm: '1.25rem' }, fontWeight: 700, color: '#1E293B' }}>Reports Center</Typography>
+                <Typography sx={{ fontSize: { xs: '0.6875rem', sm: '0.8125rem' }, color: '#94A3B8', fontWeight: 500, mt: 0.25 }}>
+                  {selectedReportLabel || 'Select a report from the main menu'}
+                </Typography>
+              </Box>
+            </Box>
 
-          {/* Filters Section */}
-          <Box sx={{ px: { xs: 2, sm: 4, md: 5 }, pb: 2.5, borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
-            <Box sx={{ display: 'flex', gap: 2, flexDirection: 'column' }}>
-              {isMobile ? (
+            {/* Filters Section */}
+            <Box sx={{ px: { xs: 2, sm: 4, md: 5 }, pb: 2.5, borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+              <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', lg: 'row' }, alignItems: { lg: 'flex-end' } }}>
+                {selectedReport === 'cashRevenueReport' && (
+                  <FormControl component='fieldset' sx={{ minWidth: 200 }}>
+                    <FormLabel component='legend' sx={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748B' }}>
+                      Report Type
+                    </FormLabel>
+                    <RadioGroup
+                      row
+                      value={cashRevenueOption}
+                      onChange={e => setCashRevenueOption(e.target.value as '0' | '1')}
+                    >
+                      <FormControlLabel value='0' control={<Radio size='small' sx={{ '&.Mui-checked': { color: '#523F99' } }} />} label='Normal' />
+                      <FormControlLabel value='1' control={<Radio size='small' sx={{ '&.Mui-checked': { color: '#523F99' } }} />} label='Detailed' />
+                    </RadioGroup>
+                  </FormControl>
+                )}
+
+                <Box sx={{ display: 'flex', gap: 1.5, flex: 1 }}>
+                  <DatePicker
+                    label='Start'
+                    value={startDate}
+                    onChange={newValue => setStartDate(newValue || new Date())}
+                    slotProps={{
+                      textField: {
+                        size: 'small',
+                        fullWidth: true,
+                        sx: { '& .MuiOutlinedInput-root': { borderRadius: '12px', backgroundColor: '#F8FAFC' } }
+                      }
+                    }}
+                  />
+                  <DatePicker
+                    label='End'
+                    value={endDate}
+                    onChange={newValue => setEndDate(newValue || new Date())}
+                    slotProps={{
+                      textField: {
+                        size: 'small',
+                        fullWidth: true,
+                        sx: { '& .MuiOutlinedInput-root': { borderRadius: '12px', backgroundColor: '#F8FAFC' } }
+                      }
+                    }}
+                  />
+                </Box>
+
                 <Button
-                  fullWidth
-                  onClick={() => setMobileDrawerOpen(true)}
-                  variant='outlined'
+                  variant='contained'
+                  onClick={handleApplyFilters}
+                  disabled={!selectedReport || loading}
                   disableElevation
                   sx={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
                     borderRadius: '12px',
                     textTransform: 'none',
                     fontWeight: 600,
-                    fontSize: '0.875rem',
-                    color: selectedReportLabel ? '#1E293B' : '#94A3B8',
-                    borderColor: 'rgba(0,0,0,0.12)',
-                    backgroundColor: '#F8FAFC',
-                    px: 1.5,
-                    py: 1,
-                    '&:hover': { borderColor: '#523F99', backgroundColor: '#F0ECFA' }
+                    fontSize: '0.9375rem',
+                    backgroundColor: '#523F99',
+                    height: 40,
+                    px: 4,
+                    '&:hover': { backgroundColor: '#6B52C4' }
                   }}
-                  endIcon={<Icon icon='mdi:chevron-down' style={{ fontSize: '1.2rem', color: '#94A3B8' }} />}
                 >
-                  {selectedReportLabel || 'Select Report'}
+                  {loading ? 'Loading...' : 'Generate Report'}
                 </Button>
-              ) : (
-                selectedReportLabel && (
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1.5, py: 1, backgroundColor: '#F0ECFA', borderRadius: '10px' }}>
-                    <Icon icon='mdi:file-document-outline' style={{ fontSize: '1.1rem', color: '#523F99' }} />
-                    <Typography sx={{ fontSize: '0.8125rem', fontWeight: 600, color: '#523F99' }}>
-                      {selectedReportLabel}
-                    </Typography>
-                  </Box>
-                )
-              )}
-
-              {selectedReport === 'cashRevenueReport' && (
-                <FormControl component='fieldset'>
-                  <FormLabel component='legend' sx={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748B' }}>
-                    Report Type
-                  </FormLabel>
-                  <RadioGroup
-                    row
-                    value={cashRevenueOption}
-                    onChange={e => setCashRevenueOption(e.target.value as '0' | '1')}
-                  >
-                    <FormControlLabel value='0' control={<Radio size='small' sx={{ '&.Mui-checked': { color: '#523F99' } }} />} label='Normal' />
-                    <FormControlLabel value='1' control={<Radio size='small' sx={{ '&.Mui-checked': { color: '#523F99' } }} />} label='Detailed' />
-                  </RadioGroup>
-                </FormControl>
-              )}
-
-              <Box sx={{ display: 'flex', gap: 1.5 }}>
-                <DatePicker
-                  label='Start'
-                  value={startDate}
-                  onChange={newValue => setStartDate(newValue || new Date())}
-                  slotProps={{
-                    textField: {
-                      size: 'small',
-                      fullWidth: true,
-                      sx: { flex: 1, '& .MuiOutlinedInput-root': { borderRadius: '12px', backgroundColor: '#F8FAFC', '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#523F99' } }, '& .MuiInputLabel-root': { fontSize: '0.8125rem' } }
-                    }
-                  }}
-                />
-                <DatePicker
-                  label='End'
-                  value={endDate}
-                  onChange={newValue => setEndDate(newValue || new Date())}
-                  slotProps={{
-                    textField: {
-                      size: 'small',
-                      fullWidth: true,
-                      sx: { flex: 1, '& .MuiOutlinedInput-root': { borderRadius: '12px', backgroundColor: '#F8FAFC', '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#523F99' } }, '& .MuiInputLabel-root': { fontSize: '0.8125rem' } }
-                    }
-                  }}
-                />
               </Box>
-
-              <Button
-                variant='contained'
-                onClick={handleApplyFilters}
-                disabled={!selectedReport || loading}
-                disableElevation
-                fullWidth
-                sx={{
-                  borderRadius: '12px',
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  fontSize: '0.9375rem',
-                  backgroundColor: '#523F99',
-                  color: '#FFFFFF',
-                  height: { xs: 48, sm: 40 },
-                  width: { md: 'auto' },
-                  '&:hover': { backgroundColor: '#6B52C4' },
-                  '&.Mui-disabled': { backgroundColor: 'rgba(82,63,153,0.35)', color: 'rgba(255,255,255,0.7)' }
-                }}
-              >
-                {loading ? 'Loading...' : 'Generate Report'}
-              </Button>
             </Box>
-          </Box>
 
-          {/* Data Grid or Empty State */}
-          {selectedReport ? (
-            <Box sx={{ p: { xs: 1, sm: 1.5 }, flex: 1, overflow: 'auto' }}>
-            {selectedReport === 'salesDetailsReport' ? (
-                <TableContainer>
-                  <Table>
-                    <TableHead>
-                      <TableRow sx={{ backgroundColor: '#F8FAFC' }}>
-                        {['Sl No', '', 'Date', 'Invoice', 'Customer', 'Mobile'].map((h) => (
-                          <TableCell key={h} sx={{ fontWeight: 600, fontSize: '0.75rem', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
-                            {h}
-                          </TableCell>
-                        ))}
-                        {['Total Qty', 'Total Tax', 'Discount', 'Net Amount'].map((h) => (
-                          <TableCell key={h} align='right' sx={{ fontWeight: 600, fontSize: '0.75rem', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
-                            {h}
-                          </TableCell>
-                        ))}
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {rows.map((row, idx) => (
-                        <React.Fragment key={row.uniqueId}>
-                          <TableRow sx={{ '&:hover': { backgroundColor: 'rgba(82,63,153,0.02)' } }}>
-                            <TableCell sx={{ fontSize: '0.8125rem', color: '#475569', borderBottom: '1px solid rgba(0,0,0,0.04)', py: 0.5 }}>{idx + 1}</TableCell>
-                            <TableCell sx={{ borderBottom: '1px solid rgba(0,0,0,0.04)', py: 0 }}>
-                              {row.children && row.children.length > 0 && (
-                                <IconButton size='small' onClick={() => handleToggleDetailPanel(row.uniqueId)} sx={{ color: '#523F99' }}>
-                                  <Icon icon={expandedRows[row.uniqueId] ? 'mdi:chevron-up' : 'mdi:chevron-down'} />
-                                </IconButton>
-                              )}
-                            </TableCell>
-                            <TableCell sx={{ fontSize: '0.8125rem', color: '#1E293B', borderBottom: '1px solid rgba(0,0,0,0.04)', py: 0.5 }}>{row.entryDate}</TableCell>
-                            <TableCell sx={{ fontSize: '0.8125rem', color: '#1E293B', fontWeight: 500, borderBottom: '1px solid rgba(0,0,0,0.04)', py: 0.5 }}>{row.invoice}</TableCell>
-                            <TableCell sx={{ fontSize: '0.8125rem', color: '#1E293B', borderBottom: '1px solid rgba(0,0,0,0.04)', py: 0.5 }}>{row.cusName}</TableCell>
-                            <TableCell sx={{ fontSize: '0.8125rem', color: '#475569', borderBottom: '1px solid rgba(0,0,0,0.04)', py: 0.5 }}>{row.mobile}</TableCell>
-                            <TableCell align='right' sx={{ fontSize: '0.8125rem', color: '#1E293B', borderBottom: '1px solid rgba(0,0,0,0.04)', py: 0.5 }}>{row.totalQuantity}</TableCell>
-                            <TableCell align='right' sx={{ fontSize: '0.8125rem', color: '#1E293B', borderBottom: '1px solid rgba(0,0,0,0.04)', py: 0.5 }}>{row.totalTax}</TableCell>
-                            <TableCell align='right' sx={{ fontSize: '0.8125rem', color: '#1E293B', borderBottom: '1px solid rgba(0,0,0,0.04)', py: 0.5 }}>{row.totalDiscountAmount}</TableCell>
-                            <TableCell align='right' sx={{ fontSize: '0.8125rem', fontWeight: 600, color: '#1E293B', borderBottom: '1px solid rgba(0,0,0,0.04)', py: 0.5 }}>{row.totalNetAmount}</TableCell>
-                          </TableRow>
-                          {row.children && row.children.length > 0 && (
-                            <TableRow>
-                              <TableCell colSpan={10} sx={{ p: 0, border: 0 }}>
-                                <Collapse in={expandedRows[row.uniqueId]} timeout='auto' unmountOnExit>
-                                  <Box sx={{ p: 2, backgroundColor: '#FAFBFC' }}>{renderNestedTable(row.children)}</Box>
-                                </Collapse>
+            {/* Data Area */}
+            {selectedReport ? (
+              <Box sx={{ p: { xs: 1, sm: 2 }, flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                <Box sx={{ flex: 1, overflow: 'auto' }}>
+                  {selectedReport === 'salesDetailsReport' ? (
+                    <TableContainer>
+                      <Table stickyHeader size='small'>
+                        <TableHead>
+                          <TableRow>
+                            {['Sl No', '', 'Date', 'Invoice', 'Customer', 'Mobile'].map((h) => (
+                              <TableCell key={h} sx={{ fontWeight: 600, fontSize: '0.75rem', color: '#64748B', backgroundColor: '#F8FAFC' }}>
+                                {h}
                               </TableCell>
-                            </TableRow>
-                          )}
-                        </React.Fragment>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-
-            ) : (
-              <DataGrid
-                autoHeight
-                density='compact'
-                loading={loading}
-                rows={rows}
-                columns={columns}
-                getRowId={row => row.uniqueId || row.id || Math.random()}
-                getRowHeight={() => 32}
-                disableRowSelectionOnClick
-                pagination
-                pageSizeOptions={[10, 25, 50, 100]}
-                rowHeight={32}
-                columnHeaderHeight={38}
-                initialState={{
-                  pagination: { paginationModel: { pageSize: 25 } }
-                }}
-                sx={{
-                  border: 'none',
-                  '& .MuiDataGrid-columnHeaders': { backgroundColor: '#F8FAFC', borderBottom: '1px solid rgba(0,0,0,0.06)' },
-                  '& .MuiDataGrid-columnHeader': { py: 0 },
-                  '& .MuiDataGrid-columnHeaderTitle': { fontSize: '0.75rem', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px' },
-                  '& .MuiDataGrid-cell': {
-                    borderBottom: '1px solid rgba(0,0,0,0.04)',
-                    fontSize: '0.8125rem',
-                    paddingTop: '0 !important',
-                    paddingBottom: '0 !important',
-                    display: 'flex',
-                    alignItems: 'center',
-                    lineHeight: 1.2
-                  },
-                  '& .MuiDataGrid-row': { maxHeight: '32px !important', minHeight: '32px !important' },
-                  '& .MuiDataGrid-row:hover': { backgroundColor: 'rgba(82,63,153,0.02)' },
-                  '& .MuiDataGrid-virtualScrollerContent': { minHeight: '0 !important' },
-                  '& .MuiDataGrid-footerContainer': { minHeight: 40, borderTop: '1px solid rgba(0,0,0,0.04)' },
-                  '& .MuiTablePagination-root': { fontSize: '0.75rem' },
-                  '& .MuiTablePagination-toolbar': { minHeight: 40, paddingLeft: '8px', paddingRight: '8px' },
-                  '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': { fontSize: '0.75rem', margin: 0 },
-                  '& .MuiTablePagination-actions button': { padding: '4px' }
-                }}
-              />
-            )}
-
-            {/* Totals Section */}
-            {rows.length > 0 && Object.keys(totals).length > 0 && (
-              <Box sx={{ mt: 1.5, p: 1.5, backgroundColor: '#F8FAFC', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.06)' }}>
-                <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#1E293B', mb: 1, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                  Summary Totals
-                </Typography>
-                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(auto-fit, minmax(160px, 1fr))' }, gap: 1 }}>
-                  {Object.entries(totals).map(([key, value]) => {
-                    const column = getReportColumns(selectedReport, cashRevenueOption).find(col => col.field === key)
-
-                    return (
-                      <Box key={key} sx={{ px: 1.25, py: 1, backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.04)' }}>
-                        <Typography sx={{ fontSize: '0.625rem', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px', mb: 0.25, lineHeight: 1.2 }}>
-                          {column?.headerName || key}
-                        </Typography>
-                        <Typography sx={{ fontSize: '0.9375rem', fontWeight: 700, color: '#1E293B', lineHeight: 1.2 }}>
-                          {typeof value === 'number' ? value.toFixed(2) : value}
-                        </Typography>
-                      </Box>
-                    )
-                  })}
+                            ))}
+                            {['Total Qty', 'Total Tax', 'Discount', 'Net Amount'].map((h) => (
+                              <TableCell key={h} align='right' sx={{ fontWeight: 600, fontSize: '0.75rem', color: '#64748B', backgroundColor: '#F8FAFC' }}>
+                                {h}
+                              </TableCell>
+                            ))}
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {rows.map((row, idx) => (
+                            <React.Fragment key={row.uniqueId}>
+                              <TableRow hover>
+                                <TableCell sx={{ fontSize: '0.8125rem' }}>{idx + 1}</TableCell>
+                                <TableCell>
+                                  {row.children && row.children.length > 0 && (
+                                    <IconButton size='small' onClick={() => handleToggleDetailPanel(row.uniqueId)} sx={{ color: '#523F99' }}>
+                                      <Icon icon={expandedRows[row.uniqueId] ? 'mdi:chevron-up' : 'mdi:chevron-down'} />
+                                    </IconButton>
+                                  )}
+                                </TableCell>
+                                <TableCell sx={{ fontSize: '0.8125rem' }}>{row.entryDate}</TableCell>
+                                <TableCell sx={{ fontSize: '0.8125rem', fontWeight: 500 }}>{row.invoice}</TableCell>
+                                <TableCell sx={{ fontSize: '0.8125rem' }}>{row.cusName}</TableCell>
+                                <TableCell sx={{ fontSize: '0.8125rem' }}>{row.mobile}</TableCell>
+                                <TableCell align='right' sx={{ fontSize: '0.8125rem' }}>{row.totalQuantity}</TableCell>
+                                <TableCell align='right' sx={{ fontSize: '0.8125rem' }}>{row.totalTax}</TableCell>
+                                <TableCell align='right' sx={{ fontSize: '0.8125rem' }}>{row.totalDiscountAmount}</TableCell>
+                                <TableCell align='right' sx={{ fontSize: '0.8125rem', fontWeight: 600 }}>{row.totalNetAmount}</TableCell>
+                              </TableRow>
+                              {row.children && row.children.length > 0 && (
+                                <TableRow>
+                                  <TableCell colSpan={10} sx={{ p: 0, border: 0 }}>
+                                    <Collapse in={expandedRows[row.uniqueId]} timeout='auto' unmountOnExit>
+                                      <Box sx={{ p: 2, backgroundColor: '#FAFBFC' }}>{renderNestedTable(row.children)}</Box>
+                                    </Collapse>
+                                  </TableCell>
+                                </TableRow>
+                              )}
+                            </React.Fragment>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  ) : (
+                    <DataGrid
+                      autoHeight
+                      density='compact'
+                      loading={loading}
+                      rows={rows}
+                      columns={columns}
+                      getRowId={row => row.uniqueId || row.id || Math.random()}
+                      getRowHeight={() => 32}
+                      disableRowSelectionOnClick
+                      pagination
+                      pageSizeOptions={[25, 50, 100]}
+                      initialState={{ pagination: { paginationModel: { pageSize: 25 } } }}
+                      sx={{
+                        border: 'none',
+                        '& .MuiDataGrid-columnHeaders': { backgroundColor: '#F8FAFC' },
+                        '& .MuiDataGrid-cell': { borderBottom: '1px solid rgba(0,0,0,0.04)', fontSize: '0.8125rem' },
+                        '& .MuiDataGrid-row:hover': { backgroundColor: 'rgba(82,63,153,0.02)' }
+                      }}
+                    />
+                  )}
                 </Box>
-              </Box>
-            )}
-          </Box>
-          ) : (
-            /* Empty State - No report selected */
-            <Box sx={{ py: { xs: 5, sm: 8 }, px: { xs: 2, sm: 3 }, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
-              <Box sx={{ position: 'relative', mb: 4 }}>
-                <Box sx={{ width: 100, height: 100, borderRadius: '50%', backgroundColor: '#F0ECFA', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Box sx={{ width: 70, height: 70, borderRadius: '50%', backgroundColor: '#E4DDF5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <i className='tabler-report-analytics' style={{ fontSize: '2rem', color: '#523F99' }} />
-                  </Box>
-                </Box>
-                <Box sx={{ position: 'absolute', top: -6, right: -6, width: 14, height: 14, borderRadius: '50%', backgroundColor: '#523F99', opacity: 0.15 }} />
-                <Box sx={{ position: 'absolute', bottom: 2, left: -10, width: 10, height: 10, borderRadius: '50%', backgroundColor: '#10B981', opacity: 0.15 }} />
-              </Box>
-              <Typography sx={{ fontSize: '1.125rem', fontWeight: 700, color: '#1E293B', mb: 1 }}>Select a report to get started</Typography>
-              <Typography sx={{ fontSize: '0.875rem', color: '#94A3B8', textAlign: 'center', maxWidth: 340, lineHeight: 1.6 }}>
-                Choose a report category from the sidebar, then select a report type, set your date range, and click Generate Report.
-              </Typography>
-              <Box sx={{ display: 'flex', gap: 4, mt: 5, pt: 4, borderTop: '1px solid rgba(0,0,0,0.04)' }}>
-                {[
-                  { icon: 'tabler-coin-rupee', label: 'Revenue Reports', color: '#523F99' },
-                  { icon: 'tabler-credit-card', label: 'Card Reports', color: '#3B82F6' },
-                  { icon: 'tabler-chart-bar', label: 'Sales Reports', color: '#10B981' }
-                ].map((item) => (
-                  <Box key={item.label} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-                    <Box sx={{ width: 40, height: 40, borderRadius: '10px', backgroundColor: `${item.color}10`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <i className={item.icon} style={{ fontSize: '1.125rem', color: item.color }} />
+
+                {/* Totals Summary */}
+                {rows.length > 0 && Object.keys(totals).length > 0 && (
+                  <Box sx={{ mt: 2, p: 2, backgroundColor: '#F8FAFC', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.06)' }}>
+                    <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: '#1E293B', mb: 1.5, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      Summary Totals
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
+                      {Object.entries(totals).map(([key, value]) => {
+                        const column = getReportColumns(selectedReport, cashRevenueOption).find(col => col.field === key)
+
+                        return (
+                          <Box key={key} sx={{ px: 2, py: 1.25, backgroundColor: '#FFFFFF', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.04)', minWidth: 140 }}>
+                            <Typography sx={{ fontSize: '0.625rem', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', mb: 0.5 }}>
+                              {column?.headerName || key}
+                            </Typography>
+                            <Typography sx={{ fontSize: '1rem', fontWeight: 700, color: '#523F99' }}>
+                              {typeof value === 'number' ? value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : value}
+                            </Typography>
+                          </Box>
+                        )
+                      })}
                     </Box>
-                    <Typography sx={{ fontSize: '0.6875rem', fontWeight: 600, color: '#64748B' }}>{item.label}</Typography>
                   </Box>
-                ))}
+                )}
               </Box>
-            </Box>
-          )}
+            ) : (
+              /* Empty State */
+              <Box sx={{ py: 10, px: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
+                <Box sx={{ width: 80, height: 80, borderRadius: '50%', backgroundColor: '#F0ECFA', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 3 }}>
+                  <i className='tabler-report-analytics' style={{ fontSize: '2.5rem', color: '#523F99' }} />
+                </Box>
+                <Typography sx={{ fontSize: '1.25rem', fontWeight: 700, color: '#1E293B', mb: 1 }}>Report Center</Typography>
+                <Typography sx={{ fontSize: '0.875rem', color: '#94A3B8', textAlign: 'center', maxWidth: 400, lineHeight: 1.6 }}>
+                  Choose a report from the main menu to view analytics.
+                </Typography>
+              </Box>
+            )}
+          </div>
         </div>
       </div>
-
-      {/* Mobile Report Selector Drawer */}
-      <Drawer
-        anchor='bottom'
-        open={mobileDrawerOpen}
-        onClose={() => setMobileDrawerOpen(false)}
-        PaperProps={{
-          sx: {
-            maxHeight: '70vh',
-            borderTopLeftRadius: '16px',
-            borderTopRightRadius: '16px',
-            backgroundColor: '#FAFBFC'
-          }
-        }}
-      >
-        <Box sx={{ px: 2, pt: 2.5, pb: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Typography sx={{ fontSize: '0.875rem', fontWeight: 700, color: '#1E293B' }}>Select Report</Typography>
-          <IconButton size='small' onClick={() => setMobileDrawerOpen(false)} sx={{ color: '#64748B' }}>
-            <Icon icon='mdi:close' style={{ fontSize: '1.25rem' }} />
-          </IconButton>
-        </Box>
-        <Box sx={{ px: 1, pb: 3, overflow: 'auto' }}>
-          {reportCategories.map(category => {
-            const isExpanded = mobileExpandedCategories[category.label]
-
-            return (
-              <Box key={category.label}>
-                <Box
-                  onClick={() => toggleMobileCategory(category.label)}
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1.5,
-                    px: 1.5,
-                    py: 1.25,
-                    cursor: 'pointer',
-                    borderRadius: '10px',
-                    '&:hover': { backgroundColor: 'rgba(82,63,153,0.04)' },
-                    transition: 'all 0.15s ease'
-                  }}
-                >
-                  <Icon icon={category.icon} style={{ fontSize: '1.1rem', color: '#64748B' }} />
-                  <Typography sx={{ flex: 1, fontSize: '0.8125rem', fontWeight: 600, color: '#334155' }}>
-                    {category.label}
-                  </Typography>
-                  <Typography sx={{ fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 500, mr: 1 }}>
-                    {category.reports.length}
-                  </Typography>
-                  <Icon
-                    icon={isExpanded ? 'mdi:chevron-up' : 'mdi:chevron-down'}
-                    style={{ fontSize: '1rem', color: '#94A3B8' }}
-                  />
-                </Box>
-                <Collapse in={isExpanded}>
-                  <Box sx={{ ml: 1, mb: 0.5 }}>
-                    {category.reports.map(report => {
-                      const isActive = selectedReport === report.value
-
-                      return (
-                        <Box
-                          key={report.value}
-                          onClick={() => handleMobileSelectReport(report.value)}
-                          sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 1.5,
-                            px: 1.5,
-                            py: 1,
-                            ml: 2.5,
-                            cursor: 'pointer',
-                            borderRadius: '8px',
-                            backgroundColor: isActive ? 'rgba(82,63,153,0.08)' : 'transparent',
-                            '&:hover': { backgroundColor: isActive ? 'rgba(82,63,153,0.08)' : 'rgba(82,63,153,0.03)' },
-                            transition: 'all 0.15s ease'
-                          }}
-                        >
-                          <Box
-                            sx={{
-                              width: 6,
-                              height: 6,
-                              borderRadius: '50%',
-                              backgroundColor: isActive ? '#523F99' : '#CBD5E1',
-                              flexShrink: 0
-                            }}
-                          />
-                          <Typography sx={{ fontSize: '0.8125rem', fontWeight: isActive ? 600 : 400, color: isActive ? '#523F99' : '#475569' }}>
-                            {report.label}
-                          </Typography>
-                          {isActive && (
-                            <Icon icon='mdi:check' style={{ fontSize: '1rem', color: '#523F99', marginLeft: 'auto' }} />
-                          )}
-                        </Box>
-                      )
-                    })}
-                  </Box>
-                </Collapse>
-              </Box>
-            )
-          })}
-        </Box>
-      </Drawer>
     </LocalizationProvider>
   )
 }
