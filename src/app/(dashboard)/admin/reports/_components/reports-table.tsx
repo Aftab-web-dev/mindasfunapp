@@ -124,6 +124,14 @@ const ReportsTable = () => {
     return `${dd}-${mm}-${yyyy}`
   }
 
+  const formatDateForApi = (date: Date) => {
+    const yyyy = date.getFullYear()
+    const mm = String(date.getMonth() + 1).padStart(2, '0')
+    const dd = String(date.getDate()).padStart(2, '0')
+
+    return `${yyyy}-${mm}-${dd}`
+  }
+
   const activeMainCategoryData = reportCategories.find(
     c => (c.label.toLowerCase() === 'f&b' ? 'fb' : 'games') === mainCategory
   )
@@ -157,8 +165,8 @@ const ReportsTable = () => {
       const branchId = storedUserData?.branchId.toString()
 
       const params = {
-        fTime: formatDate(startDate),
-        tTime: formatDate(endDate),
+        fTime: formatDateForApi(startDate),
+        tTime: formatDateForApi(endDate),
         branchId
       }
 
@@ -261,7 +269,7 @@ const ReportsTable = () => {
       } else if (selectedReport === 'salesVoidReport') {
         response = await reportsApi.salesVoidReport(params)
       } else if (selectedReport === 'thirdPartyCardTransReport') {
-        response = await reportsApi.thirdPartyCardTransReport({ fTime: formatDate(startDate), tTime: formatDate(endDate), status: 1 })
+        response = await reportsApi.thirdPartyCardTransReport({ fTime: formatDateForApi(startDate), tTime: formatDateForApi(endDate), status: 1 })
 
       } else {
         throw new Error('Invalid report type')
