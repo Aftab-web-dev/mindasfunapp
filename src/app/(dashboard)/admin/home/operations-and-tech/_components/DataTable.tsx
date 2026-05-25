@@ -105,7 +105,7 @@ const DataTable = ({ maintenanceData, title }: { maintenanceData: MaintenanceRow
                   key={col}
                   style={{
                     textAlign: 'left',
-                    paddingBottom: '16px',
+                    padding: '6px 12px 6px 0',
                     fontSize: '0.8125rem',
                     fontWeight: 500,
                     color: '#94A3B8',
@@ -126,19 +126,19 @@ const DataTable = ({ maintenanceData, title }: { maintenanceData: MaintenanceRow
                   borderTop: '1px solid #F1F5F9',
                 }}
               >
-                <td style={{ padding: '14px 12px 14px 0', fontSize: '0.8125rem', fontWeight: 500, color: '#1E293B', whiteSpace: 'nowrap' }}>
+                <td style={{ padding: '4px 12px 4px 0', fontSize: '0.8125rem', fontWeight: 500, color: '#1E293B', whiteSpace: 'nowrap' }}>
                   {row.equipment}
                 </td>
-                <td style={{ padding: '14px 12px', fontSize: '0.8125rem', color: '#64748B', whiteSpace: 'nowrap' }}>
+                <td style={{ padding: '4px 12px', fontSize: '0.8125rem', color: '#64748B', whiteSpace: 'nowrap' }}>
                   {row.issue}
                 </td>
-                <td style={{ padding: '14px 12px', fontSize: '0.8125rem', color: '#64748B', whiteSpace: 'nowrap' }}>
+                <td style={{ padding: '4px 12px', fontSize: '0.8125rem', color: '#64748B', whiteSpace: 'nowrap' }}>
                   {row.technician}
                 </td>
-                <td style={{ padding: '14px 12px', fontSize: '0.8125rem', color: '#64748B', whiteSpace: 'nowrap' }}>
+                <td style={{ padding: '4px 12px', fontSize: '0.8125rem', color: '#64748B', whiteSpace: 'nowrap' }}>
                   {row.eta}
                 </td>
-                <td style={{ padding: '14px 0 14px 12px' }}>
+                <td style={{ padding: '4px 0 4px 12px' }}>
                   <StatusSelect key={`${row.equipment}-${row.status.label}`} initial={row.status.label} />
                 </td>
               </tr>

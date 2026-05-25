@@ -22,19 +22,19 @@ const steps = ['', '', '']
 const customerFormSchema = z.object({
   ledgerName: z.string().min(1, 'Name is required'),
   mobile: z.string().nonempty('Phone Number is required').min(10, 'Phone must be at least 10 characters'),
-  emailId: z.string().email('Invalid email address').optional(),
+  emailId: z.string().email('Invalid email address').or(z.literal('')).optional(),
   dob: z.date({
     required_error: 'Birth Date is required',
     invalid_type_error: 'Invalid date format'
   }),
   age: z.string().min(1, 'Age is required'),
-  gender: z.number().optional(),
+  gender: z.coerce.number().min(1, 'Gender is required'),
   address: z.string().min(1, 'Address is required'),
   zipCode: z.string().min(1, 'Zip Code is required'),
-  country: z.number().min(1, 'Country is required'),
-  state: z.number().min(1, 'State is required'),
-  city: z.number().min(1, 'City is required'),
-  proof: z.number().min(1, 'Proof is required'),
+  country: z.coerce.number().min(1, 'Country is required'),
+  state: z.coerce.number().min(1, 'State is required'),
+  city: z.coerce.number().min(1, 'City is required'),
+  proof: z.coerce.number().min(1, 'Proof is required'),
   proofId: z.string().min(1, 'Proof Id is required'),
   occupation: z.string().optional(),
   institute: z.string().optional(),
@@ -55,9 +55,29 @@ const CustomerAdd = () => {
     handleSubmit,
     formState: { errors, isLoading, isSubmitting },
     watch,
-    trigger
+    trigger,
+    setValue
   } = useForm<CustomerFormValues>({
-    resolver: zodResolver(customerFormSchema)
+    resolver: zodResolver(customerFormSchema),
+    defaultValues: {
+      ledgerName: '',
+      mobile: '',
+      emailId: '',
+      dob: undefined,
+      age: '',
+      gender: undefined,
+      address: '',
+      zipCode: '',
+      country: undefined,
+      state: undefined,
+      city: undefined,
+      proof: undefined,
+      proofId: '',
+      occupation: '',
+      institute: '',
+      emergencyNo: '',
+      remark: ''
+    }
   })
 
   const router = useRouter()
@@ -181,7 +201,24 @@ const CustomerAdd = () => {
   const onSubmit = async (data: CustomerFormValues) => {
     try {
       const body = {
-        ...data,
+        ledgerId: 0,
+        ledgerName: data.ledgerName,
+        mobile: data.mobile,
+        emailId: data.emailId || '',
+        dob: data.dob,
+        age: Number(data.age),
+        gender: Number(data.gender),
+        country: Number(data.country),
+        state: Number(data.state),
+        city: Number(data.city),
+        address: data.address,
+        zipCode: Number(data.zipCode),
+        emergencyNo: data.emergencyNo || '',
+        proof: Number(data.proof),
+        proofId: data.proofId,
+        occupation: data.occupation || '',
+        institute: data.institute || '',
+        remark: data.remark || '',
         status: 1
       }
 
@@ -192,7 +229,26 @@ const CustomerAdd = () => {
         router.push('/admin/customers')
       }
     } catch (error) {
-      toast.error('Error')
+      console.error('Submit customer error:', error)
+      const axiosError = error as any
+      let message = 'Error'
+      const responseData = axiosError.response?.data
+      if (responseData) {
+        if (responseData.errors && typeof responseData.errors === 'object') {
+          message = Object.entries(responseData.errors)
+            .map(([field, msgs]) => `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
+            .join(' | ')
+        } else if (responseData.Errors && typeof responseData.Errors === 'object') {
+          message = Object.entries(responseData.Errors)
+            .map(([field, msgs]) => `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
+            .join(' | ')
+        } else {
+          message = responseData.message || responseData.Message || axiosError.message || 'Error'
+        }
+      } else {
+        message = axiosError.message || 'Error'
+      }
+      toast.error(message, { duration: 6000 })
     }
   }
 
@@ -283,10 +339,25 @@ const CustomerAdd = () => {
                     <AppReactDatepicker
                       showYearDropdown
                       showMonthDropdown
+                      scrollableYearDropdown
+                      yearDropdownItemNumber={120}
                       className='w-full'
                       dateFormat='dd/MM/yyyy'
                       selected={field.value}
-                      onChange={field.onChange}
+                      onChange={val => {
+                        field.onChange(val)
+                        if (val) {
+                          const today = new Date()
+                          let calculatedAge = today.getFullYear() - val.getFullYear()
+                          const monthDiff = today.getMonth() - val.getMonth()
+                          if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < val.getDate())) {
+                            calculatedAge--
+                          }
+                          setValue('age', calculatedAge.toString(), { shouldValidate: true })
+                        } else {
+                          setValue('age', '', { shouldValidate: true })
+                        }
+                      }}
                       placeholderText='DD/MM/YYYY'
                       customInput={
                         <TextField

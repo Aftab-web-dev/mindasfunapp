@@ -110,12 +110,19 @@ const VerticalMenu = ({ scrollMenu }: Props) => {
         </SubMenu>
         <SubMenu label='Reports' icon={<i className='tabler-file-text' />}>
           {reportCategories.map(category => (
-            <SubMenu key={category.label} label={category.label}>
-              {category.reports.map(report => (
-                <MenuItem key={report.value} href={`/admin/reports?type=${report.value}`}>
-                  {report.label}
+            <SubMenu key={category.label} label={category.label} icon={<i className={category.icon} style={{ fontSize: '1.25rem' }} />}>
+              {category.subCategories && category.subCategories.length > 0 ? (
+                category.subCategories.map(subCategory => (
+                  <MenuItem key={subCategory.label} href={`/admin/reports?subcategory=${encodeURIComponent(subCategory.label)}`}>
+                    {subCategory.label}
+                  </MenuItem>
+                ))
+              ) : (
+                /* Fallback or empty state if no subcategories exist */
+                <MenuItem disabled href='#'>
+                  No reports available
                 </MenuItem>
-              ))}
+              )}
             </SubMenu>
           ))}
         </SubMenu>

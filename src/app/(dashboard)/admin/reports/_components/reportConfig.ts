@@ -13,139 +13,159 @@ export interface ReportType {
   label: string
 }
 
-export interface ReportCategory {
+export interface ReportSubCategory {
   label: string
   icon: string
   reports: ReportType[]
 }
 
+export interface ReportCategory {
+  label: string
+  icon: string
+  subCategories?: ReportSubCategory[]
+  reports?: ReportType[]
+}
+
 export const reportCategories: ReportCategory[] = [
   {
-    label: 'POS Revenue Report',
-    icon: 'tabler-coin-rupee',
-    reports: [
-      { value: 'cardConsolidateReport', label: 'Card Consolidate Report' },
-      { value: 'cardLiabilityReport', label: 'Card Liability Report' },
-      { value: 'cardVoidReport', label: 'Card Void Report' },
-      { value: 'cardSummaryReport', label: 'Card Summary Report' },
-      { value: 'cardSummaryInDetailedReport', label: 'Card Summary In Detailed' },
-      { value: 'cardTransferReport', label: 'Card Transfer Report' },
-      { value: 'cashRevenueReport', label: 'Cash Revenue Report' },
-      { value: 'clearCardReport', label: 'Clear Card Report' },
-      { value: 'consolidateReport', label: 'Consolidate Report' },
-      { value: 'customerTrafficReport', label: 'Customer Traffic Report' },
-      { value: 'rechargeReport', label: 'Recharge Report' },
-      { value: 'drawerAccessReport', label: 'Drawer Access Report' },
-      { value: 'rechargeRevenueReport', label: 'Recharge Revenue Report' },
-      { value: 'refundReport', label: 'Refund Report' },
-      { value: 'requestPointReport', label: 'Request Point Report' },
-      { value: 'thirdPartyCardTransReport', label: 'Third Party Card Trans' },
+    label: 'Games',
+    icon: 'tabler-device-gamepad-2',
+    subCategories: [
+      {
+        label: 'POS Revenue Report',
+        icon: 'tabler-coin-rupee',
+        reports: [
+          { value: 'cardConsolidateReport', label: 'Card Consolidate Report' },
+          { value: 'cardLiabilityReport', label: 'Card Liability Report' },
+          { value: 'cardVoidReport', label: 'Card Void Report' },
+          { value: 'cardSummaryReport', label: 'Card Summary Report' },
+          { value: 'cashRevenueReport', label: 'Cash Revenue Report' },
+          { value: 'clearCardReport', label: 'Clear Card Report' },
+          { value: 'customerTrafficReport', label: 'Customer Traffic Report' },
+          { value: 'rechargeReport', label: 'Recharge Report' },
+          { value: 'drawerAccessReport', label: 'Drawer Access Report' },
+          { value: 'rechargeRevenueReport', label: 'Recharge Revenue Report' },
+          { value: 'refundReport', label: 'Refund Report' },
+          { value: 'requestPointReport', label: 'Request Point Report' },
+          { value: 'thirdPartyCardTransReport', label: 'Third Party Card Trans' },
+        ]
+      },
+      {
+        label: 'Advance POS Report',
+        icon: 'tabler-device-analytics',
+        reports: [
+          { value: 'creditCardActivityReport', label: 'Credit Card Activity Report' },
+          { value: 'memberActivityReport', label: 'Member Activity Report' },
+          { value: 'salesComplementaryReport', label: 'Sales Complementary Report' },
+          { value: 'salesComplementaryDetailReport', label: 'Sales Complementary Detail' },
+          { value: 'salesReport', label: 'Sales Report' },
+          { value: 'salesDetailsReport', label: 'Sales Detail Report' },
+        ]
+      },
+      {
+        label: 'Game Revenue Reports',
+        icon: 'tabler-player-play',
+        reports: [
+          { value: 'detailedEmployeeGamePlayReport', label: 'Detailed Employee Gameplay' },
+          { value: 'gameRevenueReport', label: 'Game Revenue Report' },
+          { value: 'topPlayedGameReport', label: 'Top Played Game Report' },
+        ]
+      },
+      {
+        label: 'Redemption Report',
+        icon: 'tabler-gift',
+        reports: [
+          { value: 'redemptionComplementaryReport', label: 'Redemption Complementary' },
+          { value: 'redemptionRedeemReport', label: 'Redemption Redeem Report' },
+          { value: 'redemptionDamagedProductsReport', label: 'Redemption Damaged Products' },
+          { value: 'inventoryReport', label: 'Inventory Report' },
+          { value: 'redemptionSalesReportNew', label: 'Redemption Sales Report' },
+        ]
+      },
+      {
+        label: 'Party Booking Report',
+        icon: 'tabler-calendar-event',
+        reports: [
+          { value: 'partyPackListReport', label: 'Party Pack List Report' },
+          { value: 'partyBookingReport', label: 'Party Booking Report' },
+          { value: 'partyBookingDetailReport', label: 'Party Booking Detail Report' },
+          { value: 'partyBookingPaymentDetailsReport', label: 'Party Booking Payment Details' },
+        ]
+      },
+      {
+        label: 'Employee Related',
+        icon: 'tabler-badge',
+        reports: [
+          { value: 'employeeListReport', label: 'Employee List Report' },
+          { value: 'employeePaymentAdjustments', label: 'Employee Payment Adjustments' },
+        ]
+      },
+      {
+        label: 'Purchase Report',
+        icon: 'tabler-truck',
+        reports: [
+          { value: 'purchaseReport', label: 'Purchase Report' },
+          { value: 'purchaseReturnReport', label: 'Purchase Return Report' },
+        ]
+      },
+      {
+        label: 'Inventory Report',
+        icon: 'tabler-package',
+        reports: [
+          { value: 'qtyAdjustmentReport', label: 'Qty Adjustment Report' },
+          { value: 'reorderReport', label: 'Reorder Report' },
+        ]
+      },
+      {
+        label: 'Customer Service Report',
+        icon: 'tabler-users',
+        reports: [
+          { value: 'newCardCountReport', label: 'New Card Count Report' },
+          { value: 'newCustomerRegisterReport', label: 'New Customer Register Report' },
+        ]
+      },
+      {
+        label: 'Membership Report',
+        icon: 'tabler-award',
+        reports: [
+          { value: 'membershipReport', label: 'Membership Report' },
+        ]
+      },
+      {
+        label: 'Offer And Promotions',
+        icon: 'tabler-tag',
+        reports: [
+          { value: 'happyHourReport', label: 'Happy Hour Report' },
+          { value: 'offersListReport', label: 'Offers List Report' },
+        ]
+      },
+      {
+        label: 'Other Sales',
+        icon: 'tabler-chart-dots',
+        reports: [
+          { value: 'familyCardReport', label: 'Family Card Report' },
+          { value: 'groupSaleReport', label: 'Group Sale Report' },
+          { value: 'salesReturnReport', label: 'Sales Return Report' },
+          { value: 'salesVoidReport', label: 'Sales Void Report' },
+        ]
+      },
     ]
   },
   {
-    label: 'Advance POS Report',
-    icon: 'tabler-device-analytics',
-    reports: [
-      { value: 'creditCardActivityReport', label: 'Credit Card Activity Report' },
-      { value: 'memberActivityReport', label: 'Member Activity Report' },
-      { value: 'salesComplementaryReport', label: 'Sales Complementary Report' },
-      { value: 'salesComplementaryDetailReport', label: 'Sales Complementary Detail' },
-      { value: 'salesReport', label: 'Sales Report' },
-      { value: 'salesDetailsReport', label: 'Sales Detail Report' },
+    label: 'F&B',
+    icon: 'tabler-tools-kitchen-2',
+    subCategories: [
+      {
+        label: 'F&B Reports',
+        icon: 'tabler-soup',
+        reports: [
+          { value: 'cashRevenueReport', label: 'F&B Cash Revenue Report' },
+          { value: 'salesReport', label: 'Sales Master Reports' },
+          { value: 'salesDetailsReport', label: 'Sales Details Reports' }
+        ]
+      }
     ]
-  },
-  {
-    label: 'Game Revenue Reports',
-    icon: 'tabler-player-play',
-    reports: [
-      { value: 'annualGameRevenueReport', label: 'Annual Game Revenue Report' },
-      { value: 'detailedGameRevenueReport', label: 'Detailed Game Revenue' },
-      { value: 'detailedEmployeeGamePlayReport', label: 'Detailed Employee Gameplay' },
-      { value: 'employeeGamePlayReport', label: 'Employee Game Play Report' },
-      { value: 'gameDetailsListReport', label: 'Game Details List Report' },
-      { value: 'gameRevenueReport', label: 'Game Revenue Report' },
-      { value: 'topPlayedGameReport', label: 'Top Played Game Report' },
-      { value: 'topPlayerReport', label: 'Top Player Report' },
-    ]
-  },
-  {
-    label: 'Redemption Report',
-    icon: 'tabler-gift',
-    reports: [
-      { value: 'redemptionComplementaryReport', label: 'Redemption Complementary' },
-      { value: 'redemptionRedeemReport', label: 'Redemption Redeem Report' },
-      { value: 'redemptionDamagedProductsReport', label: 'Redemption Damaged Products' },
-      { value: 'inventoryReport', label: 'Inventory Report' },
-      { value: 'redemptionSalesReportNew', label: 'Redemption Sales Report' },
-    ]
-  },
-  {
-    label: 'Party Booking Report',
-    icon: 'tabler-calendar-event',
-    reports: [
-      { value: 'partyPackListReport', label: 'Party Pack List Report' },
-      { value: 'partyBookingReport', label: 'Party Booking Report' },
-      { value: 'partyBookingDetailReport', label: 'Party Booking Detail Report' },
-      { value: 'partyBookingPaymentDetailsReport', label: 'Party Booking Payment Details' },
-    ]
-  },
-  {
-    label: 'Employee Related',
-    icon: 'tabler-badge',
-    reports: [
-      { value: 'employeeListReport', label: 'Employee List Report' },
-      { value: 'employeePaymentAdjustments', label: 'Employee Payment Adjustments' },
-    ]
-  },
-  {
-    label: 'Purchase Report',
-    icon: 'tabler-truck',
-    reports: [
-      { value: 'purchaseReport', label: 'Purchase Report' },
-      { value: 'purchaseReturnReport', label: 'Purchase Return Report' },
-    ]
-  },
-  {
-    label: 'Inventory Report',
-    icon: 'tabler-package',
-    reports: [
-      { value: 'qtyAdjustmentReport', label: 'Qty Adjustment Report' },
-      { value: 'reorderReport', label: 'Reorder Report' },
-    ]
-  },
-  {
-    label: 'Customer Service Report',
-    icon: 'tabler-users',
-    reports: [
-      { value: 'newCardCountReport', label: 'New Card Count Report' },
-      { value: 'newCustomerRegisterReport', label: 'New Customer Register Report' },
-    ]
-  },
-  {
-    label: 'Membership Report',
-    icon: 'tabler-award',
-    reports: [
-      { value: 'membershipReport', label: 'Membership Report' },
-    ]
-  },
-  {
-    label: 'Offer And Promotions',
-    icon: 'tabler-tag',
-    reports: [
-      { value: 'happyHourReport', label: 'Happy Hour Report' },
-      { value: 'offersListReport', label: 'Offers List Report' },
-    ]
-  },
-  {
-    label: 'Other Sales',
-    icon: 'tabler-chart-dots',
-    reports: [
-      { value: 'familyCardReport', label: 'Family Card Report' },
-      { value: 'groupSaleReport', label: 'Group Sale Report' },
-      { value: 'salesReturnReport', label: 'Sales Return Report' },
-      { value: 'salesVoidReport', label: 'Sales Void Report' },
-    ]
-  },
+  }
 ]
 
 
@@ -194,23 +214,6 @@ const reportColumns: Record<string, ReportColumn[]> = {
     { field: 'status', headerName: 'Status', flex: 0.1, minWidth: 100 },
     { field: 'lastUsedOn', headerName: 'Last Used On', flex: 0.15, minWidth: 150 },
   ],
-  cardSummaryInDetailedReport: [
-    { field: 'entryDate', headerName: 'Date', flex: 0.12, minWidth: 120 },
-    { field: 'iCardNo', headerName: 'Card No', flex: 0.12, minWidth: 120 },
-    { field: 'customerName', headerName: 'Customer', flex: 0.15, minWidth: 150 },
-    { field: 'actionType', headerName: 'Action', flex: 0.12, minWidth: 120 },
-    { field: 'amount', headerName: 'Amount', flex: 0.1, minWidth: 100, type: 'number' },
-    { field: 'balanceBefore', headerName: 'Before', flex: 0.1, minWidth: 100, type: 'number' },
-    { field: 'balanceAfter', headerName: 'After', flex: 0.1, minWidth: 100, type: 'number' },
-    { field: 'location', headerName: 'Location', flex: 0.15, minWidth: 130 },
-  ],
-  cardTransferReport: [
-    { field: 'entryDate', headerName: 'Date', flex: 0.12, minWidth: 120 },
-    { field: 'fromCard', headerName: 'From Card', flex: 0.15, minWidth: 130 },
-    { field: 'toCard', headerName: 'To Card', flex: 0.15, minWidth: 130 },
-    { field: 'amount', headerName: 'Amount', flex: 0.1, minWidth: 100, type: 'number' },
-    { field: 'transferBy', headerName: 'Transfer By', flex: 0.15, minWidth: 130 },
-  ],
   cashRevenueReportNormal: [
     { field: 'entryDate', headerName: 'Date', flex: 0.15, minWidth: 120 },
     { field: 'creditcard', headerName: 'Credit Card', flex: 0.12, minWidth: 120, type: 'number' },
@@ -238,12 +241,6 @@ const reportColumns: Record<string, ReportColumn[]> = {
     { field: 'icard', headerName: 'Card No', flex: 0.15, minWidth: 130 },
     { field: 'customerName', headerName: 'Name', flex: 0.15, minWidth: 140 },
     { field: 'mobile', headerName: 'Mobile Number', flex: 0.12, minWidth: 130 },
-  ],
-  consolidateReport: [
-    { field: 'entryDate', headerName: 'Date', flex: 0.12, minWidth: 120 },
-    { field: 'description', headerName: 'Description', flex: 0.2, minWidth: 150 },
-    { field: 'count', headerName: 'Count', flex: 0.1, minWidth: 100, type: 'number' },
-    { field: 'amount', headerName: 'Amount', flex: 0.12, minWidth: 120, type: 'number' },
   ],
   customerTrafficReport: [
     { field: 'entryDate', headerName: 'Date', flex: 0.15, minWidth: 120 },
@@ -353,18 +350,6 @@ const reportColumns: Record<string, ReportColumn[]> = {
     { field: 'totalDiscountAmount', headerName: 'Discount', flex: 0.1, minWidth: 100, type: 'number' },
     { field: 'totalNetAmount', headerName: 'Net Amount', flex: 0.12, minWidth: 120, type: 'number' }
   ],
-  annualGameRevenueReport: [
-    { field: 'year', headerName: 'Year', flex: 0.12, minWidth: 100 },
-    { field: 'game', headerName: 'Game', flex: 0.2, minWidth: 150 },
-    { field: 'totalAmount', headerName: 'Total Amount', flex: 0.15, minWidth: 130, type: 'number' },
-  ],
-  detailedGameRevenueReport: [
-    { field: 'entryDate', headerName: 'Date', flex: 0.12, minWidth: 120 },
-    { field: 'game', headerName: 'Game', flex: 0.2, minWidth: 150 },
-    { field: 'iCardNo', headerName: 'Card No', flex: 0.15, minWidth: 130 },
-    { field: 'amount', headerName: 'Amount', flex: 0.12, minWidth: 110, type: 'number' },
-    { field: 'type', headerName: 'Type', flex: 0.12, minWidth: 110 },
-  ],
   detailedEmployeeGamePlayReport: [
     { field: 'entryDate', headerName: 'Date', flex: 0.12, minWidth: 120 },
     { field: 'employeeName', headerName: 'Employee Name', flex: 0.2, minWidth: 150 },
@@ -372,19 +357,6 @@ const reportColumns: Record<string, ReportColumn[]> = {
     { field: 'game', headerName: 'Game', flex: 0.15, minWidth: 130 },
     { field: 'noOfPlayed', headerName: 'Times Played', flex: 0.12, minWidth: 110, type: 'number' },
     { field: 'amount', headerName: 'Amount', flex: 0.12, minWidth: 110, type: 'number' },
-  ],
-  employeeGamePlayReport: [
-    { field: 'employeeName', headerName: 'Employee Name', flex: 0.3, minWidth: 180 },
-    { field: 'iCardNo', headerName: 'Card No', flex: 0.25, minWidth: 150 },
-    { field: 'game', headerName: 'Game', flex: 0.25, minWidth: 150 },
-    { field: 'noOfPlayed', headerName: 'Times Played', flex: 0.2, minWidth: 130, type: 'number' }
-  ],
-  gameDetailsListReport: [
-    { field: 'gameCode', headerName: 'Game Code', flex: 0.15, minWidth: 120 },
-    { field: 'gameName', headerName: 'Game Name', flex: 0.2, minWidth: 150 },
-    { field: 'category', headerName: 'Category', flex: 0.15, minWidth: 130 },
-    { field: 'macId', headerName: 'Mac Id', flex: 0.15, minWidth: 130 },
-    { field: 'status', headerName: 'Status', flex: 0.12, minWidth: 100 },
   ],
   gameRevenueReport: [
     { field: 'game', headerName: 'Game', flex: 0.25, minWidth: 150 },
@@ -400,13 +372,6 @@ const reportColumns: Record<string, ReportColumn[]> = {
     { field: 'playCount', headerName: 'Play Count', flex: 0.15, minWidth: 130 },
     { field: 'amount', headerName: 'Amount', flex: 0.15, minWidth: 140, type: 'number' },
     { field: 'macId', headerName: 'Mac Id', flex: 0.12, minWidth: 130 },
-  ],
-  topPlayerReport: [
-    { field: 'rank', headerName: 'Rank', flex: 0.1, minWidth: 80, type: 'number' },
-    { field: 'customerName', headerName: 'Customer Name', flex: 0.2, minWidth: 150 },
-    { field: 'iCardNo', headerName: 'Card No', flex: 0.15, minWidth: 130 },
-    { field: 'playCount', headerName: 'Play Count', flex: 0.15, minWidth: 120, type: 'number' },
-    { field: 'totalAmount', headerName: 'Total Amount', flex: 0.15, minWidth: 130, type: 'number' },
   ],
   redemptionComplementaryReport: [
     { field: 'entryDate', headerName: 'Date', flex: 0.12, minWidth: 120 },

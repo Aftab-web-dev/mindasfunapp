@@ -77,15 +77,6 @@ export const reportsApi = {
 
         return response.data
     },
-    employeeGamePlayReport: async (params: params) => {
-        const { fTime, tTime, branchId } = params
-
-        const queryParams = `fTime=${fTime}&tTime=${tTime}&BranchId=${branchId}`
-
-        const response = await axiosConfig.post(`Report/EmployeeGamePlayReport?${queryParams}`)
-
-        return response.data
-    },
     cardLiabilityReport: async (params: params) => {
         const { fTime, tTime, branchId } = params
 
@@ -110,15 +101,6 @@ export const reportsApi = {
         const queryParams = `fTime=${fTime}&tTime=${tTime}&BranchId=${branchId}`
 
         const response = await axiosConfig.post(`Report/CardConsolidateReport?${queryParams}`)
-
-        return response.data
-    },
-    cardTransferReport: async (params: params) => {
-        const { fTime, tTime, branchId } = params
-
-        const queryParams = `fTime=${fTime}&tTime=${tTime}&BranchId=${branchId}`
-
-        const response = await axiosConfig.post(`Report/CardTransferReport?${queryParams}`)
 
         return response.data
     },
@@ -368,40 +350,5 @@ export const reportsApi = {
 
         return response.data
     },
-    consolidateReport: async (params: params) => {
-        const { fTime, tTime, branchId } = params
-        const queryParams = `fTime=${fTime}&tTime=${tTime}&BranchId=${branchId}`
-        const response = await axiosConfig.post(`Report/ConsolidateReport?${queryParams}`)
-        return response.data
-    },
-    cardSummaryInDetailedReport: async (params: params) => {
-        const { fTime, tTime, branchId } = params
-        const queryParams = `fTime=${fTime}&tTime=${tTime}&BranchId=${branchId}`
-        const response = await axiosConfig.post(`Report/CardSummaryInDetailedReport?${queryParams}`)
-        return response.data
-    },
-    annualGameRevenueReport: async (params: params) => {
-        const { fTime, tTime, branchId } = params
-        const queryParams = `fTime=${fTime}&tTime=${tTime}&BranchId=${branchId}`
-        const response = await axiosConfig.post(`Report/AnnualGameRevenueReport?${queryParams}`)
-        return response.data
-    },
-    detailedGameRevenueReport: async (params: params) => {
-        const { fTime, tTime, branchId } = params
-        const queryParams = `fTime=${fTime}&tTime=${tTime}&BranchId=${branchId}`
-        const response = await axiosConfig.post(`Report/DetailedGameRevenueReport?${queryParams}`)
-        return response.data
-    },
-    gameDetailsListReport: async (params: params) => {
-        const { fTime, tTime, branchId } = params
-        const queryParams = `fTime=${fTime}&tTime=${tTime}&BranchId=${branchId}`
-        const response = await axiosConfig.post(`Report/GameDetailsListReport?${queryParams}`)
-        return response.data
-    },
-    topPlayerReport: async (params: params) => {
-        const { fTime, tTime, branchId } = params
-        const queryParams = `fTime=${fTime}&tTime=${tTime}&BranchId=${branchId}`
-        const response = await axiosConfig.post(`Report/TopPlayerReport?${queryParams}`)
-        return response.data
-    },
+
     }

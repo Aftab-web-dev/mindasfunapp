@@ -79,15 +79,35 @@ const WaiverTable = () => {
     }
   }
 
-  const handleStatusChange = async (id: string, active: number) => {
-    try {
-      const user = getUser()
-      const changeStatus = active === 1 ? 0 : 1
+  const isRowActive = (row: any) => {
+    return row.active === 1 || row.active === true || String(row.active) === '1'
+  }
 
+  const handleStatusChange = async (id: any, active: any) => {
+    const user = getUser()
+    
+    // Support boolean, numeric (1/0), and string ('1'/'0') formats of the active status
+    const isActive = active === 1 || active === true || String(active) === '1'
+    const changeStatus = isActive ? 0 : 1
+    const previousRows = [...rows]
+
+    // Optimistically update the UI status immediately
+    setRows(prevRows =>
+      prevRows.map(row => {
+        if (String(row.waverId) === String(id)) {
+          const updatedActive = typeof row.active === 'boolean' ? !isActive : changeStatus
+          return { ...row, active: updatedActive }
+        }
+        return row
+      })
+    )
+
+    try {
       await waiverApi.statusChange({ id: Number(id), modifiedBy: user?.employeeId, active: changeStatus })
       toast.success('Updated Successfully')
-      fetchTableData()
     } catch (err) {
+      // Rollback on error
+      setRows(previousRows)
       toast.error((err as any).response?.data?.message || 'Something went wrong')
     }
   }
@@ -285,7 +305,7 @@ const WaiverTable = () => {
                     width: 44,
                     height: 44,
                     borderRadius: '12px',
-                    background: row.active
+                    background: isRowActive(row)
                       ? 'linear-gradient(135deg, rgba(82,63,153,0.12), rgba(82,63,153,0.06))'
                       : '#F1F5F9',
                     display: 'flex',
@@ -294,7 +314,7 @@ const WaiverTable = () => {
                     flexShrink: 0,
                   }}
                 >
-                  <i className='tabler-file-check' style={{ fontSize: '1.25rem', color: row.active ? '#523F99' : '#94A3B8' }} />
+                  <i className='tabler-file-check' style={{ fontSize: '1.25rem', color: isRowActive(row) ? '#523F99' : '#94A3B8' }} />
                 </Box>
 
                 {/* Title + subtitle */}
@@ -314,7 +334,7 @@ const WaiverTable = () => {
                     width: 48,
                     height: 28,
                     borderRadius: 14,
-                    backgroundColor: row.active ? '#059669' : '#E2E8F0',
+                    backgroundColor: isRowActive(row) ? '#059669' : '#E2E8F0',
                     position: 'relative',
                     cursor: 'pointer',
                     transition: 'background-color 0.25s ease',
@@ -330,7 +350,7 @@ const WaiverTable = () => {
                       boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
                       position: 'absolute',
                       top: 3,
-                      left: row.active ? 23 : 3,
+                      left: isRowActive(row) ? 23 : 3,
                       transition: 'left 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
                     }}
                   />

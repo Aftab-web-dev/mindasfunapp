@@ -63,11 +63,12 @@ export const waiverApi = {
         return await axiosConfig.post(`Waiver/WaiverCheckIn?${queryParams}`)
     },
 
-    exportCheckInHistory: async ({ waiverId, from, to }: { waiverId: number | string, from: string, to: string }) => {
-        const queryParams = `WaverId=${waiverId}&from=${from}&to=${to}`
+    exportCheckInHistory: async ({ waiverId, from, to, branchId }: { waiverId: number | string, from: string, to: string, branchId?: string }) => {
+        const queryParams = `WaverId=${waiverId}&WaiverId=${waiverId}&from=${from}&to=${to}${branchId ? `&BranchId=${branchId}` : ''}`
 
         return await axiosConfig.post(`Waiver/ExportCusWaiver?${queryParams}`, null, {
             responseType: 'blob'
         })
     }
 }
+

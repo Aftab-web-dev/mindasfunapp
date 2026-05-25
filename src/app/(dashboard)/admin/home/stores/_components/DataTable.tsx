@@ -65,8 +65,7 @@ const DataTable = ({ statusData, title }: { statusData: StatusRow[]; title: stri
                   key={col}
                   style={{
                     textAlign: 'left',
-                    paddingBottom: '16px',
-                    paddingLeft: '12px',
+                    padding: '6px 12px',
                     fontSize: '0.8125rem',
                     fontWeight: 500,
                     color: '#94A3B8',
@@ -85,19 +84,19 @@ const DataTable = ({ statusData, title }: { statusData: StatusRow[]; title: stri
 
               return (
                 <tr key={idx} style={{ borderTop: '1px solid #F1F5F9' }}>
-                  <td style={{ padding: '14px 12px', fontSize: '0.8125rem', fontWeight: 500, color: '#1E293B', whiteSpace: 'nowrap' }}>
+                  <td style={{ padding: '4px 12px', fontSize: '0.8125rem', fontWeight: 500, color: '#1E293B', whiteSpace: 'nowrap' }}>
                     {row.item}
                   </td>
-                  <td style={{ padding: '14px 12px', fontSize: '0.8125rem', color: '#64748B', whiteSpace: 'nowrap' }}>
+                  <td style={{ padding: '4px 12px', fontSize: '0.8125rem', color: '#64748B', whiteSpace: 'nowrap' }}>
                     {row.category}
                   </td>
-                  <td style={{ padding: '14px 12px', fontSize: '0.8125rem', fontWeight: 500, color: '#1E293B' }}>
+                  <td style={{ padding: '4px 12px', fontSize: '0.8125rem', fontWeight: 500, color: '#1E293B' }}>
                     {row.stock}
                   </td>
-                  <td style={{ padding: '14px 12px', fontSize: '0.8125rem', color: '#64748B' }}>
+                  <td style={{ padding: '4px 12px', fontSize: '0.8125rem', color: '#64748B' }}>
                     {row.threshold}
                   </td>
-                  <td style={{ padding: '14px 12px' }}>
+                  <td style={{ padding: '4px 12px' }}>
                     <Box
                       component='span'
                       sx={{

@@ -20,7 +20,10 @@ import {
   FormControl,
   FormLabel,
   useMediaQuery,
-  useTheme
+  useTheme,
+  InputLabel,
+  Select,
+  MenuItem
 } from '@mui/material'
 import { DataGrid } from '@mui/x-data-grid'
 import type { GridColDef } from '@mui/x-data-grid'
@@ -37,6 +40,8 @@ import { getUser } from '@/utils/authStorage'
 
 const ReportsTable = () => {
   const searchParams = useSearchParams()
+  const [mainCategory, setMainCategory] = useState<string>('games') // 'games' | 'fb'
+  const [selectedSubCategory, setSelectedSubCategory] = useState<string>('') // e.g. "POS Revenue Report"
   const [selectedReport, setSelectedReport] = useState<string>('')
   const [cashRevenueOption, setCashRevenueOption] = useState<'0' | '1'>('0')
 
@@ -61,12 +66,53 @@ const ReportsTable = () => {
 
   useEffect(() => {
     const type = searchParams.get('type')
+    const categoryParam = searchParams.get('category')
+    const subcategoryParam = searchParams.get('subcategory')
 
     if (type) {
+      // Find which main category and subcategory this report type belongs to
+      let foundCategoryKey = 'games'
+      let foundSubCategoryLabel = ''
+
+      for (const mainCat of reportCategories) {
+        if (mainCat.subCategories) {
+          for (const subCat of mainCat.subCategories) {
+            if (subCat.reports.some(r => r.value === type)) {
+              foundCategoryKey = mainCat.label.toLowerCase() === 'f&b' ? 'fb' : 'games'
+              foundSubCategoryLabel = subCat.label
+              break
+            }
+          }
+        }
+      }
+
+      setMainCategory(foundCategoryKey)
+      setSelectedSubCategory(foundSubCategoryLabel)
       setSelectedReport(type)
       setRows([])
       setExpandedRows({})
       setCashRevenueOption('0')
+    } else if (subcategoryParam) {
+      // Find which main category this subcategory belongs to
+      let foundCategoryKey = 'games'
+      for (const mainCat of reportCategories) {
+        if (mainCat.subCategories?.some(sc => sc.label === subcategoryParam)) {
+          foundCategoryKey = mainCat.label.toLowerCase() === 'f&b' ? 'fb' : 'games'
+          break
+        }
+      }
+      setMainCategory(foundCategoryKey)
+      setSelectedSubCategory(subcategoryParam)
+      setSelectedReport('')
+      setRows([])
+      setExpandedRows({})
+    } else if (categoryParam) {
+      const catKey = categoryParam.toLowerCase() === 'fb' ? 'fb' : 'games'
+      setMainCategory(catKey)
+      setSelectedSubCategory('')
+      setSelectedReport('')
+      setRows([])
+      setExpandedRows({})
     }
   }, [searchParams])
 
@@ -78,8 +124,23 @@ const ReportsTable = () => {
     return `${dd}-${mm}-${yyyy}`
   }
 
+  const activeMainCategoryData = reportCategories.find(
+    c => (c.label.toLowerCase() === 'f&b' ? 'fb' : 'games') === mainCategory
+  )
+  const subCategoriesList = activeMainCategoryData?.subCategories || []
+
+  const activeSubCategoryData = subCategoriesList.find(
+    sc => sc.label === selectedSubCategory
+  )
+  const reportsList = activeSubCategoryData?.reports || []
+
   const selectedReportLabel = reportCategories
-    .flatMap(c => c.reports)
+    .flatMap(c => {
+      if (c.subCategories) {
+        return c.subCategories.flatMap(sc => sc.reports)
+      }
+      return c.reports || []
+    })
     .find(r => r.value === selectedReport)?.label
 
   const handleApplyFilters = useCallback(async () => {
@@ -119,16 +180,14 @@ const ReportsTable = () => {
         response = await reportsApi.rechargeReport(params)
       } else if (selectedReport === 'rechargeRevenueReport') {
         response = await reportsApi.rechargeRevenueReport(params)
-      } else if (selectedReport === 'employeeGamePlayReport') {
-        response = await reportsApi.employeeGamePlayReport(params)
+
       } else if (selectedReport === 'cardLiabilityReport') {
         response = await reportsApi.cardLiabilityReport(params)
       } else if (selectedReport === 'clearCardReport') {
         response = await reportsApi.clearCardReport(params)
       } else if (selectedReport === 'cardConsolidateReport') {
         response = await reportsApi.cardConsolidateReport(params)
-      } else if (selectedReport === 'cardTransferReport') {
-        response = await reportsApi.cardTransferReport(params)
+
       } else if (selectedReport === 'topPlayedGameReport') {
         response = await reportsApi.topPlayedGameReport(params)
       } else if (selectedReport === 'cardVoidReport') {
@@ -203,18 +262,7 @@ const ReportsTable = () => {
         response = await reportsApi.salesVoidReport(params)
       } else if (selectedReport === 'thirdPartyCardTransReport') {
         response = await reportsApi.thirdPartyCardTransReport({ fTime: formatDate(startDate), tTime: formatDate(endDate), status: 1 })
-      } else if (selectedReport === 'consolidateReport') {
-        response = await reportsApi.consolidateReport(params)
-      } else if (selectedReport === 'cardSummaryInDetailedReport') {
-        response = await reportsApi.cardSummaryInDetailedReport(params)
-      } else if (selectedReport === 'annualGameRevenueReport') {
-        response = await reportsApi.annualGameRevenueReport(params)
-      } else if (selectedReport === 'detailedGameRevenueReport') {
-        response = await reportsApi.detailedGameRevenueReport(params)
-      } else if (selectedReport === 'gameDetailsListReport') {
-        response = await reportsApi.gameDetailsListReport(params)
-      } else if (selectedReport === 'topPlayerReport') {
-        response = await reportsApi.topPlayerReport(params)
+
       } else {
         throw new Error('Invalid report type')
       }
@@ -236,6 +284,76 @@ const ReportsTable = () => {
       setLoading(false)
     }
   }, [selectedReport, startDate, endDate, cashRevenueOption])
+
+  const handleExportPDF = async () => {
+    if (rows.length === 0) return
+
+    setLoading(true)
+    try {
+      const { jsPDF } = await import('jspdf')
+      const autoTableModule = await import('jspdf-autotable')
+      // Safe resolution for both CommonJS and ES Module dynamic imports
+      const autoTable = autoTableModule.default || (autoTableModule as any).autoTable
+
+      const doc = new jsPDF()
+
+      // Document Title
+      doc.setFontSize(16)
+      doc.setFont('helvetica', 'bold')
+      doc.text(selectedReportLabel || 'Report', 14, 20)
+
+      doc.setFontSize(10)
+      doc.setFont('helvetica', 'normal')
+      doc.text(`Date Range: ${formatDate(startDate)} to ${formatDate(endDate)}`, 14, 28)
+
+      // Resolve columns dynamically (exclude helper/interactive columns)
+      const activeCols = columns
+        .filter(col => col.field !== 'slNo' && col.field !== 'expand' && col.headerName !== '')
+        .map(col => ({ header: col.headerName, dataKey: col.field }))
+
+      const headers = [['Sl No', ...activeCols.map(c => c.header || '')]]
+      const body: any[] = []
+
+      rows.forEach((row, index) => {
+        // Parent row
+        body.push([
+          index + 1,
+          ...activeCols.map(c => row[c.dataKey] ?? '')
+        ])
+
+        // Add child transactions if they exist (e.g. for salesDetailsReport)
+        if (row.children && row.children.length > 0) {
+          row.children.forEach((child: any) => {
+            body.push([
+              '', // Empty Sl No for child items
+              `  └─ Item: ${child.itemCode || ''} | Qty: ${child.quantity || 0} | Rate: ${child.salesRate || 0} | Net: ${child.netAmount || 0}`,
+              ...activeCols.slice(1).map(() => '')
+            ])
+          })
+        }
+      })
+
+      // Generate Table using jspdf-autotable
+      autoTable(doc, {
+        head: headers,
+        body: body,
+        startY: 35,
+        theme: 'striped',
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: [82, 63, 153], textColor: [255, 255, 255] }, // Brand color #523F99
+        margin: { top: 35 }
+      })
+
+      const fileName = `${selectedReport || 'report'}_${formatDate(new Date())}.pdf`
+      doc.save(fileName)
+      toast.success('PDF exported successfully')
+    } catch (err) {
+      console.error('Error generating PDF:', err)
+      toast.error('Failed to export PDF')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const groupSalesDetails = (data: any[]) => {
     const grouped: Record<string, any> = {}
@@ -453,79 +571,128 @@ const ReportsTable = () => {
             {/* Header */}
             <Box sx={{ px: { xs: 2, sm: 4, md: 5 }, pt: { xs: 2.5, sm: 3, md: 4 }, pb: 1.5, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <Box>
-                <Typography sx={{ fontSize: { xs: '1.125rem', sm: '1.25rem' }, fontWeight: 700, color: '#1E293B' }}>Reports Center</Typography>
+                <Typography sx={{ fontSize: { xs: '1.125rem', sm: '1.25rem' }, fontWeight: 700, color: '#1E293B' }}>
+                  Reports Center - {mainCategory === 'fb' ? 'F&B' : (selectedSubCategory || 'Games')}
+                </Typography>
                 <Typography sx={{ fontSize: { xs: '0.6875rem', sm: '0.8125rem' }, color: '#94A3B8', fontWeight: 500, mt: 0.25 }}>
-                  {selectedReportLabel || 'Select a report from the main menu'}
+                  {selectedReportLabel || 'Select a report type below'}
                 </Typography>
               </Box>
             </Box>
 
             {/* Filters Section */}
-            <Box sx={{ px: { xs: 2, sm: 4, md: 5 }, pb: 2.5, borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
-              <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', lg: 'row' }, alignItems: { lg: 'flex-end' } }}>
-                {selectedReport === 'cashRevenueReport' && (
-                  <FormControl component='fieldset' sx={{ minWidth: 200 }}>
-                    <FormLabel component='legend' sx={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748B' }}>
-                      Report Type
-                    </FormLabel>
-                    <RadioGroup
-                      row
-                      value={cashRevenueOption}
-                      onChange={e => setCashRevenueOption(e.target.value as '0' | '1')}
-                    >
-                      <FormControlLabel value='0' control={<Radio size='small' sx={{ '&.Mui-checked': { color: '#523F99' } }} />} label='Normal' />
-                      <FormControlLabel value='1' control={<Radio size='small' sx={{ '&.Mui-checked': { color: '#523F99' } }} />} label='Detailed' />
-                    </RadioGroup>
-                  </FormControl>
-                )}
+            {selectedSubCategory && (
+              <Box sx={{ px: { xs: 2, sm: 4, md: 5 }, pb: 2.5, borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+                <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', lg: 'row' }, alignItems: { lg: 'flex-end' } }}>
+                  <Box sx={{ display: 'flex', gap: 2, flex: 1, flexDirection: { xs: 'column', sm: 'row' } }}>
+                    <FormControl size='small' fullWidth sx={{ minWidth: 260 }}>
+                      <InputLabel id='report-select-label' sx={{ color: '#64748B' }}>Select Report</InputLabel>
+                      <Select
+                        labelId='report-select-label'
+                        id='report-select'
+                        value={selectedReport}
+                        label='Select Report'
+                        onChange={e => {
+                          setSelectedReport(e.target.value)
+                          setRows([])
+                        }}
+                        sx={{ borderRadius: '12px', backgroundColor: '#F8FAFC' }}
+                      >
+                        {reportsList.map(r => (
+                          <MenuItem key={r.value} value={r.value}>
+                            {r.label}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Box>
 
-                <Box sx={{ display: 'flex', gap: 1.5, flex: 1 }}>
-                  <DatePicker
-                    label='Start'
-                    value={startDate}
-                    onChange={newValue => setStartDate(newValue || new Date())}
-                    slotProps={{
-                      textField: {
-                        size: 'small',
-                        fullWidth: true,
-                        sx: { '& .MuiOutlinedInput-root': { borderRadius: '12px', backgroundColor: '#F8FAFC' } }
-                      }
+                  {selectedReport === 'cashRevenueReport' && (
+                    <FormControl component='fieldset' sx={{ minWidth: 200 }}>
+                      <FormLabel component='legend' sx={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748B' }}>
+                        Report Type
+                      </FormLabel>
+                      <RadioGroup
+                        row
+                        value={cashRevenueOption}
+                        onChange={e => setCashRevenueOption(e.target.value as '0' | '1')}
+                      >
+                        <FormControlLabel value='0' control={<Radio size='small' sx={{ '&.Mui-checked': { color: '#523F99' } }} />} label='Normal' />
+                        <FormControlLabel value='1' control={<Radio size='small' sx={{ '&.Mui-checked': { color: '#523F99' } }} />} label='Detailed' />
+                      </RadioGroup>
+                    </FormControl>
+                  )}
+
+                  <Box sx={{ display: 'flex', gap: 1.5, flex: 1 }}>
+                    <DatePicker
+                      label='Start'
+                      value={startDate}
+                      onChange={newValue => setStartDate(newValue || new Date())}
+                      slotProps={{
+                        textField: {
+                          size: 'small',
+                          fullWidth: true,
+                          sx: { '& .MuiOutlinedInput-root': { borderRadius: '12px', backgroundColor: '#F8FAFC' } }
+                        }
+                      }}
+                    />
+                    <DatePicker
+                      label='End'
+                      value={endDate}
+                      onChange={newValue => setEndDate(newValue || new Date())}
+                      slotProps={{
+                        textField: {
+                          size: 'small',
+                          fullWidth: true,
+                          sx: { '& .MuiOutlinedInput-root': { borderRadius: '12px', backgroundColor: '#F8FAFC' } }
+                        }
+                      }}
+                    />
+                  </Box>
+
+                  <Button
+                    variant='contained'
+                    onClick={handleApplyFilters}
+                    disabled={!selectedReport || loading}
+                    disableElevation
+                    sx={{
+                      borderRadius: '12px',
+                      textTransform: 'none',
+                      fontWeight: 600,
+                      fontSize: '0.9375rem',
+                      backgroundColor: '#523F99',
+                      height: 40,
+                      px: 4,
+                      '&:hover': { backgroundColor: '#6B52C4' }
                     }}
-                  />
-                  <DatePicker
-                    label='End'
-                    value={endDate}
-                    onChange={newValue => setEndDate(newValue || new Date())}
-                    slotProps={{
-                      textField: {
-                        size: 'small',
-                        fullWidth: true,
-                        sx: { '& .MuiOutlinedInput-root': { borderRadius: '12px', backgroundColor: '#F8FAFC' } }
-                      }
+                  >
+                    {loading ? 'Loading...' : 'Generate Report'}
+                  </Button>
+
+                  <Button
+                    variant='outlined'
+                    onClick={handleExportPDF}
+                    disabled={rows.length === 0 || loading}
+                    disableElevation
+                    startIcon={<Icon icon='tabler-file-type-pdf' />}
+                    sx={{
+                      borderRadius: '12px',
+                      textTransform: 'none',
+                      fontWeight: 600,
+                      fontSize: '0.9375rem',
+                      borderColor: '#523F99',
+                      color: '#523F99',
+                      height: 40,
+                      px: 4,
+                      '&:hover': { borderColor: '#6B52C4', backgroundColor: 'rgba(82,63,153,0.04)' },
+                      '&.Mui-disabled': { borderColor: 'rgba(0,0,0,0.12)', color: 'rgba(0,0,0,0.26)' }
                     }}
-                  />
+                  >
+                    Export PDF
+                  </Button>
                 </Box>
-
-                <Button
-                  variant='contained'
-                  onClick={handleApplyFilters}
-                  disabled={!selectedReport || loading}
-                  disableElevation
-                  sx={{
-                    borderRadius: '12px',
-                    textTransform: 'none',
-                    fontWeight: 600,
-                    fontSize: '0.9375rem',
-                    backgroundColor: '#523F99',
-                    height: 40,
-                    px: 4,
-                    '&:hover': { backgroundColor: '#6B52C4' }
-                  }}
-                >
-                  {loading ? 'Loading...' : 'Generate Report'}
-                </Button>
               </Box>
-            </Box>
+            )}
 
             {/* Data Area */}
             {selectedReport ? (
@@ -635,11 +802,17 @@ const ReportsTable = () => {
               /* Empty State */
               <Box sx={{ py: 10, px: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
                 <Box sx={{ width: 80, height: 80, borderRadius: '50%', backgroundColor: '#F0ECFA', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 3 }}>
-                  <i className='tabler-report-analytics' style={{ fontSize: '2.5rem', color: '#523F99' }} />
+                  <i className={mainCategory === 'fb' ? 'tabler-tools-kitchen-2' : 'tabler-device-gamepad-2'} style={{ fontSize: '2.5rem', color: '#523F99' }} />
                 </Box>
-                <Typography sx={{ fontSize: '1.25rem', fontWeight: 700, color: '#1E293B', mb: 1 }}>Report Center</Typography>
+                <Typography sx={{ fontSize: '1.25rem', fontWeight: 700, color: '#1E293B', mb: 1 }}>
+                  {mainCategory === 'fb' ? 'F&B Reports' : (selectedSubCategory || 'Games Reports')}
+                </Typography>
                 <Typography sx={{ fontSize: '0.875rem', color: '#94A3B8', textAlign: 'center', maxWidth: 400, lineHeight: 1.6 }}>
-                  Choose a report from the main menu to view analytics.
+                  {mainCategory === 'fb' && !selectedSubCategory
+                    ? 'There are no reports configured for the F&B category yet.'
+                    : selectedSubCategory
+                    ? 'Select a Report from the dropdown menu above to view analytics.'
+                    : 'Select a report category from the sidebar menu to get started.'}
                 </Typography>
               </Box>
             )}

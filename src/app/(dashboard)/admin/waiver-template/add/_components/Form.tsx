@@ -14,10 +14,8 @@ import toast from 'react-hot-toast'
 import FileUpload from '@/components/custom-fields/CustomizedSingleFileUploader'
 import { waiverApi } from '@/api/waiver-api'
 import { fileToBase64 } from '@/utils/fileToBase64'
-
-const ReactDraftWysiwyg = dynamic(() => import('@/components/react-draft-wysiwyg'), {
-  ssr: false
-})
+import { EditorState, convertToRaw } from 'draft-js'
+import ReactDraftWysiwyg from '@/components/react-draft-wysiwyg'
 
 const FIELD_OPTIONS = [
   { label: 'Name', icon: 'tabler-label', id: 'name', info: 'Collect participant full name' },
@@ -127,7 +125,7 @@ export default function WaiverForm() {
     resolver: zodResolver(eventFormSchema),
     defaultValues: {
       title: '',
-      description: undefined,
+      description: EditorState.createEmpty(),
       logo: undefined,
       fields: FIELD_OPTIONS.map(opt => ({
         id: opt.id,
@@ -142,12 +140,10 @@ export default function WaiverForm() {
       let htmlDescription = ''
 
       if (values.description) {
-        const [{ convertToRaw }, { default: draftToHtml }] = await Promise.all([
-          import('draft-js'),
-          import('draftjs-to-html'),
-        ])
+        const { default: draftToHtml } = await import('draftjs-to-html')
+        const editorState = values.description as EditorState
 
-        htmlDescription = draftToHtml(convertToRaw(values.description.getCurrentContent()))
+        htmlDescription = draftToHtml(convertToRaw(editorState.getCurrentContent()))
       }
 
       const formatted = convertToWaiverPayload({

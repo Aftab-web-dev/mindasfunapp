@@ -12,13 +12,9 @@ import { convertFromHTML, convertToRaw, EditorState, ContentState } from 'draft-
 import toast from 'react-hot-toast'
 
 import FileUpload from '@/components/custom-fields/CustomizedSingleFileUploader'
-
-// Import Editor styles
-import 'react-draft-wysiwyg/dist/react-draft-wysiwyg.css'
 import { waiverApi } from '@/api/waiver-api'
+import ReactDraftWysiwyg from '@/components/react-draft-wysiwyg'
 
-// Dynamically import ReactDraftWysiwyg with SSR disabled
-const ReactDraftWysiwyg = dynamic(() => import('react-draft-wysiwyg').then(mod => mod.Editor), { ssr: false })
 
 const FIELD_OPTIONS = [
   { label: 'Name', icon: 'tabler-label', id: 'name', info: 'Collect participant full name' },

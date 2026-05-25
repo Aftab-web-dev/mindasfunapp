@@ -9,6 +9,7 @@ import { format } from 'date-fns'
 import toast from 'react-hot-toast'
 
 import { waiverApi } from '@/api/waiver-api'
+import { getUser } from '@/utils/authStorage'
 
 const ExportData = () => {
   const [startDate, setStartDate] = useState<Date | null>(null)
@@ -16,16 +17,23 @@ const ExportData = () => {
   const [selectedWaiver, setSelectedWaiver] = useState<string>('')
   const [waivers, setWaivers] = useState<any[]>([])
   const [downloading, setDownloading] = useState(false)
+  const [branchId, setBranchId] = useState<string>('')
 
   useEffect(() => {
     waiverApi.waiverList().then(res => {
       setWaivers(res.data?.data || [])
     }).catch(() => setWaivers([]))
+
+    const user = getUser()
+
+    if (user?.branchId) {
+      setBranchId(user.branchId.toString())
+    }
   }, [])
 
   const handleDownload = async () => {
-    if (!selectedWaiver || !startDate || !endDate) {
-      toast.error('Please select waiver and date range')
+    if (!selectedWaiver || !startDate || !endDate || !branchId) {
+      toast.error('Please select waiver, branch ID, and date range')
 
       return
     }
@@ -36,7 +44,7 @@ const ExportData = () => {
       const from = format(startDate, 'MM-dd-yyyy')
       const to = format(endDate, 'MM-dd-yyyy')
 
-      const response = await waiverApi.exportCheckInHistory({ waiverId: selectedWaiver, from, to })
+      const response = await waiverApi.exportCheckInHistory({ waiverId: selectedWaiver, from, to, branchId })
 
       const blob = new Blob([response.data], { type: 'application/pdf' })
       const url = window.URL.createObjectURL(blob)
@@ -51,7 +59,26 @@ const ExportData = () => {
 
       toast.success('Export downloaded')
     } catch (err) {
-      toast.error('Failed to download export')
+      console.error('Export error:', err)
+      const axiosError = err as any
+      
+      if (axiosError.response && axiosError.response.data instanceof Blob) {
+        const reader = new FileReader()
+        reader.onload = () => {
+          const text = reader.result as string
+          console.error('Server error response text:', text)
+          try {
+            const errorObj = JSON.parse(text)
+            toast.error(errorObj.message || errorObj.Message || 'Failed to download export')
+          } catch {
+            toast.error(`Error ${axiosError.response.status}: ${text || 'Failed to download export'}`)
+          }
+        }
+        reader.readAsText(axiosError.response.data)
+      } else {
+        const message = axiosError.response?.data?.message || axiosError.message || 'Failed to download export'
+        toast.error(message)
+      }
     } finally {
       setDownloading(false)
     }
@@ -119,6 +146,20 @@ const ExportData = () => {
                   }}
                 />
               </Box>
+            </Box>
+
+            {/* Branch ID */}
+            <Box sx={{ mb: 3, maxWidth: { xs: '100%', sm: 520 } }}>
+              <Typography sx={{ fontSize: '0.8125rem', fontWeight: 600, color: '#475569', mb: 1 }}>Branch ID</Typography>
+              <TextField
+                fullWidth
+                variant='outlined'
+                size='small'
+                value={branchId}
+                onChange={e => setBranchId(e.target.value)}
+                sx={fieldSx}
+                placeholder='Enter Branch ID'
+              />
             </Box>
 
             {/* Select Waiver */}

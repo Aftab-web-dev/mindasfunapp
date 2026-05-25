@@ -26,7 +26,7 @@ export default function CustomStepper({ currentStep }: { currentStep: number }) 
         const isActive = index === currentStep
 
         return (
-          <div key={index} className='flex flex-col items-center relative flex-1'>
+          <div key={index} className='flex flex-col items-center relative z-[2] flex-1'>
             <div
               className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 border-2
                 ${isCompleted

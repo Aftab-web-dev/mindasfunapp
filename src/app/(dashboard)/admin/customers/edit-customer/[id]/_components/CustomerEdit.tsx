@@ -24,7 +24,7 @@ const customerFormSchema = z.object({
 
   mobile: z.string().nonempty('Phone Number is required').min(10),
 
-  emailId: z.string().email('Invalid email address').optional(),
+  emailId: z.string().email('Invalid email address').or(z.literal('')).optional(),
 
   dob: z.coerce.date({
     required_error: 'Birth Date is required',
@@ -105,7 +105,8 @@ const CustomerEdit = ({ data, genders, countries, proofs }: props) => {
     handleSubmit,
     watch,
     formState: { errors, isLoading, isSubmitting },
-    trigger // <-- add this
+    trigger,
+    setValue
   } = useForm<CustomerFormValues>({
     resolver: zodResolver(customerFormSchema),
     defaultValues: {
@@ -215,7 +216,26 @@ const CustomerEdit = ({ data, genders, countries, proofs }: props) => {
         router.push('/admin/customers')
       }
     } catch (error) {
-      toast.error('Error')
+      console.error('Submit customer error:', error)
+      const axiosError = error as any
+      let message = 'Error'
+      const responseData = axiosError.response?.data
+      if (responseData) {
+        if (responseData.errors && typeof responseData.errors === 'object') {
+          message = Object.entries(responseData.errors)
+            .map(([field, msgs]) => `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
+            .join(' | ')
+        } else if (responseData.Errors && typeof responseData.Errors === 'object') {
+          message = Object.entries(responseData.Errors)
+            .map(([field, msgs]) => `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
+            .join(' | ')
+        } else {
+          message = responseData.message || responseData.Message || axiosError.message || 'Error'
+        }
+      } else {
+        message = axiosError.message || 'Error'
+      }
+      toast.error(message, { duration: 6000 })
     }
   }
 
@@ -348,10 +368,25 @@ const CustomerEdit = ({ data, genders, countries, proofs }: props) => {
                     <AppReactDatepicker
                       showYearDropdown
                       showMonthDropdown
+                      scrollableYearDropdown
+                      yearDropdownItemNumber={120}
                       className='w-full'
                       dateFormat='dd/MM/yyyy'
                       selected={field.value}
-                      onChange={field.onChange}
+                      onChange={val => {
+                        field.onChange(val)
+                        if (val) {
+                          const today = new Date()
+                          let calculatedAge = today.getFullYear() - val.getFullYear()
+                          const monthDiff = today.getMonth() - val.getMonth()
+                          if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < val.getDate())) {
+                            calculatedAge--
+                          }
+                          setValue('age', calculatedAge, { shouldValidate: true })
+                        } else {
+                          setValue('age', 0, { shouldValidate: true })
+                        }
+                      }}
                       placeholderText='DD/MM/YYYY'
                       customInput={
                         <TextField
