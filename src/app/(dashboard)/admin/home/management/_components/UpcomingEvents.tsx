@@ -8,7 +8,7 @@ import Avatar from '@mui/material/Avatar'
 
 import { format } from 'date-fns'
 
-import { managementDashboardMockApi as managementDashboardApi } from './mockData'
+import { managementDashboardApi } from '@/api/management-dashboard'
 
 interface DataType {
   title: string
@@ -18,11 +18,11 @@ interface DataType {
 
 const eventColors = ['#523F99', '#3B82F6', '#10B981', '#F59E0B']
 
-const UpcomingEvents = () => {
+const UpcomingEvents = ({ from, to }: { from: string; to: string }) => {
   const [data, setData] = useState<DataType[]>([])
 
   useEffect(() => {
-    managementDashboardApi.upcomingEvent().then(res => {
+    managementDashboardApi.upcomingEvent({ from, to }).then(res => {
       const items: any[] = res.data?.data || []
 
       const mapped = items.map((row: any) => ({
@@ -33,7 +33,7 @@ const UpcomingEvents = () => {
 
       setData(mapped)
     }).catch(() => setData([]))
-  }, [])
+  }, [from, to])
 
   return (
     <Box

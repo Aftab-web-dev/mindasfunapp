@@ -13,9 +13,9 @@ import { useTheme } from '@mui/material/styles'
 
 import type { ApexOptions } from 'apexcharts'
 
-import { AVERAGE_PERIODS, RANGES, formatTimeLabel, detectAllHours, resolveDay } from './ranges'
+import { AVERAGE_PERIODS, RANGES, formatTimeLabel, detectAllHours, resolveDay, resolveDates } from './ranges'
 import type { AveragePeriod, RangeKey } from './ranges'
-import { managementDashboardMockApi as managementDashboardApi } from './mockData'
+import { managementDashboardApi } from '@/api/management-dashboard'
 import { getCategoryColor } from './categoryColors'
 
 const SERIES_COLORS = [
@@ -54,6 +54,13 @@ const MainCart = ({
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
 
+  // Reset filter when range switches to average
+  useEffect(() => {
+    if (range === 'average') {
+      setFilter('all')
+    }
+  }, [range])
+
   const [loading, setLoading] = useState(true)
   const [categories, setCategories] = useState<string[]>([])
   const [series, setSeries] = useState<{ name: string; data: number[] }[]>([])
@@ -68,9 +75,9 @@ const MainCart = ({
     }
 
     setLoading(true)
-    const day = resolveDay(range, fromDate, toDate, averagePeriod)
+    const { from, to } = resolveDates(range, fromDate, toDate, averagePeriod)
 
-    managementDashboardApi.mainGraph({ day }).then(res => {
+    managementDashboardApi.mainGraph({ from, to }).then(res => {
       const raw = res.data?.data
 
       if (!Array.isArray(raw) || raw.length === 0) {
@@ -108,7 +115,7 @@ const MainCart = ({
   // Apply Top 10 / Low 10 filter by ranking time buckets on summed revenue
   // across all three series, then preserving original chronological order.
   const { filteredCategories, filteredSeries } = useMemo(() => {
-    if (filter === 'all' || categories.length <= 10) {
+    if (filter === 'all') {
       return { filteredCategories: categories, filteredSeries: series }
     }
 
@@ -119,7 +126,7 @@ const MainCart = ({
 
     indexed.sort((a, b) => filter === 'top10' ? b.total - a.total : a.total - b.total)
 
-    const keepIdx = indexed.slice(0, 10).map(x => x.i).sort((a, b) => a - b)
+    const keepIdx = indexed.slice(0, 10).map(x => x.i)
 
     return {
       filteredCategories: keepIdx.map(i => categories[i]),
@@ -240,7 +247,7 @@ const MainCart = ({
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexShrink: 0 }}>
-          {(['all', 'top10', 'low10'] as FilterMode[]).map(f => {
+          {range !== 'average' && (['all', 'top10', 'low10'] as FilterMode[]).map(f => {
             const active = filter === f
             const label = f === 'all' ? 'All' : f === 'top10' ? 'Top 10' : 'Low 10'
             const icon = f === 'all' ? 'tabler-list' : f === 'top10' ? 'tabler-trending-up' : 'tabler-trending-down'

@@ -60,3 +60,42 @@ export function detectAllHours(rows: any[]): boolean {
 
   return times.every(n => Number.isFinite(n) && n >= 0 && n <= 23)
 }
+
+export function resolveDates(
+  range: RangeKey,
+  fromDate?: Date | null,
+  toDate?: Date | null,
+  averagePeriod?: AveragePeriod
+): { from: string; to: string } {
+  const formatDate = (date: Date) => {
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    const year = date.getFullYear()
+    return `${month}-${day}-${year}`
+  }
+
+  const to = new Date()
+  let from = new Date()
+
+  if (range === 'custom' && fromDate && toDate) {
+    return {
+      from: formatDate(fromDate),
+      to: formatDate(toDate)
+    }
+  }
+
+  let days = 0
+  if (range === 'average' && averagePeriod) {
+    days = AVERAGE_PERIODS[averagePeriod].day
+  } else {
+    days = RANGES[range].day
+  }
+
+  from.setDate(to.getDate() - days)
+
+  return {
+    from: formatDate(from),
+    to: formatDate(to)
+  }
+}
+

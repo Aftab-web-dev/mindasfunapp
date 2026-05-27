@@ -5,17 +5,23 @@ import type { NextConfig } from 'next'
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  productionBrowserSourceMaps: false,
+  webpack: config => {
+    config.devtool = 'source-map'
+
+return config
+  },
   outputFileTracingRoot: path.join(__dirname),
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: true
   },
   images: {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'api.midasfun.com',
-      },
-    ],
+        hostname: 'api.midasfun.com'
+      }
+    ]
   },
   redirects: async () => {
     return [
@@ -23,10 +29,10 @@ const nextConfig: NextConfig = {
         source: '/',
         destination: '/admin/home/management',
         permanent: true,
-        locale: false,
-      },
+        locale: false
+      }
     ]
-  },
+  }
 }
 
 export default nextConfig

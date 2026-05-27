@@ -12,9 +12,10 @@ import UpcomingEvents from './UpcomingEvents'
 import MainCart from './MainChart'
 import RevenueSummary from './RevenueSummary'
 import RangeTabs from './RangeTabs'
-import { AVERAGE_PERIODS, RANGES, formatTimeLabel, detectAllHours, resolveDay } from './ranges'
+import { AVERAGE_PERIODS, RANGES, formatTimeLabel, detectAllHours, resolveDay, resolveDates } from './ranges'
 import type { AveragePeriod, RangeKey } from './ranges'
-import { managementDashboardMockApi as managementDashboardApi, GAMES, GAME_DAILY } from './mockData'
+import { managementDashboardApi } from '@/api/management-dashboard'
+import { GAMES } from './mockData'
 import { CATEGORY_COLORS, getCategoryColor, getCategoryPalette } from './categoryColors'
 import AnimatedNumber from './AnimatedNumber'
 
@@ -67,35 +68,7 @@ function buildTopStat(selectedStat: any, labels: string[], values: number[]) {
   }
 }
 
-// Game-revenue specific: rank the actual games (not time slots) so the Top 6
-// breakdown reads "Bumper Car / Shooting / …" instead of "6 PM / 7 PM / …".
-function buildTopGameStat(selectedStat: any) {
-  const ranked = GAMES
-    .map(g => ({ id: g.id, name: g.name, val: GAME_DAILY[g.id] ?? 0 }))
-    .sort((a, b) => b.val - a.val)
-
-  const top6 = ranked.slice(0, 6)
-  const topTotal = top6.reduce((s, t) => s + t.val, 0) || 1
-
-  const colors1 = ['text-primary', 'text-info', 'text-success']
-  const colors2 = ['text-secondary', 'text-error', 'text-warning']
-
-  return {
-    ...selectedStat,
-    datas: top6.map(t => t.name),
-    data1: top6.slice(0, 3).map((t, j) => ({
-      title: t.name,
-      value: Math.round((t.val / topTotal) * 100),
-      colorClass: colors1[j]
-    })),
-    data2: top6.slice(3, 6).map((t, j) => ({
-      title: t.name,
-      value: Math.round((t.val / topTotal) * 100),
-      colorClass: colors2[j]
-    })),
-    chartData: top6.map(t => t.val)
-  }
-}
+// buildTopGameStat removed
 
 const HomePage = () => {
   const [range, setRange] = useState<RangeKey>('daily')
@@ -116,9 +89,9 @@ const HomePage = () => {
   useEffect(() => {
     if (range === 'custom' && (!fromDate || !toDate)) return
 
-    const day = resolveDay(range, fromDate, toDate, averagePeriod)
+    const { from, to } = resolveDates(range, fromDate, toDate, averagePeriod)
 
-    managementDashboardApi.widgetValues({ day }).then(res => {
+    managementDashboardApi.widgetValues({ from, to }).then(res => {
       const next = res.data?.data?.[0]
 
       if (next) setStats(next)
@@ -151,10 +124,10 @@ const HomePage = () => {
     }
 
     setCatLoading(true)
-    const day = resolveDay(range, fromDate, toDate, averagePeriod)
+    const { from, to } = resolveDates(range, fromDate, toDate, averagePeriod)
     const fn = managementDashboardApi[apiKey] as (args: any) => Promise<any>
 
-    const args: any = { day }
+    const args: any = { from, to }
 
     if (selectedStat.title === 'Game Revenue' && selectedGame && selectedGame !== 'all') {
       args.game = selectedGame
@@ -223,7 +196,9 @@ const HomePage = () => {
 
   const breakdownColor = selectedStat ? getCategoryColor(selectedStat.title) : '#523F99'
 
-  const options: ApexCharts.ApexOptions = {
+  const { from, to } = resolveDates(range, fromDate, toDate, averagePeriod)
+
+  const options: ApexCharts.ApexOptions = useMemo(() => ({
     chart: {
       type: 'area',
       parentHeightOffset: 0,
@@ -264,28 +239,11 @@ const HomePage = () => {
       xaxis: { lines: { show: false } }
     },
     tooltip: { y: { formatter: (val: number) => `₹${val.toLocaleString()}` } }
-  }
+  }), [breakdownColor, catCategories])
 
   const categoryHasData = catData.some(v => v > 0)
 
-  // Initial load: render skeleton placeholders so the layout doesn't jump.
-  if (!stats) {
-    return (
-      <Stack spacing={{ xs: 2, sm: 3 }} sx={{ p: { xs: 1.5, sm: 2.5, md: 3 } }}>
-        <Skeleton variant='rounded' height={64} sx={{ borderRadius: '14px' }} />
-        <Skeleton variant='rounded' height={56} sx={{ borderRadius: '14px' }} />
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', sm: 'repeat(3, minmax(0, 1fr))', md: 'repeat(4, minmax(0, 1fr))' }, gap: { xs: 1.25, sm: 2 } }}>
-          {[...Array(8)].map((_, i) => (
-            <Skeleton key={i} variant='rounded' height={85} sx={{ borderRadius: '14px' }} />
-          ))}
-        </Box>
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', lg: 'minmax(0, 1fr) 340px' }, gap: { xs: 2, sm: 3 } }}>
-          <Skeleton variant='rounded' height={400} sx={{ borderRadius: '16px' }} />
-          <Skeleton variant='rounded' height={400} sx={{ borderRadius: '16px' }} />
-        </Box>
-      </Stack>
-    )
-  }
+  // Removed whole-page skeleton guard to allow parallel endpoint fetching
 
   return (
     <Box
@@ -345,7 +303,11 @@ const HomePage = () => {
                 Total
               </Typography>
               <Typography sx={{ fontSize: '0.875rem', fontWeight: 800, color: '#0F172A', lineHeight: 1.1, mt: 0.25 }}>
-                <AnimatedNumber value={totalRevenue} prefix='₹' />
+                {stats ? (
+                  <AnimatedNumber value={totalRevenue} prefix='₹' />
+                ) : (
+                  <Skeleton width={60} height={20} sx={{ mt: 0.25 }} />
+                )}
               </Typography>
             </Box>
           </Box>
@@ -376,17 +338,23 @@ const HomePage = () => {
             gap: { xs: 1.25, sm: 1.5, md: 2 }
           }}
         >
-          {statsCardArray.map((item, i) => (
-            <Box
-              key={i}
-              onClick={() => {
-                setSelectedGame('all')
-                setSelectedStat(selectedStat?.title === item.title ? null : item)
-              }}
-            >
-              <StatsCard item={item} selected={selectedStat?.title === item.title} index={i} />
-            </Box>
-          ))}
+          {!stats ? (
+            [...Array(8)].map((_, i) => (
+              <Skeleton key={i} variant='rounded' height={85} sx={{ borderRadius: '14px' }} />
+            ))
+          ) : (
+            statsCardArray.map((item, i) => (
+              <Box
+                key={i}
+                onClick={() => {
+                  setSelectedGame('all')
+                  setSelectedStat(selectedStat?.title === item.title ? null : item)
+                }}
+              >
+                <StatsCard item={item} selected={selectedStat?.title === item.title} index={i} />
+              </Box>
+            ))
+          )}
         </Box>
       </Box>
 
@@ -524,19 +492,23 @@ const HomePage = () => {
         ) : (
           <MainCart range={range} fromDate={fromDate} toDate={toDate} averagePeriod={averagePeriod} />
         )}
-        <RevenueSummary
-          totalRevenue={totalRevenue}
-          categories={[
-            { label: 'Game Revenue', amount: stats.gameRevenue, color: CATEGORY_COLORS['Game Revenue'].primary },
-            { label: 'Product Revenue', amount: stats.cardRevenue, color: CATEGORY_COLORS['Product Revenue'].primary },
-            { label: 'Redemption Revenue', amount: stats.redemptionRevenue, color: CATEGORY_COLORS['Redemption Revenue'].primary },
-            { label: 'Event Revenue', amount: stats.eventRevenue, color: CATEGORY_COLORS['Event Revenue'].primary },
-            { label: 'F&B Revenue', amount: stats.fbRevenue, color: CATEGORY_COLORS['F&B Revenue'].primary },
-            { label: 'Bounzing Revenue', amount: stats.trampolineRevenue, color: CATEGORY_COLORS['Bounzing Revenue'].primary },
-            { label: 'Bowling Revenue', amount: stats.bowlingRevenue, color: CATEGORY_COLORS['Bowling Revenue'].primary },
-            { label: 'Ticketing Revenue', amount: stats.ticket, color: CATEGORY_COLORS['Ticketing Revenue'].primary }
-          ]}
-        />
+        {stats ? (
+          <RevenueSummary
+            totalRevenue={totalRevenue}
+            categories={[
+              { label: 'Game Revenue', amount: stats.gameRevenue, color: CATEGORY_COLORS['Game Revenue'].primary },
+              { label: 'Product Revenue', amount: stats.cardRevenue, color: CATEGORY_COLORS['Product Revenue'].primary },
+              { label: 'Redemption Revenue', amount: stats.redemptionRevenue, color: CATEGORY_COLORS['Redemption Revenue'].primary },
+              { label: 'Event Revenue', amount: stats.eventRevenue, color: CATEGORY_COLORS['Event Revenue'].primary },
+              { label: 'F&B Revenue', amount: stats.fbRevenue, color: CATEGORY_COLORS['F&B Revenue'].primary },
+              { label: 'Bounzing Revenue', amount: stats.trampolineRevenue, color: CATEGORY_COLORS['Bounzing Revenue'].primary },
+              { label: 'Bowling Revenue', amount: stats.bowlingRevenue, color: CATEGORY_COLORS['Bowling Revenue'].primary },
+              { label: 'Ticketing Revenue', amount: stats.ticket, color: CATEGORY_COLORS['Ticketing Revenue'].primary }
+            ]}
+          />
+        ) : (
+          <Skeleton variant='rounded' height={400} sx={{ borderRadius: '16px' }} />
+        )}
       </Box>
 
       {/* Row 3: Category Breakdown + Upcoming Events (shown when card selected) */}
@@ -550,13 +522,9 @@ const HomePage = () => {
           }}
         >
           <TopGameChart
-            selectedStat={
-              selectedStat.title === 'Game Revenue'
-                ? buildTopGameStat(selectedStat)
-                : buildTopStat(selectedStat, catCategories, catData)
-            }
+            selectedStat={buildTopStat(selectedStat, catCategories, catData)}
           />
-          <UpcomingEvents />
+          <UpcomingEvents from={from} to={to} />
         </Box>
       )}
       {selectedStat && !categoryHasData && !catLoading && (
@@ -569,7 +537,7 @@ const HomePage = () => {
           }}
         >
           <Box />
-          <UpcomingEvents />
+          <UpcomingEvents from={from} to={to} />
         </Box>
       )}
     </Box>
