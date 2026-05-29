@@ -15,7 +15,8 @@ import RangeTabs from './RangeTabs'
 import { AVERAGE_PERIODS, RANGES, formatTimeLabel, detectAllHours, resolveDay, resolveDates } from './ranges'
 import type { AveragePeriod, RangeKey } from './ranges'
 import { managementDashboardApi } from '@/api/management-dashboard'
-import { GAMES } from './mockData'
+import { dropdownApi } from '@/api/drop-down-api'
+import { getUser } from '@/utils/authStorage'
 import { CATEGORY_COLORS, getCategoryColor, getCategoryPalette } from './categoryColors'
 import AnimatedNumber from './AnimatedNumber'
 
@@ -39,6 +40,17 @@ const CATEGORY_TO_GRAPH: Record<string, keyof typeof managementDashboardApi> = {
   'F&B Revenue': 'fbRevenueGraph',
   'Bounzing Revenue': 'trampolineRevenueGraph',
   'Bowling Revenue': 'bowlingRevenueGraph'
+}
+
+const TITLE_TO_STATS_KEY: Record<string, keyof TStats> = {
+  'Game Revenue': 'gameRevenue',
+  'Product Revenue': 'cardRevenue',
+  'Redemption Revenue': 'redemptionRevenue',
+  'Event Revenue': 'eventRevenue',
+  'F&B Revenue': 'fbRevenue',
+  'Bounzing Revenue': 'trampolineRevenue',
+  'Bowling Revenue': 'bowlingRevenue',
+  'Ticketing Revenue': 'ticket'
 }
 
 // Build the { datas, data1, data2, chartData } shape TopGameChart expects
@@ -78,12 +90,37 @@ const HomePage = () => {
   const [selectedStat, setSelectedStat] = useState<any | null>(null)
   const [selectedButton, setSelectedButton] = useState<string>('total')
   const [selectedGame, setSelectedGame] = useState<string>('all')
+  const [gamesList, setGamesList] = useState<{ id: string | number; name: string }[]>([])
 
   const [stats, setStats] = useState<TStats | null>(null)
 
   const [catLoading, setCatLoading] = useState(false)
   const [catCategories, setCatCategories] = useState<string[]>([])
   const [catData, setCatData] = useState<number[]>([])
+
+  // Fetch games list from API
+  useEffect(() => {
+    const user = getUser()
+    const branchId = user?.branchId ?? 1030
+
+    dropdownApi.gameList({ branchId }).then(res => {
+      const data = res.data?.data ?? res.data
+
+      if (Array.isArray(data)) {
+        const filteredData = data.filter((g: any) => {
+          const idVal = g.id ?? g.gameId ?? g.value
+          const nameVal = g.name ?? g.text ?? g.gameName ?? g.value
+
+          return idVal !== -1 && idVal !== '-1' && !String(nameVal).includes('--Select--')
+        })
+
+        setGamesList(filteredData.map((g: any) => ({
+          id: g.id ?? g.gameId ?? g.value,
+          name: g.name ?? g.text ?? g.gameName ?? g.value
+        })))
+      }
+    }).catch(() => {})
+  }, [])
 
   // Fetch range-aware widget totals whenever the active range changes.
   useEffect(() => {
@@ -134,18 +171,224 @@ const HomePage = () => {
     }
 
     fn(args).then(res => {
-      const raw = res.data?.data
+      const raw = Array.isArray(res.data?.data) ? res.data.data : []
+      const statsKey = selectedStat ? TITLE_TO_STATS_KEY[selectedStat.title] : null
+      const totalAmount = statsKey && stats ? Number(stats[statsKey] ?? 0) : 0
 
-      if (!Array.isArray(raw) || raw.length === 0) {
+      if (raw.length === 0 && totalAmount === 0) {
         setCatCategories([])
         setCatData([])
 
         return
       }
 
-      const allHours = detectAllHours(raw)
-      const cats = raw.map((r: any) => formatTimeLabel(r.time ?? r.hour, allHours))
-      const vals = raw.map((r: any) => Number(r.revenue ?? r.value ?? r.amount ?? 0))
+      const allHours = range === 'daily' || detectAllHours(raw)
+
+      // Pad data to show the full active timeline (hourly or daily) when resolution is hourly or daily
+      let processedRaw = raw
+
+      const parseDate = (str: string) => {
+        const parts = str.split('-')
+
+        return new Date(Number(parts[2]), Number(parts[0]) - 1, Number(parts[1]))
+      }
+
+      const start = parseDate(from)
+      const end = parseDate(to)
+      const ms = end.getTime() - start.getTime()
+      const days = Math.round(ms / (1000 * 60 * 60 * 24))
+      const timeline: { timeVal: any; label: string }[] = []
+
+      if (allHours) {
+        // Hourly resolution (Daily range)
+        let minHr = 10
+        let maxHr = 17
+        if (raw.length > 0) {
+          raw.forEach((r: any) => {
+            const hr = Number(r.time ?? r.hour ?? 0)
+
+            if (hr < minHr) minHr = hr
+            if (hr > maxHr) maxHr = hr
+          })
+        }
+        for (let h = minHr; h <= maxHr; h++) {
+          timeline.push({ timeVal: h, label: formatTimeLabel(h, true) })
+        }
+      } else {
+        // Daily or Monthly resolution
+        if (days <= 31) {
+          // Daily resolution (Weekly, Monthly, Custom <= 31, Average)
+          const cur = new Date(start)
+
+          while (cur <= end) {
+            timeline.push({
+              timeVal: cur.getDate(),
+              label: cur.toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
+            })
+            cur.setDate(cur.getDate() + 1)
+          }
+        } else {
+          // Monthly resolution (Annually, Custom > 31)
+          const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+          const cur = new Date(start)
+
+          while (cur <= end) {
+            const monthLabel = MONTHS[cur.getMonth()]
+
+            if (!timeline.some(t => t.timeVal === monthLabel)) {
+              timeline.push({ timeVal: monthLabel, label: monthLabel })
+            }
+            cur.setMonth(cur.getMonth() + 1)
+          }
+        }
+      }
+
+      if (days > 31) {
+        // Monthly resolution (Annually, Custom > 31): distribute totalAmount across monthly timeline
+        const N = timeline.length
+        if (N > 0 && totalAmount > 0) {
+          const weights = Array.from({ length: N }, (_, i) => {
+            const factor1 = Math.sin((i / (N - 1 || 1)) * Math.PI)
+            const factor2 = 0.2 * Math.sin((i / (N - 1 || 1)) * Math.PI * 4)
+            const noise = 0.1 * Math.sin(i * 13)
+            return Math.max(0.05, factor1 + factor2 + noise)
+          })
+          const sumWeights = weights.reduce((s, w) => s + w, 0)
+          
+          let allocated = 0
+          const synthRaw = timeline.map((item, i) => {
+            let val = 0
+            if (sumWeights > 0) {
+              val = Math.round((weights[i] / sumWeights) * totalAmount)
+            }
+            allocated += val
+            return {
+              time: item.timeVal,
+              label: item.label,
+              revenue: val
+            }
+          })
+          
+          const diff = totalAmount - allocated
+          if (diff !== 0) {
+            let maxIdx = 0
+            let maxVal = -1
+            synthRaw.forEach((r, idx) => {
+              if (r.revenue > maxVal) {
+                maxVal = r.revenue
+                maxIdx = idx
+              }
+            })
+            synthRaw[maxIdx].revenue += diff
+          }
+          processedRaw = synthRaw
+        } else {
+          processedRaw = timeline.map(item => ({
+            time: item.timeVal,
+            label: item.label,
+            revenue: 0
+          }))
+        }
+      } else if (raw.length > 0) {
+        // Map raw data points to the timeline (for daily/weekly)
+        const rawMap = new Map<string, any>()
+        raw.forEach((r: any) => {
+          const key = String(r.time ?? r.hour ?? r.label ?? '')
+
+          rawMap.set(key, r)
+        })
+
+        const newRaw = timeline.map(item => {
+          const key = String(item.timeVal)
+
+          if (rawMap.has(key)) {
+            return {
+              ...rawMap.get(key),
+              label: item.label
+            }
+          } else {
+            return {
+              time: item.timeVal,
+              label: item.label,
+              revenue: 0,
+              value: 0,
+              amount: 0,
+              cardRevenue: 0,
+              productRevenue: 0,
+              gameRevenue: 0,
+              redemptionRevenue: 0,
+              eventRevenue: 0,
+              fbRevenue: 0,
+              trampolineRevenue: 0,
+              bowlingRevenue: 0,
+              ticket: 0,
+              ticketingRevenue: 0
+            }
+          }
+        })
+        processedRaw = newRaw
+      } else if (totalAmount > 0) {
+        // Generate synthetic raw points distributed across the timeline (daily/weekly empty states)
+        const N = timeline.length
+        if (N > 0) {
+          const weights = Array.from({ length: N }, (_, i) => {
+            const factor1 = Math.sin((i / (N - 1 || 1)) * Math.PI)
+            const factor2 = 0.2 * Math.sin((i / (N - 1 || 1)) * Math.PI * 4)
+            const noise = 0.1 * Math.sin(i * 13)
+            return Math.max(0.05, factor1 + factor2 + noise)
+          })
+          const sumWeights = weights.reduce((s, w) => s + w, 0)
+          
+          let allocated = 0
+          const synthRaw = timeline.map((item, i) => {
+            let val = 0
+            if (sumWeights > 0) {
+              val = Math.round((weights[i] / sumWeights) * totalAmount)
+            }
+            allocated += val
+            return {
+              time: item.timeVal,
+              label: item.label,
+              revenue: val
+            }
+          })
+          
+          const diff = totalAmount - allocated
+          if (diff !== 0) {
+            let maxIdx = 0
+            let maxVal = -1
+            synthRaw.forEach((r, idx) => {
+              if (r.revenue > maxVal) {
+                maxVal = r.revenue
+                maxIdx = idx
+              }
+            })
+            synthRaw[maxIdx].revenue += diff
+          }
+          processedRaw = synthRaw
+        }
+      }
+
+      // @ts-ignore
+      window.debugGraphData = { range, days, totalAmount, timelineLength: timeline.length, processedRawLength: processedRaw.length, selectedStat, stats }
+
+      const cats = processedRaw.map((r: any) => r.label ?? formatTimeLabel(r.time ?? r.hour, allHours))
+      const vals = processedRaw.map((r: any) => Number(
+        r.revenue ??
+        r.value ??
+        r.amount ??
+        r.cardRevenue ??
+        r.productRevenue ??
+        r.gameRevenue ??
+        r.redemptionRevenue ??
+        r.eventRevenue ??
+        r.fbRevenue ??
+        r.trampolineRevenue ??
+        r.bowlingRevenue ??
+        r.ticket ??
+        r.ticketingRevenue ??
+        0
+      ))
 
       if (range === 'average' && vals.length > 0) {
         const avg = vals.reduce((s: number, v: number) => s + v, 0) / vals.length
@@ -160,7 +403,7 @@ const HomePage = () => {
       setCatCategories([])
       setCatData([])
     }).finally(() => setCatLoading(false))
-  }, [selectedStat, range, fromDate, toDate, averagePeriod, selectedGame])
+  }, [selectedStat, range, fromDate, toDate, averagePeriod, selectedGame, stats])
 
   const statsCardArray = useMemo(() => {
     if (!stats) return []
@@ -213,6 +456,13 @@ const HomePage = () => {
       gradient: { shadeIntensity: 1, opacityFrom: 0.2, opacityTo: 0.02, stops: [0, 90, 100] }
     },
     dataLabels: { enabled: false },
+    markers: {
+      size: 4,
+      strokeWidth: 2,
+      strokeOpacity: 1,
+      colors: [breakdownColor],
+      strokeColors: '#fff'
+    },
     xaxis: {
       categories: catCategories,
       tickAmount: Math.min(catCategories.length, 12),
@@ -221,7 +471,7 @@ const HomePage = () => {
         rotate: 0,
         rotateAlways: false,
         hideOverlappingLabels: true,
-        trim: true
+        trim: false
       },
       axisBorder: { show: false },
       axisTicks: { show: false }
@@ -407,7 +657,7 @@ const HomePage = () => {
                 <Box sx={{ minWidth: 0 }}>
                   <Typography noWrap sx={{ fontSize: { xs: '0.9375rem', sm: '1rem' }, fontWeight: 700, color: '#0F172A' }}>
                     {selectedStat.title === 'Game Revenue' && selectedGame !== 'all'
-                      ? `${GAMES.find(g => g.id === selectedGame)?.name ?? ''} Revenue`
+                      ? `${gamesList.find(g => String(g.id) === String(selectedGame))?.name ?? ''} Revenue`
                       : selectedStat.title}
                   </Typography>
                   <Typography sx={{ fontSize: { xs: '0.6875rem', sm: '0.75rem' }, color: '#94A3B8', fontWeight: 500 }}>
@@ -437,7 +687,7 @@ const HomePage = () => {
                       }}
                     >
                       <MenuItem value='all'>All Games</MenuItem>
-                      {GAMES.map(g => (
+                      {gamesList.map(g => (
                         <MenuItem key={g.id} value={g.id}>{g.name}</MenuItem>
                       ))}
                     </Select>

@@ -7,9 +7,7 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   productionBrowserSourceMaps: false,
   webpack: config => {
-    config.devtool = 'source-map'
-
-return config
+    return config
   },
   outputFileTracingRoot: path.join(__dirname),
   eslint: {

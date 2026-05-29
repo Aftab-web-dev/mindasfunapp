@@ -56,6 +56,7 @@ export function formatTimeLabel(value: any, allHours: boolean): string {
 }
 
 export function detectAllHours(rows: any[]): boolean {
+  if (!rows || rows.length === 0) return false
   const times = rows.map(r => Number(r.time ?? r.hour ?? r.label))
 
   return times.every(n => Number.isFinite(n) && n >= 0 && n <= 23)
