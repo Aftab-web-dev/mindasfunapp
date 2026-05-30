@@ -281,7 +281,7 @@ const ReportsTable = () => {
         throw new Error('Invalid report type')
       }
 
-      if (selectedReport === 'salesDetailsReport') {
+      if (selectedReport === 'salesDetailsReport' || selectedReport === 'fbSalesDetailsReport') {
         const grouped = groupSalesDetails(response.data || response)
 
         setRows(grouped)
@@ -442,7 +442,7 @@ const ReportsTable = () => {
   }
 
   const columns: GridColDef<any>[] =
-    selectedReport === 'salesDetailsReport'
+    selectedReport === 'salesDetailsReport' || selectedReport === 'fbSalesDetailsReport'
       ? [
           {
             field: 'slNo',
@@ -712,7 +712,7 @@ const ReportsTable = () => {
             {selectedReport ? (
               <Box sx={{ p: { xs: 1, sm: 2 }, flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                 <Box sx={{ flex: 1, overflow: 'auto' }}>
-                  {selectedReport === 'salesDetailsReport' ? (
+                  {selectedReport === 'salesDetailsReport' || selectedReport === 'fbSalesDetailsReport' ? (
                     <TableContainer>
                       <Table stickyHeader size='small'>
                         <TableHead>
