@@ -159,9 +159,9 @@ export const reportCategories: ReportCategory[] = [
         label: 'F&B Reports',
         icon: 'tabler-soup',
         reports: [
-          { value: 'cashRevenueReport', label: 'F&B Cash Revenue Report' },
-          { value: 'salesReport', label: 'Sales Master Reports' },
-          { value: 'salesDetailsReport', label: 'Sales Details Reports' }
+          { value: 'fbCashRevenueReport', label: 'F&B Cash Revenue Report' },
+          { value: 'fbSalesReport', label: 'Sales Master Reports' },
+          { value: 'fbSalesDetailsReport', label: 'Sales Details Reports' }
         ]
       }
     ]
@@ -568,8 +568,14 @@ const reportColumns: Record<string, ReportColumn[]> = {
 }
 
 export const getReportColumns = (reportType: string, cashRevenueOption?: string): ReportColumn[] => {
-  if (reportType === 'cashRevenueReport') {
+  if (reportType === 'cashRevenueReport' || reportType === 'fbCashRevenueReport') {
     return cashRevenueOption === '1' ? reportColumns.cashRevenueReportDetailed : reportColumns.cashRevenueReportNormal
+  }
+  if (reportType === 'fbSalesReport') {
+    return reportColumns.salesReport
+  }
+  if (reportType === 'fbSalesDetailsReport') {
+    return reportColumns.salesDetailsReport
   }
 
   return reportColumns[reportType] || []

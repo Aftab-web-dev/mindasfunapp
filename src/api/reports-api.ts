@@ -351,4 +351,31 @@ export const reportsApi = {
         return response.data
     },
 
-    }
+    // ==================== F&B Reports ====================
+    fbCashRevenueReport: async (params: params) => {
+        const { fTime, tTime, branchId, option } = params
+
+        const queryParams = `fTime=${fTime}&tTime=${tTime}&BranchId=${branchId}&Branchld=${branchId}&Option=${option}`
+
+        const response = await axiosConfig.post(`FB_Report/FBCashRevenueReport?${queryParams}`)
+
+        return response.data
+    },
+    fbSalesReport: async (params: params) => {
+        const { fTime, tTime, branchId } = params
+        const queryParams = `fTime=${fTime}&tTime=${tTime}&BranchId=${branchId}&Branchld=${branchId}`
+
+        const response = await axiosConfig.post(`FB_Report/FBSalesReport?${queryParams}`)
+
+        return response.data
+    },
+    fbSalesDetailsReport: async (params: params) => {
+        const { fTime, tTime, branchId } = params
+        const queryParams = `fTime=${fTime}&tTime=${tTime}&BranchId=${branchId}&Branchld=${branchId}`
+
+        const response = await axiosConfig.post(`FB_Report/SalesDetailReport?${queryParams}`)
+
+        return response.data
+    },
+}
+

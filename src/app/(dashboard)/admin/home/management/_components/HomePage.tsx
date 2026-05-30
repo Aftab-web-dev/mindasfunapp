@@ -203,6 +203,7 @@ const HomePage = () => {
         // Hourly resolution (Daily range)
         let minHr = 10
         let maxHr = 17
+
         if (raw.length > 0) {
           raw.forEach((r: any) => {
             const hr = Number(r.time ?? r.hour ?? 0)
@@ -211,6 +212,7 @@ const HomePage = () => {
             if (hr > maxHr) maxHr = hr
           })
         }
+
         for (let h = minHr; h <= maxHr; h++) {
           timeline.push({ timeVal: h, label: formatTimeLabel(h, true) })
         }
@@ -238,6 +240,7 @@ const HomePage = () => {
             if (!timeline.some(t => t.timeVal === monthLabel)) {
               timeline.push({ timeVal: monthLabel, label: monthLabel })
             }
+
             cur.setMonth(cur.getMonth() + 1)
           }
         }
@@ -246,33 +249,43 @@ const HomePage = () => {
       if (days > 31) {
         // Monthly resolution (Annually, Custom > 31): distribute totalAmount across monthly timeline
         const N = timeline.length
+
         if (N > 0 && totalAmount > 0) {
           const weights = Array.from({ length: N }, (_, i) => {
             const factor1 = Math.sin((i / (N - 1 || 1)) * Math.PI)
             const factor2 = 0.2 * Math.sin((i / (N - 1 || 1)) * Math.PI * 4)
             const noise = 0.1 * Math.sin(i * 13)
-            return Math.max(0.05, factor1 + factor2 + noise)
+
+            
+return Math.max(0.05, factor1 + factor2 + noise)
           })
+
           const sumWeights = weights.reduce((s, w) => s + w, 0)
-          
+
           let allocated = 0
+
           const synthRaw = timeline.map((item, i) => {
             let val = 0
+
             if (sumWeights > 0) {
               val = Math.round((weights[i] / sumWeights) * totalAmount)
             }
+
             allocated += val
-            return {
+            
+return {
               time: item.timeVal,
               label: item.label,
               revenue: val
             }
           })
-          
+
           const diff = totalAmount - allocated
+
           if (diff !== 0) {
             let maxIdx = 0
             let maxVal = -1
+
             synthRaw.forEach((r, idx) => {
               if (r.revenue > maxVal) {
                 maxVal = r.revenue
@@ -281,6 +294,7 @@ const HomePage = () => {
             })
             synthRaw[maxIdx].revenue += diff
           }
+
           processedRaw = synthRaw
         } else {
           processedRaw = timeline.map(item => ({
@@ -327,37 +341,48 @@ const HomePage = () => {
             }
           }
         })
+
         processedRaw = newRaw
       } else if (totalAmount > 0) {
         // Generate synthetic raw points distributed across the timeline (daily/weekly empty states)
         const N = timeline.length
+
         if (N > 0) {
           const weights = Array.from({ length: N }, (_, i) => {
             const factor1 = Math.sin((i / (N - 1 || 1)) * Math.PI)
             const factor2 = 0.2 * Math.sin((i / (N - 1 || 1)) * Math.PI * 4)
             const noise = 0.1 * Math.sin(i * 13)
-            return Math.max(0.05, factor1 + factor2 + noise)
+
+            
+return Math.max(0.05, factor1 + factor2 + noise)
           })
+
           const sumWeights = weights.reduce((s, w) => s + w, 0)
-          
+
           let allocated = 0
+
           const synthRaw = timeline.map((item, i) => {
             let val = 0
+
             if (sumWeights > 0) {
               val = Math.round((weights[i] / sumWeights) * totalAmount)
             }
+
             allocated += val
-            return {
+            
+return {
               time: item.timeVal,
               label: item.label,
               revenue: val
             }
           })
-          
+
           const diff = totalAmount - allocated
+
           if (diff !== 0) {
             let maxIdx = 0
             let maxVal = -1
+
             synthRaw.forEach((r, idx) => {
               if (r.revenue > maxVal) {
                 maxVal = r.revenue
@@ -366,6 +391,7 @@ const HomePage = () => {
             })
             synthRaw[maxIdx].revenue += diff
           }
+
           processedRaw = synthRaw
         }
       }
@@ -374,6 +400,7 @@ const HomePage = () => {
       window.debugGraphData = { range, days, totalAmount, timelineLength: timeline.length, processedRawLength: processedRaw.length, selectedStat, stats }
 
       const cats = processedRaw.map((r: any) => r.label ?? formatTimeLabel(r.time ?? r.hour, allHours))
+
       const vals = processedRaw.map((r: any) => Number(
         r.revenue ??
         r.value ??

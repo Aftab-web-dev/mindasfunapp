@@ -174,12 +174,18 @@ const ReportsTable = () => {
 
       if (selectedReport === 'cashRevenueReport') {
         response = await reportsApi.cashRevenueReport({ ...params, option: cashRevenueOption })
+      } else if (selectedReport === 'fbCashRevenueReport') {
+        response = await reportsApi.fbCashRevenueReport({ ...params, option: cashRevenueOption })
       } else if (selectedReport === 'gameRevenueReport') {
         response = await reportsApi.gameRevenueReport(params)
       } else if (selectedReport === 'salesReport') {
         response = await reportsApi.salesReport(params)
+      } else if (selectedReport === 'fbSalesReport') {
+        response = await reportsApi.fbSalesReport(params)
       } else if (selectedReport === 'salesDetailsReport') {
         response = await reportsApi.salesDetailsReport(params)
+      } else if (selectedReport === 'fbSalesDetailsReport') {
+        response = await reportsApi.fbSalesDetailsReport(params)
       } else if (selectedReport === 'redeemptionReport') {
         response = await reportsApi.redeemptionReport(params)
       } else if (selectedReport === 'redemptionSalesReport') {
@@ -615,7 +621,7 @@ const ReportsTable = () => {
                     </FormControl>
                   </Box>
 
-                  {selectedReport === 'cashRevenueReport' && (
+                  {(selectedReport === 'cashRevenueReport' || selectedReport === 'fbCashRevenueReport') && (
                     <FormControl component='fieldset' sx={{ minWidth: 200 }}>
                       <FormLabel component='legend' sx={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748B' }}>
                         Report Type
