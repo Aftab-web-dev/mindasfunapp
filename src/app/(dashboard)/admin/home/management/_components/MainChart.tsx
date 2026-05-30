@@ -22,11 +22,6 @@ const SERIES_COLORS = [
   getCategoryColor('Game Revenue'),
   getCategoryColor('Product Revenue'),
   getCategoryColor('Redemption Revenue'),
-  getCategoryColor('Event Revenue'),
-  getCategoryColor('F&B Revenue'),
-  getCategoryColor('Bounzing Revenue'),
-  getCategoryColor('Bowling Revenue'),
-  getCategoryColor('Ticketing Revenue')
 ]
 
 const AppReactApexCharts = dynamic(() => import('@/libs/styles/AppReactApexCharts'))
@@ -39,38 +34,34 @@ const formatValue = (val: number, short: boolean) => {
   return `₹${val}`
 }
 
-const distributeData = (total: number, length: number) => {
-  if (length === 0) return []
-  if (total === 0) return Array(length).fill(0)
-  
-  const weights = Array.from({ length }, (_, i) => {
-    const factor1 = Math.sin((i / (length - 1 || 1)) * Math.PI)
-    const factor2 = 0.2 * Math.sin((i / (length - 1 || 1)) * Math.PI * 4)
-    const noise = 0.1 * Math.sin(i * 13)
-    return Math.max(0.05, factor1 + factor2 + noise)
-  })
-  const sumWeights = weights.reduce((s, w) => s + w, 0)
-  
-  let allocated = 0
-  const result = weights.map(w => {
-    const val = Math.round((w / sumWeights) * total)
-    allocated += val
-    return val
-  })
-  
-  const diff = total - allocated
-  if (diff !== 0) {
-    let maxIdx = 0
-    let maxVal = -1
-    result.forEach((v, idx) => {
-      if (v > maxVal) {
-        maxVal = v
-        maxIdx = idx
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+function getMonthKey(label: any, fallbackIndex: number, start: Date, end: Date): string {
+  if (typeof label === 'string') {
+    const match1 = label.match(/^(\d{2})[-/](\d{2})[-/](\d{4})$/)
+    if (match1) {
+      const p1 = Number(match1[1])
+      const p2 = Number(match1[2])
+      const monthIdx = p1 >= 1 && p1 <= 12 ? p1 - 1 : p2 >= 1 && p2 <= 12 ? p2 - 1 : 0
+      return MONTHS[monthIdx]
+    }
+    const match2 = label.match(/^(\d{4})[-/](\d{2})[-/](\d{2})$/)
+    if (match2) {
+      const monthIdx = Number(match2[2]) - 1
+      if (monthIdx >= 0 && monthIdx < 12) {
+        return MONTHS[monthIdx]
       }
-    })
-    result[maxIdx] += diff
+    }
+    
+    for (const m of MONTHS) {
+      if (label.toLowerCase().includes(m.toLowerCase())) {
+        return m
+      }
+    }
   }
-  return result
+  
+  const estimatedDate = new Date(start.getTime() + fallbackIndex * 24 * 60 * 60 * 1000)
+  return MONTHS[estimatedDate.getMonth()]
 }
 
 type MainCartProps = {
@@ -145,12 +136,6 @@ const MainCart = ({
       const ms = end.getTime() - start.getTime()
       const days = Math.round(ms / (1000 * 60 * 60 * 24))
 
-      const eventTotal = Number(stats?.eventRevenue ?? 0)
-      const fbTotal = Number(stats?.fbRevenue ?? 0)
-      const trampolineTotal = Number(stats?.trampolineRevenue ?? 0)
-      const bowlingTotal = Number(stats?.bowlingRevenue ?? 0)
-      const ticketTotal = Number(stats?.ticket ?? 0)
-
       if (days > 31) {
         // Build monthly categories (timeline)
         const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -166,22 +151,30 @@ const MainCart = ({
           cur.setMonth(cur.getMonth() + 1)
         }
 
-        const N = monthlyCategories.length
+        const sums: Record<string, Record<string, number>> = {}
+        monthlyCategories.forEach(m => {
+          sums[m] = {
+            game: 0,
+            product: 0,
+            redemption: 0
+          }
+        })
 
-        const totalGame = game.reduce((s: number, v: number) => s + v, 0)
-        const totalProduct = product.reduce((s: number, v: number) => s + v, 0)
-        const totalRedemption = redemption.reduce((s: number, v: number) => s + v, 0)
+        raw.forEach((r: any, idx: number) => {
+          const label = r.time ?? r.hour ?? r.label
+          const monthKey = getMonthKey(label, idx, start, end)
+          if (sums[monthKey]) {
+            sums[monthKey].game += Number(r.gameRevenue ?? 0)
+            sums[monthKey].product += Number(r.cardRevenue ?? r.productRevenue ?? 0)
+            sums[monthKey].redemption += Number(r.redemptionRevenue ?? 0)
+          }
+        })
 
         setCategories(monthlyCategories)
         setSeries([
-          { name: 'Game Revenue', data: distributeData(totalGame, N) },
-          { name: 'Product Revenue', data: distributeData(totalProduct, N) },
-          { name: 'Redemption Revenue', data: distributeData(totalRedemption, N) },
-          { name: 'Event Revenue', data: distributeData(eventTotal, N) },
-          { name: 'F&B Revenue', data: distributeData(fbTotal, N) },
-          { name: 'Bounzing Revenue', data: distributeData(trampolineTotal, N) },
-          { name: 'Bowling Revenue', data: distributeData(bowlingTotal, N) },
-          { name: 'Ticketing Revenue', data: distributeData(ticketTotal, N) }
+          { name: 'Game Revenue', data: monthlyCategories.map(m => sums[m].game) },
+          { name: 'Product Revenue', data: monthlyCategories.map(m => sums[m].product) },
+          { name: 'Redemption Revenue', data: monthlyCategories.map(m => sums[m].redemption) }
         ])
       } else {
         const flatten = (arr: number[]) => {
@@ -191,24 +184,18 @@ const MainCart = ({
           return arr.map(() => Math.round(avg))
         }
 
-        const len = cats.length
         setCategories(cats)
         setSeries([
           { name: 'Game Revenue', data: flatten(game) },
           { name: 'Product Revenue', data: flatten(product) },
-          { name: 'Redemption Revenue', data: flatten(redemption) },
-          { name: 'Event Revenue', data: flatten(distributeData(eventTotal, len)) },
-          { name: 'F&B Revenue', data: flatten(distributeData(fbTotal, len)) },
-          { name: 'Bounzing Revenue', data: flatten(distributeData(trampolineTotal, len)) },
-          { name: 'Bowling Revenue', data: flatten(distributeData(bowlingTotal, len)) },
-          { name: 'Ticketing Revenue', data: flatten(distributeData(ticketTotal, len)) }
+          { name: 'Redemption Revenue', data: flatten(redemption) }
         ])
       }
     }).catch(() => {
       setCategories([])
       setSeries([])
     }).finally(() => setLoading(false))
-  }, [range, fromDate, toDate, averagePeriod, stats])
+  }, [range, fromDate, toDate, averagePeriod])
 
   // Apply Top 10 / Low 10 filter by ranking time buckets on summed revenue
   // across all three series, then preserving original chronological order.

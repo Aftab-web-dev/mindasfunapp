@@ -53,6 +53,34 @@ const TITLE_TO_STATS_KEY: Record<string, keyof TStats> = {
   'Ticketing Revenue': 'ticket'
 }
 
+const MONTHS_LIST = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+function getMonthKey(label: any, fallbackIndex: number, start: Date, end: Date): string {
+  if (typeof label === 'string') {
+    const match1 = label.match(/^(\d{2})[-/](\d{2})[-/](\d{4})$/)
+    if (match1) {
+      const p1 = Number(match1[1])
+      const p2 = Number(match1[2])
+      const monthIdx = p1 >= 1 && p1 <= 12 ? p1 - 1 : p2 >= 1 && p2 <= 12 ? p2 - 1 : 0
+      return MONTHS_LIST[monthIdx]
+    }
+    const match2 = label.match(/^(\d{4})[-/](\d{2})[-/](\d{2})$/)
+    if (match2) {
+      const monthIdx = Number(match2[2]) - 1
+      if (monthIdx >= 0 && monthIdx < 12) {
+        return MONTHS_LIST[monthIdx]
+      }
+    }
+    for (const m of MONTHS_LIST) {
+      if (label.toLowerCase().includes(m.toLowerCase())) {
+        return m
+      }
+    }
+  }
+  const estimatedDate = new Date(start.getTime() + fallbackIndex * 24 * 60 * 60 * 1000)
+  return MONTHS_LIST[estimatedDate.getMonth()]
+}
+
 // Build the { datas, data1, data2, chartData } shape TopGameChart expects
 // from the API category labels + values (top 6 by value, split 3/3).
 function buildTopStat(selectedStat: any, labels: string[], values: number[]) {
@@ -247,62 +275,40 @@ const HomePage = () => {
       }
 
       if (days > 31) {
-        // Monthly resolution (Annually, Custom > 31): distribute totalAmount across monthly timeline
-        const N = timeline.length
+        const sums: Record<string, number> = {}
+        timeline.forEach(item => {
+          sums[item.timeVal] = 0
+        })
 
-        if (N > 0 && totalAmount > 0) {
-          const weights = Array.from({ length: N }, (_, i) => {
-            const factor1 = Math.sin((i / (N - 1 || 1)) * Math.PI)
-            const factor2 = 0.2 * Math.sin((i / (N - 1 || 1)) * Math.PI * 4)
-            const noise = 0.1 * Math.sin(i * 13)
-
-            
-return Math.max(0.05, factor1 + factor2 + noise)
-          })
-
-          const sumWeights = weights.reduce((s, w) => s + w, 0)
-
-          let allocated = 0
-
-          const synthRaw = timeline.map((item, i) => {
-            let val = 0
-
-            if (sumWeights > 0) {
-              val = Math.round((weights[i] / sumWeights) * totalAmount)
-            }
-
-            allocated += val
-            
-return {
-              time: item.timeVal,
-              label: item.label,
-              revenue: val
-            }
-          })
-
-          const diff = totalAmount - allocated
-
-          if (diff !== 0) {
-            let maxIdx = 0
-            let maxVal = -1
-
-            synthRaw.forEach((r, idx) => {
-              if (r.revenue > maxVal) {
-                maxVal = r.revenue
-                maxIdx = idx
-              }
-            })
-            synthRaw[maxIdx].revenue += diff
+        raw.forEach((r: any, idx: number) => {
+          const label = r.time ?? r.hour ?? r.label
+          const monthKey = getMonthKey(label, idx, start, end)
+          const val = Number(
+            r.revenue ??
+            r.value ??
+            r.amount ??
+            r.cardRevenue ??
+            r.productRevenue ??
+            r.gameRevenue ??
+            r.redemptionRevenue ??
+            r.eventRevenue ??
+            r.fbRevenue ??
+            r.trampolineRevenue ??
+            r.bowlingRevenue ??
+            r.ticket ??
+            r.ticketingRevenue ??
+            0
+          )
+          if (sums[monthKey] !== undefined) {
+            sums[monthKey] += val
           }
+        })
 
-          processedRaw = synthRaw
-        } else {
-          processedRaw = timeline.map(item => ({
-            time: item.timeVal,
-            label: item.label,
-            revenue: 0
-          }))
-        }
+        processedRaw = timeline.map(item => ({
+          time: item.timeVal,
+          label: item.label,
+          revenue: sums[item.timeVal]
+        }))
       } else if (raw.length > 0) {
         // Map raw data points to the timeline (for daily/weekly)
         const rawMap = new Map<string, any>()
@@ -325,75 +331,18 @@ return {
             return {
               time: item.timeVal,
               label: item.label,
-              revenue: 0,
-              value: 0,
-              amount: 0,
-              cardRevenue: 0,
-              productRevenue: 0,
-              gameRevenue: 0,
-              redemptionRevenue: 0,
-              eventRevenue: 0,
-              fbRevenue: 0,
-              trampolineRevenue: 0,
-              bowlingRevenue: 0,
-              ticket: 0,
-              ticketingRevenue: 0
+              revenue: 0
             }
           }
         })
 
         processedRaw = newRaw
-      } else if (totalAmount > 0) {
-        // Generate synthetic raw points distributed across the timeline (daily/weekly empty states)
-        const N = timeline.length
-
-        if (N > 0) {
-          const weights = Array.from({ length: N }, (_, i) => {
-            const factor1 = Math.sin((i / (N - 1 || 1)) * Math.PI)
-            const factor2 = 0.2 * Math.sin((i / (N - 1 || 1)) * Math.PI * 4)
-            const noise = 0.1 * Math.sin(i * 13)
-
-            
-return Math.max(0.05, factor1 + factor2 + noise)
-          })
-
-          const sumWeights = weights.reduce((s, w) => s + w, 0)
-
-          let allocated = 0
-
-          const synthRaw = timeline.map((item, i) => {
-            let val = 0
-
-            if (sumWeights > 0) {
-              val = Math.round((weights[i] / sumWeights) * totalAmount)
-            }
-
-            allocated += val
-            
-return {
-              time: item.timeVal,
-              label: item.label,
-              revenue: val
-            }
-          })
-
-          const diff = totalAmount - allocated
-
-          if (diff !== 0) {
-            let maxIdx = 0
-            let maxVal = -1
-
-            synthRaw.forEach((r, idx) => {
-              if (r.revenue > maxVal) {
-                maxVal = r.revenue
-                maxIdx = idx
-              }
-            })
-            synthRaw[maxIdx].revenue += diff
-          }
-
-          processedRaw = synthRaw
-        }
+      } else {
+        processedRaw = timeline.map(item => ({
+          time: item.timeVal,
+          label: item.label,
+          revenue: 0
+        }))
       }
 
       // @ts-ignore
