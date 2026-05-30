@@ -292,6 +292,7 @@ const HomePage = () => {
       } else if (raw.length > 0) {
         // Map raw data points to the timeline (for daily/weekly)
         const rawMap = new Map<string, any>()
+
         raw.forEach((r: any) => {
           const key = String(r.time ?? r.hour ?? r.label ?? '')
 
@@ -740,7 +741,7 @@ const HomePage = () => {
             </Box>
           </Box>
         ) : (
-          <MainCart range={range} fromDate={fromDate} toDate={toDate} averagePeriod={averagePeriod} />
+          <MainCart range={range} fromDate={fromDate} toDate={toDate} averagePeriod={averagePeriod} stats={stats} />
         )}
         {stats ? (
           <RevenueSummary

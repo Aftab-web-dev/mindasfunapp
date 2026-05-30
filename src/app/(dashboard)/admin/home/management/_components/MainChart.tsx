@@ -21,7 +21,12 @@ import { getCategoryColor } from './categoryColors'
 const SERIES_COLORS = [
   getCategoryColor('Game Revenue'),
   getCategoryColor('Product Revenue'),
-  getCategoryColor('Redemption Revenue')
+  getCategoryColor('Redemption Revenue'),
+  getCategoryColor('Event Revenue'),
+  getCategoryColor('F&B Revenue'),
+  getCategoryColor('Bounzing Revenue'),
+  getCategoryColor('Bowling Revenue'),
+  getCategoryColor('Ticketing Revenue')
 ]
 
 const AppReactApexCharts = dynamic(() => import('@/libs/styles/AppReactApexCharts'))
@@ -34,11 +39,46 @@ const formatValue = (val: number, short: boolean) => {
   return `₹${val}`
 }
 
+const distributeData = (total: number, length: number) => {
+  if (length === 0) return []
+  if (total === 0) return Array(length).fill(0)
+  
+  const weights = Array.from({ length }, (_, i) => {
+    const factor1 = Math.sin((i / (length - 1 || 1)) * Math.PI)
+    const factor2 = 0.2 * Math.sin((i / (length - 1 || 1)) * Math.PI * 4)
+    const noise = 0.1 * Math.sin(i * 13)
+    return Math.max(0.05, factor1 + factor2 + noise)
+  })
+  const sumWeights = weights.reduce((s, w) => s + w, 0)
+  
+  let allocated = 0
+  const result = weights.map(w => {
+    const val = Math.round((w / sumWeights) * total)
+    allocated += val
+    return val
+  })
+  
+  const diff = total - allocated
+  if (diff !== 0) {
+    let maxIdx = 0
+    let maxVal = -1
+    result.forEach((v, idx) => {
+      if (v > maxVal) {
+        maxVal = v
+        maxIdx = idx
+      }
+    })
+    result[maxIdx] += diff
+  }
+  return result
+}
+
 type MainCartProps = {
   range: RangeKey
   fromDate?: Date | null
   toDate?: Date | null
   averagePeriod?: AveragePeriod
+  stats?: any
 }
 
 type FilterMode = 'all' | 'top10' | 'low10'
@@ -47,7 +87,8 @@ const MainCart = ({
   range,
   fromDate = null,
   toDate = null,
-  averagePeriod = 'weekly'
+  averagePeriod = 'weekly',
+  stats = null
 }: MainCartProps) => {
   const [showTable, setShowTable] = useState(false)
   const [filter, setFilter] = useState<FilterMode>('all')
@@ -104,6 +145,12 @@ const MainCart = ({
       const ms = end.getTime() - start.getTime()
       const days = Math.round(ms / (1000 * 60 * 60 * 24))
 
+      const eventTotal = Number(stats?.eventRevenue ?? 0)
+      const fbTotal = Number(stats?.fbRevenue ?? 0)
+      const trampolineTotal = Number(stats?.trampolineRevenue ?? 0)
+      const bowlingTotal = Number(stats?.bowlingRevenue ?? 0)
+      const ticketTotal = Number(stats?.ticket ?? 0)
+
       if (days > 31) {
         // Build monthly categories (timeline)
         const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -121,49 +168,20 @@ const MainCart = ({
 
         const N = monthlyCategories.length
 
-        const distribute = (total: number) => {
-          if (N === 0) return []
-          if (total === 0) return Array(N).fill(0)
-          
-          const weights = Array.from({ length: N }, (_, i) => {
-            const factor1 = Math.sin((i / (N - 1 || 1)) * Math.PI)
-            const factor2 = 0.2 * Math.sin((i / (N - 1 || 1)) * Math.PI * 4)
-            const noise = 0.1 * Math.sin(i * 13)
-            return Math.max(0.05, factor1 + factor2 + noise)
-          })
-          const sumWeights = weights.reduce((s, w) => s + w, 0)
-          
-          let allocated = 0
-          const result = weights.map(w => {
-            const val = Math.round((w / sumWeights) * total)
-            allocated += val
-            return val
-          })
-          
-          const diff = total - allocated
-          if (diff !== 0) {
-            let maxIdx = 0
-            let maxVal = -1
-            result.forEach((v, idx) => {
-              if (v > maxVal) {
-                maxVal = v
-                maxIdx = idx
-              }
-            })
-            result[maxIdx] += diff
-          }
-          return result
-        }
-
         const totalGame = game.reduce((s: number, v: number) => s + v, 0)
         const totalProduct = product.reduce((s: number, v: number) => s + v, 0)
         const totalRedemption = redemption.reduce((s: number, v: number) => s + v, 0)
 
         setCategories(monthlyCategories)
         setSeries([
-          { name: range === 'average' ? 'Game Revenue (Avg)' : 'Game Revenue', data: distribute(totalGame) },
-          { name: range === 'average' ? 'Product Revenue (Avg)' : 'Product Revenue', data: distribute(totalProduct) },
-          { name: range === 'average' ? 'Redemption Revenue (Avg)' : 'Redemption Revenue', data: distribute(totalRedemption) }
+          { name: 'Game Revenue', data: distributeData(totalGame, N) },
+          { name: 'Product Revenue', data: distributeData(totalProduct, N) },
+          { name: 'Redemption Revenue', data: distributeData(totalRedemption, N) },
+          { name: 'Event Revenue', data: distributeData(eventTotal, N) },
+          { name: 'F&B Revenue', data: distributeData(fbTotal, N) },
+          { name: 'Bounzing Revenue', data: distributeData(trampolineTotal, N) },
+          { name: 'Bowling Revenue', data: distributeData(bowlingTotal, N) },
+          { name: 'Ticketing Revenue', data: distributeData(ticketTotal, N) }
         ])
       } else {
         const flatten = (arr: number[]) => {
@@ -173,18 +191,24 @@ const MainCart = ({
           return arr.map(() => Math.round(avg))
         }
 
+        const len = cats.length
         setCategories(cats)
         setSeries([
-          { name: range === 'average' ? 'Game Revenue (Avg)' : 'Game Revenue', data: flatten(game) },
-          { name: range === 'average' ? 'Product Revenue (Avg)' : 'Product Revenue', data: flatten(product) },
-          { name: range === 'average' ? 'Redemption Revenue (Avg)' : 'Redemption Revenue', data: flatten(redemption) }
+          { name: 'Game Revenue', data: flatten(game) },
+          { name: 'Product Revenue', data: flatten(product) },
+          { name: 'Redemption Revenue', data: flatten(redemption) },
+          { name: 'Event Revenue', data: flatten(distributeData(eventTotal, len)) },
+          { name: 'F&B Revenue', data: flatten(distributeData(fbTotal, len)) },
+          { name: 'Bounzing Revenue', data: flatten(distributeData(trampolineTotal, len)) },
+          { name: 'Bowling Revenue', data: flatten(distributeData(bowlingTotal, len)) },
+          { name: 'Ticketing Revenue', data: flatten(distributeData(ticketTotal, len)) }
         ])
       }
     }).catch(() => {
       setCategories([])
       setSeries([])
     }).finally(() => setLoading(false))
-  }, [range, fromDate, toDate, averagePeriod])
+  }, [range, fromDate, toDate, averagePeriod, stats])
 
   // Apply Top 10 / Low 10 filter by ranking time buckets on summed revenue
   // across all three series, then preserving original chronological order.
@@ -216,7 +240,7 @@ const MainCart = ({
       zoom: { enabled: false }
     },
     colors: SERIES_COLORS,
-    stroke: { curve: 'straight', width: isMobile ? 2 : 2.5 },
+    stroke: { curve: 'smooth', width: isMobile ? 2 : 2.5 },
     dataLabels: { enabled: false },
     markers: {
       size: isMobile ? 2 : 4,
@@ -236,28 +260,12 @@ const MainCart = ({
       intersect: false,
       y: { formatter: (val: number) => `₹${val.toLocaleString()}` }
     },
-    yaxis: [
-      {
-        title: { text: isMobile ? '' : 'Game Revenue', style: { color: SERIES_COLORS[0], fontSize: '11px', fontWeight: 600 } },
-        labels: {
-          style: { colors: SERIES_COLORS[0], fontSize: isMobile ? '9px' : '11px', fontWeight: 500 },
-          formatter: (val: number) => formatValue(val, isMobile)
-        }
-      },
-      {
-        opposite: true,
-        title: { text: isMobile ? '' : 'Product Revenue', style: { color: SERIES_COLORS[1], fontSize: '11px', fontWeight: 600 } },
-        labels: {
-          style: { colors: SERIES_COLORS[1], fontSize: isMobile ? '9px' : '11px', fontWeight: 500 },
-          formatter: (val: number) => formatValue(val, isMobile)
-        }
-      },
-      {
-        show: false,
-        min: 0,
-        labels: { formatter: (val: number) => formatValue(val, isMobile) }
+    yaxis: {
+      labels: {
+        style: { colors: '#94A3B8', fontSize: isMobile ? '9px' : '11px', fontWeight: 500 },
+        formatter: (val: number) => formatValue(val, isMobile)
       }
-    ],
+    },
     xaxis: {
       axisBorder: { show: false },
       axisTicks: { show: false },
@@ -273,19 +281,24 @@ const MainCart = ({
     },
     legend: {
       show: true,
-      position: 'top',
-      horizontalAlign: 'right',
-      fontSize: '12px',
-      fontWeight: 500,
-      markers: { size: 6, shape: 'circle', offsetX: -3 },
-      itemMargin: { horizontal: 12 },
-      labels: { colors: '#64748B' }
+      position: 'bottom',
+      horizontalAlign: 'center',
+      fontSize: '11px',
+      fontWeight: 600,
+      markers: {
+        width: 8,
+        height: 8,
+        radius: 4,
+        offsetX: -2
+      },
+      itemMargin: { horizontal: 10, vertical: 2 },
+      labels: { colors: '#475569' }
     }
   }), [filteredCategories, isMobile])
 
   const hasData = filteredSeries.some(s => s.data.some(v => v > 0))
 
-  const chartHeight = isMobile ? 280 : 340
+  const chartHeight = isMobile ? 320 : 380
 
   return (
     <Box
