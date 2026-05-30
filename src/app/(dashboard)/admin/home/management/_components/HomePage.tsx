@@ -743,14 +743,18 @@ const HomePage = () => {
         <Box
           sx={{
             display: 'grid',
-            gridTemplateColumns: { xs: 'minmax(0, 1fr)', xl: 'minmax(0, 2fr) minmax(0, 1fr)' },
+            gridTemplateColumns: selectedStat.title === 'Game Revenue'
+              ? 'minmax(0, 1fr)'
+              : { xs: 'minmax(0, 1fr)', xl: 'minmax(0, 2fr) minmax(0, 1fr)' },
             gap: 3,
             minWidth: 0
           }}
         >
-          <TopGameChart
-            selectedStat={buildTopStat(selectedStat, catCategories, catData)}
-          />
+          {selectedStat.title !== 'Game Revenue' && (
+            <TopGameChart
+              selectedStat={buildTopStat(selectedStat, catCategories, catData)}
+            />
+          )}
           <UpcomingEvents from={from} to={to} />
         </Box>
       )}
