@@ -21,8 +21,8 @@ export const managementDashboardApi = {
   redemptionRevenueGraph: async function ({ product = 0, from, to }: { product?: number | string; from: string; to: string }) {
     return await axiosConfig.post(`MangementDashBoard/RedemptionRevenueGraph?from=${from}&to=${to}&Product=${product}`)
   },
-  eventRevenueGraph: async function ({ from, to }: { from: string; to: string }) {
-    return await axiosConfig.post(`MangementDashBoard/EventRevenueGraph?from=${from}&to=${to}`)
+  eventRevenueGraph: async function ({ event = 0, from, to }: { event?: number | string; from: string; to: string }) {
+    return await axiosConfig.post(`MangementDashBoard/EventRevenueGraph?from=${from}&to=${to}&Event=${event}`)
   },
   fbRevenueGraph: async function ({ product = 0, from, to }: { product?: number | string; from: string; to: string }) {
     return await axiosConfig.post(`MangementDashBoard/FBRevenueGraph?from=${from}&to=${to}&Product=${product}`)

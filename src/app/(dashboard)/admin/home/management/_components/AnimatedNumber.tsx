@@ -37,7 +37,7 @@ const AnimatedNumber = ({
   }, [display])
 
   useEffect(() => {
-    if (value === targetRef.current) return
+    if (value === targetRef.current && displayRef.current === value) return
 
     fromRef.current = displayRef.current
     targetRef.current = value

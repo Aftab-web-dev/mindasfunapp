@@ -108,22 +108,23 @@ const MainCart = ({
 
     setLoading(true)
     const { from, to } = resolveDates(range, fromDate, toDate, averagePeriod)
+    console.log('[DEBUG] MainChart fetch: range=', range, 'from=', from, 'to=', to)
 
-    managementDashboardApi.mainGraph({ from, to }).then(res => {
-      const raw = res.data?.data
+    Promise.all([
+      managementDashboardApi.gameRevenueGraph({ from, to }),
+      managementDashboardApi.productRevenueGraph({ from, to }),
+      managementDashboardApi.redemptionRevenueGraph({ from, to })
+    ]).then(([gameRes, productRes, redemptionRes]) => {
+      const gameRaw = Array.isArray(gameRes.data?.data) ? gameRes.data.data : []
+      const productRaw = Array.isArray(productRes.data?.data) ? productRes.data.data : []
+      const redemptionRaw = Array.isArray(redemptionRes.data?.data) ? redemptionRes.data.data : []
 
-      if (!Array.isArray(raw) || raw.length === 0) {
+      if (gameRaw.length === 0 && productRaw.length === 0 && redemptionRaw.length === 0) {
         setCategories([])
         setSeries([])
 
         return
       }
-
-      const allHours = detectAllHours(raw)
-      const cats = raw.map((r: any) => formatTimeLabel(r.time ?? r.hour ?? r.label, allHours))
-      const game = raw.map((r: any) => Number(r.gameRevenue ?? 0))
-      const product = raw.map((r: any) => Number(r.cardRevenue ?? r.productRevenue ?? 0))
-      const redemption = raw.map((r: any) => Number(r.redemptionRevenue ?? 0))
 
       // Check date range length
       const parseDate = (str: string) => {
@@ -160,13 +161,27 @@ const MainCart = ({
           }
         })
 
-        raw.forEach((r: any, idx: number) => {
+        gameRaw.forEach((r: any, idx: number) => {
           const label = r.time ?? r.hour ?? r.label
           const monthKey = getMonthKey(label, idx, start, end)
           if (sums[monthKey]) {
-            sums[monthKey].game += Number(r.gameRevenue ?? 0)
-            sums[monthKey].product += Number(r.cardRevenue ?? r.productRevenue ?? 0)
-            sums[monthKey].redemption += Number(r.redemptionRevenue ?? 0)
+            sums[monthKey].game += Number(r.revenue ?? r.value ?? r.amount ?? r.gameRevenue ?? 0)
+          }
+        })
+
+        productRaw.forEach((r: any, idx: number) => {
+          const label = r.time ?? r.hour ?? r.label
+          const monthKey = getMonthKey(label, idx, start, end)
+          if (sums[monthKey]) {
+            sums[monthKey].product += Number(r.revenue ?? r.value ?? r.amount ?? r.cardRevenue ?? r.productRevenue ?? 0)
+          }
+        })
+
+        redemptionRaw.forEach((r: any, idx: number) => {
+          const label = r.time ?? r.hour ?? r.label
+          const monthKey = getMonthKey(label, idx, start, end)
+          if (sums[monthKey]) {
+            sums[monthKey].redemption += Number(r.revenue ?? r.value ?? r.amount ?? r.redemptionRevenue ?? 0)
           }
         })
 
@@ -177,6 +192,95 @@ const MainCart = ({
           { name: 'Redemption Revenue', data: monthlyCategories.map(m => sums[m].redemption) }
         ])
       } else {
+        const combinedRaw = [...gameRaw, ...productRaw, ...redemptionRaw]
+        const allHours = range === 'daily' || detectAllHours(combinedRaw)
+        const timeline: { timeVal: any; label: string }[] = []
+
+        if (allHours) {
+          // Hourly resolution
+          let minHr = 10
+          let maxHr = 17
+
+          combinedRaw.forEach((r: any) => {
+            const hr = Number(r.time ?? r.hour ?? r.label ?? 0)
+
+            if (hr < minHr) minHr = hr
+            if (hr > maxHr) maxHr = hr
+          })
+
+          for (let h = minHr; h <= maxHr; h++) {
+            timeline.push({ timeVal: h, label: formatTimeLabel(h, true) })
+          }
+        } else {
+          // Daily resolution (Weekly, Monthly <= 31, Custom <= 31)
+          const cur = new Date(start)
+
+          while (cur <= end) {
+            timeline.push({
+              timeVal: cur.getDate(),
+              label: cur.toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
+            })
+            cur.setDate(cur.getDate() + 1)
+          }
+        }
+
+        const buildRawMap = (rawArr: any[]) => {
+          const m = new Map<string, any>()
+          rawArr.forEach((r: any) => {
+            let key = String(r.time ?? r.hour ?? r.label ?? '').trim()
+            const match1 = key.match(/^(\d{2})[-/](\d{2})[-/](\d{4})$/)
+            if (match1) {
+              key = String(Number(match1[2]))
+            } else {
+              const match2 = key.match(/^(\d{4})[-/](\d{2})[-/](\d{2})$/)
+              if (match2) {
+                key = String(Number(match2[3]))
+              } else {
+                const num = Number(key)
+
+                if (Number.isFinite(num)) {
+                  key = String(num)
+                }
+              }
+            }
+
+            m.set(key, r)
+          })
+          return m
+        }
+
+        const gameMap = buildRawMap(gameRaw)
+        const productMap = buildRawMap(productRaw)
+        const redemptionMap = buildRawMap(redemptionRaw)
+
+        const processedRaw = timeline.map(item => {
+          const key = String(item.timeVal)
+
+          const gameVal = gameMap.has(key)
+            ? Number(gameMap.get(key).revenue ?? gameMap.get(key).value ?? gameMap.get(key).amount ?? gameMap.get(key).gameRevenue ?? 0)
+            : 0
+
+          const productVal = productMap.has(key)
+            ? Number(productMap.get(key).revenue ?? productMap.get(key).value ?? productMap.get(key).amount ?? productMap.get(key).cardRevenue ?? productMap.get(key).productRevenue ?? 0)
+            : 0
+
+          const redemptionVal = redemptionMap.has(key)
+            ? Number(redemptionMap.get(key).revenue ?? redemptionMap.get(key).value ?? redemptionMap.get(key).amount ?? redemptionMap.get(key).redemptionRevenue ?? 0)
+            : 0
+
+          return {
+            label: item.label,
+            gameRevenue: gameVal,
+            productRevenue: productVal,
+            redemptionRevenue: redemptionVal
+          }
+        })
+
+        const cats = processedRaw.map(r => r.label)
+        const game = processedRaw.map(r => r.gameRevenue)
+        const product = processedRaw.map(r => r.productRevenue)
+        const redemption = processedRaw.map(r => r.redemptionRevenue)
+
         const flatten = (arr: number[]) => {
           if (range !== 'average' || arr.length === 0) return arr
           const avg = arr.reduce((s, v) => s + v, 0) / arr.length
@@ -191,7 +295,8 @@ const MainCart = ({
           { name: 'Redemption Revenue', data: flatten(redemption) }
         ])
       }
-    }).catch(() => {
+    }).catch(err => {
+      console.error('[DEBUG] MainChart fetch error:', err)
       setCategories([])
       setSeries([])
     }).finally(() => setLoading(false))
