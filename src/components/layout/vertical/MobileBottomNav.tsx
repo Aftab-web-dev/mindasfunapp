@@ -63,22 +63,22 @@ const tabs: TabItem[] = [
     id: 'more',
     label: 'More',
     icon: 'tabler-grid-dots',
-    matchPaths: ['/admin/recharge', '/admin/waiver', '/admin/view-signed', '/admin/check-in', '/admin/export-waiver', '/admin/reports'],
+    matchPaths: ['/admin/recharge', '/admin/waiver', '/admin/view-signed', '/admin/check-in', '/admin/export-waiver'],
     children: [
       { label: 'Recharge & Balance', href: '/admin/recharge-and-balance', icon: 'tabler-recharging' },
       { label: 'Register Template', href: '/admin/waiver-template/add', icon: 'tabler-file-plus' },
       { label: 'Waiver Templates', href: '/admin/waiver-template', icon: 'tabler-file-check' },
       { label: 'Signed Waivers', href: '/admin/view-signed-waivers', icon: 'tabler-file-check' },
       { label: 'Check-in History', href: '/admin/check-in-history', icon: 'tabler-history' },
-      { label: 'Export Data', href: '/admin/export-waiver-data', icon: 'tabler-download' },
-      { label: 'Reports', href: '/admin/reports', icon: 'tabler-file-text' }
+      { label: 'Export Data', href: '/admin/export-waiver-data', icon: 'tabler-download' }
     ]
   },
   {
-    id: 'profile',
-    label: 'Profile',
-    icon: 'tabler-user-circle',
-    matchPaths: ['/admin/profile', '/admin/account']
+    id: 'reports',
+    label: 'Reports',
+    icon: 'tabler-file-text',
+    href: '/admin/reports',
+    matchPaths: ['/admin/reports']
   }
 ]
 

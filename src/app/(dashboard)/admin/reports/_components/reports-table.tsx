@@ -62,7 +62,7 @@ const ReportsTable = () => {
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({})
 
   const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
+  const isMobile = useMediaQuery(theme.breakpoints.down('lg'))
 
   useEffect(() => {
     const type = searchParams.get('type')
@@ -594,6 +594,56 @@ const ReportsTable = () => {
               </Box>
             </Box>
 
+            {/* Mobile Category & Subcategory Selectors */}
+            {isMobile && (
+              <Box sx={{ px: { xs: 2, sm: 4, md: 5 }, pb: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+                  <FormControl size='small' fullWidth sx={{ minWidth: 200 }}>
+                    <InputLabel id='mobile-category-label' sx={{ color: '#64748B' }}>Category</InputLabel>
+                    <Select
+                      labelId='mobile-category-label'
+                      id='mobile-category'
+                      value={mainCategory}
+                      label='Category'
+                      onChange={e => {
+                        const val = e.target.value
+                        setMainCategory(val)
+                        setSelectedSubCategory('')
+                        setSelectedReport('')
+                        setRows([])
+                      }}
+                      sx={{ borderRadius: '12px', backgroundColor: '#F8FAFC' }}
+                    >
+                      <MenuItem value='games'>Games</MenuItem>
+                      <MenuItem value='fb'>F&B</MenuItem>
+                    </Select>
+                  </FormControl>
+
+                  <FormControl size='small' fullWidth sx={{ minWidth: 200 }} disabled={!mainCategory}>
+                    <InputLabel id='mobile-subcategory-label' sx={{ color: '#64748B' }}>Sub Category</InputLabel>
+                    <Select
+                      labelId='mobile-subcategory-label'
+                      id='mobile-subcategory'
+                      value={selectedSubCategory}
+                      label='Sub Category'
+                      onChange={e => {
+                        setSelectedSubCategory(e.target.value)
+                        setSelectedReport('')
+                        setRows([])
+                      }}
+                      sx={{ borderRadius: '12px', backgroundColor: '#F8FAFC' }}
+                    >
+                      {subCategoriesList.map(sc => (
+                        <MenuItem key={sc.label} value={sc.label}>
+                          {sc.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Box>
+              </Box>
+            )}
+
             {/* Filters Section */}
             {selectedSubCategory && (
               <Box sx={{ px: { xs: 2, sm: 4, md: 5 }, pb: 2.5, borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
@@ -826,6 +876,8 @@ const ReportsTable = () => {
                     ? 'There are no reports configured for the F&B category yet.'
                     : selectedSubCategory
                     ? 'Select a Report from the dropdown menu above to view analytics.'
+                    : isMobile
+                    ? 'Select a report category and subcategory from the dropdowns above to get started.'
                     : 'Select a report category from the sidebar menu to get started.'}
                 </Typography>
               </Box>

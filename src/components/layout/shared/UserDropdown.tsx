@@ -32,8 +32,7 @@ const BadgeContentSpan = styled('span')({
   height: 8,
   borderRadius: '50%',
   cursor: 'pointer',
-  backgroundColor: 'var(--mui-palette-success-main)',
-  boxShadow: '0 0 0 2px var(--mui-palette-background-paper)'
+  backgroundColor: 'var(--mui-palette-success-main)'
 })
 
 const UserDropdown = () => {
@@ -88,14 +87,21 @@ const UserDropdown = () => {
         badgeContent={<BadgeContentSpan onClick={handleDropdownOpen} />}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         className='mis-2'
+        sx={{
+          '& .MuiBadge-badge': {
+            boxShadow: 'none'
+          }
+        }}
       >
         <Avatar
           ref={anchorRef}
           alt={userName || 'User'}
-          src='/images/avatars/profile.png'
           onClick={handleDropdownOpen}
           className='cursor-pointer bs-[38px] is-[38px]'
-        />
+          sx={{ backgroundColor: 'transparent !important' }}
+        >
+          <i className='tabler-user-circle' style={{ fontSize: '2.3rem', color: '#523F99' }} />
+        </Avatar>
       </Badge>
       <Popper
         open={open}
@@ -116,7 +122,9 @@ const UserDropdown = () => {
               <ClickAwayListener onClickAway={e => handleDropdownClose(e as MouseEvent | TouchEvent)}>
                 <MenuList>
                   <div className='flex items-center plb-2 pli-6 gap-2' tabIndex={-1}>
-                    <Avatar alt={userName || 'User'} src='/images/avatars/profile.png' />
+                    <Avatar alt={userName || 'User'} sx={{ backgroundColor: 'transparent !important' }}>
+                      <i className='tabler-user-circle' style={{ fontSize: '2.3rem', color: '#523F99' }} />
+                    </Avatar>
                     <div className='flex items-start flex-col'>
                       <Typography className='font-medium' color='text.primary'>
                         {userName || 'User'}
