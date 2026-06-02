@@ -78,7 +78,7 @@ const TopGameChart = ({
   const data1 = topItems.slice(0, half)
   const data2 = topItems.slice(half)
 
-  const chartHeight = Math.max(300, topItems.length * 40)
+  const chartHeight = Math.max(180, topItems.length * 50)
 
   const options: ApexOptions = {
     chart: {
@@ -89,7 +89,7 @@ const TopGameChart = ({
     plotOptions: {
       bar: {
         horizontal: true,
-        barHeight: '24px',
+        barHeight: '60%',
         distributed: true,
         borderRadius: 6,
         borderRadiusApplication: 'end'
