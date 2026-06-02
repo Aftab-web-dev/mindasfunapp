@@ -1,7 +1,8 @@
 'use client'
 
+import { useState, useMemo } from 'react'
+
 import dynamic from 'next/dynamic'
-import { useState, useMemo, useEffect } from 'react'
 
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
@@ -11,20 +12,9 @@ import TextField from '@mui/material/TextField'
 import CircularProgress from '@mui/material/CircularProgress'
 import { useTheme } from '@mui/material/styles'
 
-import classnames from 'classnames'
 import type { ApexOptions } from 'apexcharts'
 
-import { managementDashboardApi } from '@/api/management-dashboard'
-import { getUser } from '@/utils/authStorage'
-
 const AppReactApexCharts = dynamic(() => import('@/libs/styles/AppReactApexCharts'))
-
-type DataType = {
-  title: string
-  value: number
-  color?: string
-  colorClass?: string
-}
 
 const COLOR_PALETTE = [
   '#523F99', '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#06B6D4',
@@ -33,117 +23,56 @@ const COLOR_PALETTE = [
 ]
 
 const TopGameChart = ({
-  selectedStat,
-  catCategories = [],
-  catData = [],
-  from = '',
-  to = '',
-  gamesList = []
+  title,
+  data = [],
+  loading = false,
+  topLimit = 5,
+  setTopLimit
 }: {
-  selectedStat: {
-    title: string
-    datas: any[]
-    data1: DataType[]
-    data2: DataType[]
-    revenue: string
-    icon: string
-    chartData: number[]
-  }
-  catCategories?: string[]
-  catData?: number[]
-  from?: string
-  to?: string
-  gamesList?: { id: string | number; name: string }[]
+  title: string
+  data?: { label: string; val: number }[]
+  loading?: boolean
+  topLimit: number
+  setTopLimit: (val: number) => void
 }) => {
-  const [topLimit, setTopLimit] = useState<number>(5)
   const [customValue, setCustomValue] = useState<string>('')
-  const [apiData, setApiData] = useState<{ label: string; val: number }[]>([])
-  const [loading, setLoading] = useState<boolean>(false)
   const theme = useTheme()
 
-  // Fetch actual top games by revenue when on Game Revenue selection
-  useEffect(() => {
-    if (selectedStat.title !== 'Game Revenue' || !from || !to) {
-      setApiData([])
-      return
-    }
+  const getTypeName = (title: string) => {
+    const t = (title || '').toLowerCase()
 
-    setLoading(true)
-    const user = getUser()
-    const branchId = user?.branchId ?? 1030
+    if (t.includes('game')) return 'games'
+    if (t.includes('product')) return 'products'
+    if (t.includes('redemption')) return 'redemption items'
+    if (t.includes('event')) return 'events'
+    if (t.includes('f&b') || t.includes('food')) return 'F&B items'
+    if (t.includes('bounzing') || t.includes('trampoline')) return 'bounzing items'
+    if (t.includes('bowling')) return 'bowling items'
+    if (t.includes('ticketing') || t.includes('ticket')) return 'tickets'
 
-    managementDashboardApi.topGameRevenue({
-      from,
-      to,
-      branchId,
-      topOff: topLimit
-    })
-    .then(res => {
-      const data = res.data?.data ?? res.data
-      if (Array.isArray(data)) {
-        // Filter out null/empty game items and ID 0 items
-        const filtered = data.filter((item: any) => item.game !== null && item.game !== undefined && item.game !== '' && item.id !== 0 && item.id !== '0')
-        setApiData(filtered.map((item: any) => {
-          // Look up in gamesList if game/gameName is null
-          let label = item.gameName ?? item.game ?? item.name ?? item.text ?? '';
-          if (!label && gamesList && gamesList.length > 0) {
-            const matched = gamesList.find(g => String(g.id) === String(item.id))
-            if (matched) {
-              label = matched.name
-            }
-          }
-          if (!label) {
-            label = `Game #${item.id}`
-          }
-          const val = Number(item.revenue ?? item.amount ?? item.value ?? 0);
-          return { label, val };
-        }))
-      } else {
-        setApiData([])
-      }
-    })
-    .catch(err => {
-      console.error('Error fetching TopGameRevenue:', err)
-      setApiData([])
-    })
-    .finally(() => {
-      setLoading(false)
-    })
-  }, [selectedStat.title, from, to, gamesList, topLimit])
-
-  // Select whether to use API fetched top games or fallback to time-series category breakdown
-  const isGameRevenue = selectedStat.title === 'Game Revenue'
-  const activeCategories = isGameRevenue 
-    ? apiData.map(item => item.label)
-    : (catCategories.length > 0 ? catCategories : selectedStat.datas)
-    
-  const activeData = isGameRevenue
-    ? apiData.map(item => item.val)
-    : (catData.length > 0 ? catData : selectedStat.chartData)
+    return 'categories'
+  }
 
   // Sort and slice data to the user-selected topLimit
   const topItems = useMemo(() => {
-    if (!activeCategories || !activeData || activeCategories.length === 0) return []
-    
-    const indexed = activeData.map((val, idx) => ({ val, label: activeCategories[idx] ?? '' }))
-    // Sort descending
-    const sorted = [...indexed].sort((a, b) => b.val - a.val)
-    
+    if (!data || data.length === 0) return []
+
     // Slice to limit
-    const sliced = sorted.slice(0, topLimit)
+    const sliced = data.slice(0, topLimit)
     const topTotal = sliced.reduce((s, t) => s + t.val, 0) || 1
-    
-    return sliced.map((t, idx) => ({
-      title: t.label,
-      value: Math.round((t.val / topTotal) * 100),
-      color: COLOR_PALETTE[idx % COLOR_PALETTE.length]
-    }))
-  }, [activeCategories, activeData, topLimit])
+
+    return sliced
+      .map((t, idx) => ({
+        title: t.label,
+        value: Math.round((t.val / topTotal) * 100),
+        color: COLOR_PALETTE[idx % COLOR_PALETTE.length]
+      }))
+      .filter(item => item.value > 0)
+  }, [data, topLimit])
 
   const labels = topItems.map(item => item.title)
   const percentages = topItems.map(item => item.value)
   const series = [{ data: percentages }]
-  const topCount = topItems.length
 
   const half = Math.ceil(topItems.length / 2)
   const data1 = topItems.slice(0, half)
@@ -227,10 +156,10 @@ const TopGameChart = ({
       <Box sx={{ px: 3, pt: 2.5, pb: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1.5, flexWrap: 'wrap' }}>
         <Box sx={{ minWidth: 0 }}>
           <Typography sx={{ fontSize: '1rem', fontWeight: 700, color: '#1E293B' }}>
-            {`Top ${topLimit} ${selectedStat.title || 'Categories'}`}
+            {`Top ${topLimit} ${title || 'Categories'}`}
           </Typography>
           <Typography sx={{ fontSize: '0.8125rem', color: '#94A3B8', fontWeight: 500 }}>
-            {`Top ${topLimit} categories by share`}
+            {`Top ${topLimit} ${getTypeName(title)} by share`}
           </Typography>
         </Box>
         <Box
@@ -257,6 +186,7 @@ const TopGameChart = ({
         </Typography>
         {[5, 10, 15].map(limit => {
           const active = topLimit === limit
+
           return (
             <Button
               key={limit}
@@ -288,7 +218,7 @@ const TopGameChart = ({
             </Button>
           )
         })}
-        
+
         {/* Custom Input */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: { xs: 0, sm: 'auto' } }}>
           <TextField
@@ -297,12 +227,15 @@ const TopGameChart = ({
             value={customValue}
             onChange={e => {
               const val = e.target.value
+
               if (/^\d*$/.test(val)) {
                 setCustomValue(val)
+
                 if (val === '') {
                   setTopLimit(5)
                 } else {
                   const num = parseInt(val)
+
                   if (num > 0) {
                     setTopLimit(num)
                   }
