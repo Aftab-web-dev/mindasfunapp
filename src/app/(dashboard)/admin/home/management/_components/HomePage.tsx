@@ -178,8 +178,8 @@ const HomePage = () => {
   const [catData, setCatData] = useState<number[]>([])
 
   const [topLimit, setTopLimit] = useState<number>(5)
-  const [topGamesData, setTopGamesData] = useState<{ label: string; val: number }[]>([])
-  const [topGamesLoading, setTopGamesLoading] = useState<boolean>(false)
+  const [topChartData, setTopChartData] = useState<{ label: string; val: number }[]>([])
+  const [topChartLoading, setTopChartLoading] = useState<boolean>(false)
 
   // Fetch all dropdown lists from API on mount
   useEffect(() => {
@@ -215,67 +215,83 @@ const HomePage = () => {
     fetchAndSet(dropdownApi.event({ branchId }), setEventsList)
   }, [])
 
-  // Fetch actual top games by revenue when on Game Revenue selection
+  // Fetch actual top games or products by revenue when selected
   useEffect(() => {
-    if (selectedStat?.title !== 'Game Revenue') {
-      setTopGamesData([])
+    const isGame = selectedStat?.title === 'Game Revenue'
+    const isProduct = selectedStat?.title === 'Product Revenue'
+
+    if (!isGame && !isProduct) {
+      setTopChartData([])
+
       return
     }
 
     if (range === 'custom' && (!fromDate || !toDate)) {
-      setTopGamesData([])
+      setTopChartData([])
+
       return
     }
 
     const { from, to } = resolveDates(range, fromDate, toDate, averagePeriod)
 
-    setTopGamesLoading(true)
+    setTopChartLoading(true)
     const user = getUser()
     const branchId = user?.branchId ?? 1030
 
-    managementDashboardApi.topGameRevenue({
-      from,
-      to,
-      branchId,
-      topOff: topLimit
-    })
-    .then(res => {
-      const data = res.data?.data ?? res.data
-      if (Array.isArray(data)) {
-        const mapped = data.map((item: any) => {
-          let label = item.gameName ?? item.game ?? item.name ?? item.text ?? '';
-          if (!label && gamesList && gamesList.length > 0) {
-            const matched = gamesList.find(g => String(g.id) === String(item.id))
-            if (matched) {
-              label = matched.name
+    const apiCall = isGame
+      ? managementDashboardApi.topGameRevenue({ from, to, branchId, topOff: topLimit })
+      : managementDashboardApi.topProductRevenue({ from, to, branchId, topOff: topLimit })
+
+    apiCall
+      .then(res => {
+        const data = res.data?.data ?? res.data
+
+        if (Array.isArray(data)) {
+          const mapped = data.map((item: any) => {
+            let label = isProduct
+              ? (item.product ?? item.productName ?? item.name ?? item.text ?? '')
+              : (item.gameName ?? item.game ?? item.name ?? item.text ?? '')
+
+            if (!label && isGame && gamesList && gamesList.length > 0) {
+              const matched = gamesList.find(g => String(g.id) === String(item.id))
+
+              if (matched) {
+                label = matched.name
+              }
             }
-          }
-          const val = Number(item.revenue ?? item.amount ?? item.value ?? 0);
-          return { label, val, id: item.id };
-        })
 
-        const filtered = mapped.filter((item: any) => {
-          const hasLabel = item.label !== null && item.label !== undefined && String(item.label).trim() !== '';
-          const hasValidId = item.id !== null && item.id !== undefined && item.id !== 0 && item.id !== '0' && item.id !== -1 && item.id !== '-1';
-          const hasData = item.val > 0;
-          return hasLabel && hasValidId && hasData;
-        })
+            const val = Number(item.revenue ?? item.amount ?? item.value ?? 0)
 
-        setTopGamesData(filtered.map((item: any) => ({
-          label: item.label,
-          val: item.val
-        })))
-      } else {
-        setTopGamesData([])
-      }
-    })
-    .catch(err => {
-      console.error('Error fetching TopGameRevenue:', err)
-      setTopGamesData([])
-    })
-    .finally(() => {
-      setTopGamesLoading(false)
-    })
+            return { label, val, id: item.id }
+          })
+
+          const filtered = mapped.filter((item: any) => {
+            const hasLabel = item.label !== null && item.label !== undefined && String(item.label).trim() !== ''
+            const hasValidId = isProduct
+              ? true
+              : (item.id !== null && item.id !== undefined && item.id !== 0 && item.id !== '0' && item.id !== -1 && item.id !== '-1')
+            const hasData = item.val > 0
+
+            return hasLabel && hasValidId && hasData
+          })
+
+          setTopChartData(
+            filtered.map((item: any) => ({
+              label: item.label,
+              val: item.val
+            }))
+          )
+        } else {
+          setTopChartData([])
+        }
+      })
+      .catch(err => {
+        console.error(`Error fetching Top${isGame ? 'Game' : 'Product'}Revenue:`, err)
+        setTopChartData([])
+      })
+      .finally(() => {
+        setTopChartLoading(false)
+      })
   }, [selectedStat, range, fromDate, toDate, averagePeriod, gamesList, topLimit])
 
   // Reset filters when range or selected category changes
@@ -1077,11 +1093,11 @@ const HomePage = () => {
             minWidth: 0
           }}
         >
-          {selectedStat.title === 'Game Revenue' ? (
+          {selectedStat.title === 'Game Revenue' || selectedStat.title === 'Product Revenue' ? (
             <TopGameChart
               title={selectedStat.title}
-              data={topGamesData}
-              loading={topGamesLoading}
+              data={topChartData}
+              loading={topChartLoading}
               topLimit={topLimit}
               setTopLimit={setTopLimit}
             />

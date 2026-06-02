@@ -42,6 +42,9 @@ export const managementDashboardApi = {
   },
   topGameRevenue: async function ({ from, to, branchId, topOff }: { from: string; to: string; branchId: number | string; topOff: number }) {
     return await axiosConfig.post(`MangementDashBoard/TopGameRevenue?from=${from}&to=${to}&BranchId=${branchId}&TopOff=${topOff}`)
+  },
+  topProductRevenue: async function ({ from, to, branchId, topOff }: { from: string; to: string; branchId: number | string; topOff: number }) {
+    return await axiosConfig.post(`MangementDashBoard/TopProductRevenue?from=${from}&to=${to}&BranchId=${branchId}&TopOff=${topOff}`)
   }
 }
 
