@@ -39,6 +39,9 @@ export const managementDashboardApi = {
   },
   mainGraph: async function ({ from, to }: { from: string; to: string }) {
     return await axiosConfig.post(`MangementDashBoard/MainGraph?from=${from}&to=${to}`)
+  },
+  topGameRevenue: async function ({ from, to, branchId, topOff }: { from: string; to: string; branchId: number | string; topOff: number }) {
+    return await axiosConfig.post(`MangementDashBoard/TopGameRevenue?from=${from}&to=${to}&BranchId=${branchId}&TopOff=${topOff}`)
   }
 }
 
