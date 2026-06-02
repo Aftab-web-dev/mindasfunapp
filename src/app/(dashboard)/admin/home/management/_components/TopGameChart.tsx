@@ -76,12 +76,14 @@ const TopGameChart = ({
       from,
       to,
       branchId,
-      topOff: 100
+      topOff: topLimit
     })
     .then(res => {
       const data = res.data?.data ?? res.data
       if (Array.isArray(data)) {
-        setApiData(data.map((item: any) => {
+        // Filter out null/empty game items and ID 0 items
+        const filtered = data.filter((item: any) => item.game !== null && item.game !== undefined && item.game !== '' && item.id !== 0 && item.id !== '0')
+        setApiData(filtered.map((item: any) => {
           // Look up in gamesList if game/gameName is null
           let label = item.gameName ?? item.game ?? item.name ?? item.text ?? '';
           if (!label && gamesList && gamesList.length > 0) {
@@ -107,7 +109,7 @@ const TopGameChart = ({
     .finally(() => {
       setLoading(false)
     })
-  }, [selectedStat.title, from, to, gamesList])
+  }, [selectedStat.title, from, to, gamesList, topLimit])
 
   // Select whether to use API fetched top games or fallback to time-series category breakdown
   const isGameRevenue = selectedStat.title === 'Game Revenue'
@@ -225,10 +227,10 @@ const TopGameChart = ({
       <Box sx={{ px: 3, pt: 2.5, pb: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1.5, flexWrap: 'wrap' }}>
         <Box sx={{ minWidth: 0 }}>
           <Typography sx={{ fontSize: '1rem', fontWeight: 700, color: '#1E293B' }}>
-            {`Top ${topCount} ${selectedStat.title || 'Categories'}`}
+            {`Top ${topLimit} ${selectedStat.title || 'Categories'}`}
           </Typography>
           <Typography sx={{ fontSize: '0.8125rem', color: '#94A3B8', fontWeight: 500 }}>
-            {`Top ${topCount} categories by share`}
+            {`Top ${topLimit} categories by share`}
           </Typography>
         </Box>
         <Box
@@ -244,7 +246,7 @@ const TopGameChart = ({
             textTransform: 'uppercase'
           }}
         >
-          {`Top ${topCount}`}
+          {`Top ${topLimit}`}
         </Box>
       </Box>
 
@@ -343,7 +345,7 @@ const TopGameChart = ({
         ) : (
           <Grid container spacing={4}>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <AppReactApexCharts type='bar' height={chartHeight} width='100%' series={series} options={options} />
+              <AppReactApexCharts key={`${topLimit}-${labels.join(',')}`} type='bar' height={chartHeight} width='100%' series={series} options={options} />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }} alignSelf='center'>
               <Box sx={{ display: { xs: 'none', sm: 'flex' }, justifyContent: 'space-around', px: 2 }}>
