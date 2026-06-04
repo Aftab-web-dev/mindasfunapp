@@ -646,16 +646,19 @@ const HomePage = () => {
       { title: 'Ticketing Revenue', revenue: stats.ticket, icon: 'tabler-cash' }
     ]
 
-    return categories.map(cat => ({
-      title: cat.title,
-      revenue: `₹${cat.revenue.toLocaleString()}`,
-      amount: cat.revenue,
-      icon: cat.icon,
-      datas: [],
-      data1: [],
-      data2: [],
-      chartData: []
-    }))
+    return categories.map(cat => {
+      const isNoRupee = ['Game Revenue', 'Redemption Revenue', 'Ticketing Revenue'].includes(cat.title)
+      return {
+        title: cat.title,
+        revenue: isNoRupee ? cat.revenue.toLocaleString() : `₹${cat.revenue.toLocaleString()}`,
+        amount: cat.revenue,
+        icon: cat.icon,
+        datas: [],
+        data1: [],
+        data2: [],
+        chartData: []
+      }
+    })
   }, [stats])
 
   const totalRevenue = stats
@@ -767,7 +770,10 @@ const HomePage = () => {
     yaxis: {
       labels: {
         style: { colors: '#94A3B8', fontSize: '12px', fontWeight: 500 },
-        formatter: (val: number) => `₹${val.toLocaleString()}`
+        formatter: (val: number) => {
+          const showRupee = selectedStat ? !['Game Revenue', 'Redemption Revenue', 'Ticketing Revenue'].includes(selectedStat.title) : true
+          return showRupee ? `₹${val.toLocaleString()}` : val.toLocaleString()
+        }
       }
     },
     grid: {
@@ -776,8 +782,15 @@ const HomePage = () => {
       strokeDashArray: 3,
       xaxis: { lines: { show: false } }
     },
-    tooltip: { y: { formatter: (val: number) => `₹${val.toLocaleString()}` } }
-  }), [breakdownColor, filteredCategories])
+    tooltip: {
+      y: {
+        formatter: (val: number) => {
+          const showRupee = selectedStat ? !['Game Revenue', 'Redemption Revenue', 'Ticketing Revenue'].includes(selectedStat.title) : true
+          return showRupee ? `₹${val.toLocaleString()}` : val.toLocaleString()
+        }
+      }
+    }
+  }), [breakdownColor, filteredCategories, selectedStat])
 
   const categoryHasData = catData.some(v => v > 0)
 
@@ -835,6 +848,7 @@ const HomePage = () => {
               border: `1px solid ${CATEGORY_COLORS['Game Revenue'].primary}20`
             }}
           >
+
             <i className='tabler-trending-up' style={{ fontSize: '1.125rem', color: CATEGORY_COLORS['Game Revenue'].primary }} />
             <Box>
               <Typography sx={{ fontSize: '0.625rem', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px', lineHeight: 1 }}>

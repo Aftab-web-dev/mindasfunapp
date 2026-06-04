@@ -350,7 +350,13 @@ const MainCart = ({
     tooltip: {
       shared: true,
       intersect: false,
-      y: { formatter: (val: number) => `₹${val.toLocaleString()}` }
+      y: {
+        formatter: (val: number, opts?: any) => {
+          const seriesName = opts?.w?.config?.series?.[opts?.seriesIndex]?.name || ''
+          const showRupee = !['Game Revenue', 'Redemption Revenue', 'Ticketing Revenue'].includes(seriesName)
+          return showRupee ? `₹${val.toLocaleString()}` : val.toLocaleString()
+        }
+      }
     },
     yaxis: {
       labels: {

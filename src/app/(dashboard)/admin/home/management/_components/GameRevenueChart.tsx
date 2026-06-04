@@ -39,7 +39,10 @@ const GameRevenueChart = ({ chartData, title, categories, color = '#523F99' }: P
     yaxis: {
       labels: {
         style: { colors: '#94A3B8', fontSize: '12px', fontWeight: 500 },
-        formatter: (val: number) => `₹${val.toLocaleString()}`
+        formatter: (val: number) => {
+          const showRupee = !['Game Revenue', 'Redemption Revenue', 'Ticketing Revenue'].includes(title)
+          return showRupee ? `₹${val.toLocaleString()}` : val.toLocaleString()
+        }
       }
     },
     xaxis: {
@@ -49,14 +52,19 @@ const GameRevenueChart = ({ chartData, title, categories, color = '#523F99' }: P
       tickAmount: Math.min(categories.length, 12),
       labels: {
         style: { colors: '#94A3B8', fontSize: '11px', fontWeight: 500 },
-        rotate: 0,
+        rotate: -45,
         rotateAlways: false,
         hideOverlappingLabels: true,
-        trim: true
+        trim: false
       }
     },
     tooltip: {
-      y: { formatter: (val: number) => `₹${val.toLocaleString()}` }
+      y: {
+        formatter: (val: number) => {
+          const showRupee = !['Game Revenue', 'Redemption Revenue', 'Ticketing Revenue'].includes(title)
+          return showRupee ? `₹${val.toLocaleString()}` : val.toLocaleString()
+        }
+      }
     }
   }
 

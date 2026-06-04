@@ -4,7 +4,7 @@ import React from 'react'
 import { Box, Chip, Tabs, Tab, Typography, useMediaQuery } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
-import { LocalizationProvider, DateTimePicker, MobileDateTimePicker } from '@mui/x-date-pickers'
+import { LocalizationProvider, DatePicker, MobileDatePicker } from '@mui/x-date-pickers'
 
 import { AVERAGE_PERIODS } from './ranges'
 import type { AveragePeriod, RangeKey } from './ranges'
@@ -41,7 +41,7 @@ const RangeTabs = ({
 }: Props) => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
-  const PickerComponent = isMobile ? MobileDateTimePicker : DateTimePicker
+  const PickerComponent = isMobile ? MobileDatePicker : DatePicker
 
   const dateFieldSx = {
     minWidth: { xs: '100%', sm: 220 },
@@ -155,7 +155,7 @@ const RangeTabs = ({
               label='From'
               value={fromDate}
               onChange={onFromDateChange}
-              maxDateTime={toDate ?? undefined}
+              maxDate={toDate ?? undefined}
               slotProps={{
                 textField: { size: 'small', sx: dateFieldSx },
                 dialog: {
@@ -193,8 +193,8 @@ const RangeTabs = ({
               label='Till'
               value={toDate}
               onChange={onToDateChange}
-              minDateTime={fromDate ?? undefined}
-              maxDateTime={new Date()}
+              minDate={fromDate ?? undefined}
+              maxDate={new Date()}
               slotProps={{
                 textField: { size: 'small', sx: dateFieldSx },
                 dialog: {

@@ -89,7 +89,7 @@ const StatsCard = ({ item, selected }: Props) => {
           }}
         >
           {typeof item.amount === 'number' ? (
-            <AnimatedNumber value={item.amount} prefix='₹' />
+            <AnimatedNumber value={item.amount} prefix={['Game Revenue', 'Redemption Revenue', 'Ticketing Revenue'].includes(item.title) ? '' : '₹'} />
           ) : (
             item.revenue
           )}
