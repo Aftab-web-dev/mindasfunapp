@@ -68,7 +68,7 @@ const RevenueSummary = ({ totalRevenue, categories }: Props) => {
         const val = series[seriesIndex]
         const pct = Math.round((val / total) * 100)
         const label = w.config.labels[seriesIndex]
-        const showRupee = !['Game Revenue', 'Redemption Revenue', 'Ticketing Revenue'].includes(label)
+        const showRupee = !['Game Revenue', 'Reedemption PayOut', 'Other Sales'].includes(label)
         return `<div style="padding: 6px 10px; font-size: 11px; font-weight: 600; color: #1e293b; background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);">
           ${label}: ${showRupee ? '₹' : ''}${val.toLocaleString()} (${pct}%)
         </div>`
@@ -195,7 +195,7 @@ const RevenueSummary = ({ totalRevenue, categories }: Props) => {
                 </Typography>
               </Box>
               <Typography sx={{ fontSize: { xs: '0.6875rem', sm: '0.75rem' }, fontWeight: 700, color: '#0F172A', flexShrink: 0 }}>
-                <AnimatedNumber value={item.amount} prefix={['Game Revenue', 'Redemption Revenue', 'Ticketing Revenue'].includes(item.label) ? '' : '₹'} />
+                <AnimatedNumber value={item.amount} prefix={['Game Revenue', 'Reedemption PayOut', 'Other Sales'].includes(item.label) ? '' : '₹'} />
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

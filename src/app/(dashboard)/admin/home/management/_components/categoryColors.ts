@@ -25,7 +25,7 @@ export const CATEGORY_COLORS: Record<string, CategoryPalette> = {
     gradient: 'linear-gradient(135deg, #0891B2 0%, #22D3EE 100%)',
     textClass: 'text-info'
   },
-  'Redemption Revenue': {
+  'Reedemption PayOut': {
     primary: '#F59E0B',
     light: '#FBBF24',
     bg: '#FFFBEB',
@@ -60,7 +60,7 @@ export const CATEGORY_COLORS: Record<string, CategoryPalette> = {
     gradient: 'linear-gradient(135deg, #F97316 0%, #FB923C 100%)',
     textClass: 'text-warning'
   },
-  'Ticketing Revenue': {
+  'Other Sales': {
     primary: '#EC4899',
     light: '#F472B6',
     bg: '#FDF2F8',

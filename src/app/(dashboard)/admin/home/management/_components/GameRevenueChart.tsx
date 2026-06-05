@@ -40,7 +40,7 @@ const GameRevenueChart = ({ chartData, title, categories, color = '#523F99' }: P
       labels: {
         style: { colors: '#94A3B8', fontSize: '12px', fontWeight: 500 },
         formatter: (val: number) => {
-          const showRupee = !['Game Revenue', 'Redemption Revenue', 'Ticketing Revenue'].includes(title)
+          const showRupee = !['Game Revenue', 'Reedemption PayOut', 'Other Sales'].includes(title)
           return showRupee ? `₹${val.toLocaleString()}` : val.toLocaleString()
         }
       }
@@ -61,7 +61,7 @@ const GameRevenueChart = ({ chartData, title, categories, color = '#523F99' }: P
     tooltip: {
       y: {
         formatter: (val: number) => {
-          const showRupee = !['Game Revenue', 'Redemption Revenue', 'Ticketing Revenue'].includes(title)
+          const showRupee = !['Game Revenue', 'Reedemption PayOut', 'Other Sales'].includes(title)
           return showRupee ? `₹${val.toLocaleString()}` : val.toLocaleString()
         }
       }

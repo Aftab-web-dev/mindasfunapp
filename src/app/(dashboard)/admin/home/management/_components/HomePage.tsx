@@ -35,7 +35,7 @@ type TStats = {
 const CATEGORY_TO_GRAPH: Record<string, keyof typeof managementDashboardApi> = {
   'Game Revenue': 'gameRevenueGraph',
   'Product Revenue': 'productRevenueGraph',
-  'Redemption Revenue': 'redemptionRevenueGraph',
+  'Reedemption PayOut': 'redemptionRevenueGraph',
   'Event Revenue': 'eventRevenueGraph',
   'F&B Revenue': 'fbRevenueGraph',
   'Bounzing Revenue': 'trampolineRevenueGraph',
@@ -45,12 +45,12 @@ const CATEGORY_TO_GRAPH: Record<string, keyof typeof managementDashboardApi> = {
 const TITLE_TO_STATS_KEY: Record<string, keyof TStats> = {
   'Game Revenue': 'gameRevenue',
   'Product Revenue': 'cardRevenue',
-  'Redemption Revenue': 'redemptionRevenue',
+  'Reedemption PayOut': 'redemptionRevenue',
   'Event Revenue': 'eventRevenue',
   'F&B Revenue': 'fbRevenue',
   'Bounzing Revenue': 'trampolineRevenue',
   'Bowling Revenue': 'bowlingRevenue',
-  'Ticketing Revenue': 'ticket'
+  'Other Sales': 'ticket'
 }
 
 const MONTHS_LIST = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -336,7 +336,7 @@ const HomePage = () => {
       return
     }
 
-    if (selectedStat.title === 'Ticketing Revenue') {
+    if (selectedStat.title === 'Other Sales') {
       const { from, to } = resolveDates(range, fromDate, toDate, averagePeriod)
       const parseDate = (str: string) => {
         const parts = str.split('-')
@@ -422,7 +422,7 @@ const HomePage = () => {
         args.event = selectedFilterVal
       } else if (
         selectedStat.title === 'Product Revenue' ||
-        selectedStat.title === 'Redemption Revenue' ||
+        selectedStat.title === 'Reedemption PayOut' ||
         selectedStat.title === 'F&B Revenue' ||
         selectedStat.title === 'Bounzing Revenue' ||
         selectedStat.title === 'Bowling Revenue'
@@ -441,6 +441,61 @@ const HomePage = () => {
         console.log('[DEBUG] catGraph empty results and total amount is 0, clearing graph')
         setCatCategories([])
         setCatData([])
+
+        return
+      }
+
+      if (raw.length === 0 && totalAmount > 0) {
+        console.log('[DEBUG] catGraph empty results but total amount is > 0, distributing total amount across timeline')
+        const parseDate = (str: string) => {
+          const parts = str.split('-')
+          return new Date(Number(parts[2]), Number(parts[0]) - 1, Number(parts[1]))
+        }
+        const start = parseDate(from)
+        const end = parseDate(to)
+        const ms = end.getTime() - start.getTime()
+        const days = Math.round(ms / (1000 * 60 * 60 * 24))
+        const timeline: { timeVal: any; label: string }[] = []
+
+        const allHours = range === 'daily'
+        if (allHours) {
+          for (let h = 10; h <= 17; h++) {
+            timeline.push({ timeVal: h, label: formatTimeLabel(h, true) })
+          }
+        } else {
+          if (days <= 31) {
+            const cur = new Date(start)
+            while (cur <= end) {
+              timeline.push({
+                timeVal: cur.getDate(),
+                label: cur.toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
+              })
+              cur.setDate(cur.getDate() + 1)
+            }
+          } else {
+            const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+            const cur = new Date(start)
+            while (cur <= end) {
+              const monthLabel = MONTHS[cur.getMonth()]
+              if (!timeline.some(t => t.timeVal === monthLabel)) {
+                timeline.push({ timeVal: monthLabel, label: monthLabel })
+              }
+              cur.setMonth(cur.getMonth() + 1)
+            }
+          }
+        }
+
+        const cats = timeline.map(r => r.label)
+        const vals = distributeData(totalAmount, timeline.length)
+
+        if (range === 'average' && vals.length > 0) {
+          const avg = vals.reduce((s: number, v: number) => s + v, 0) / vals.length
+          setCatCategories(cats)
+          setCatData(vals.map(() => Math.round(avg)))
+        } else {
+          setCatCategories(cats)
+          setCatData(vals)
+        }
 
         return
       }
@@ -638,16 +693,16 @@ const HomePage = () => {
     const categories = [
       { title: 'Game Revenue', revenue: stats.gameRevenue, icon: 'tabler-coin-rupee' },
       { title: 'Product Revenue', revenue: stats.cardRevenue, icon: 'tabler-cash' },
-      { title: 'Redemption Revenue', revenue: stats.redemptionRevenue, icon: 'tabler-coin-rupee' },
+      { title: 'Reedemption PayOut', revenue: stats.redemptionRevenue, icon: 'tabler-coin-rupee' },
       { title: 'Event Revenue', revenue: stats.eventRevenue, icon: 'tabler-calendar-event' },
       { title: 'F&B Revenue', revenue: stats.fbRevenue, icon: 'tabler-coffee' },
       { title: 'Bounzing Revenue', revenue: stats.trampolineRevenue, icon: 'tabler-confetti' },
       { title: 'Bowling Revenue', revenue: stats.bowlingRevenue, icon: 'tabler-ball-bowling' },
-      { title: 'Ticketing Revenue', revenue: stats.ticket, icon: 'tabler-cash' }
+      { title: 'Other Sales', revenue: stats.ticket, icon: 'tabler-cash' }
     ]
 
     return categories.map(cat => {
-      const isNoRupee = ['Game Revenue', 'Redemption Revenue', 'Ticketing Revenue'].includes(cat.title)
+      const isNoRupee = ['Game Revenue', 'Reedemption PayOut', 'Other Sales'].includes(cat.title)
       return {
         title: cat.title,
         revenue: isNoRupee ? cat.revenue.toLocaleString() : `₹${cat.revenue.toLocaleString()}`,
@@ -667,6 +722,10 @@ const HomePage = () => {
       stats.bowlingRevenue + stats.ticket
     : 0
 
+  const summaryTotalRevenue = stats
+    ? stats.cardRevenue + stats.eventRevenue + stats.fbRevenue + stats.trampolineRevenue + stats.bowlingRevenue
+    : 0
+
   const breakdownColor = selectedStat ? getCategoryColor(selectedStat.title) : '#523F99'
 
   const { from, to } = resolveDates(range, fromDate, toDate, averagePeriod)
@@ -678,7 +737,7 @@ const HomePage = () => {
         return gamesList
       case 'Product Revenue':
         return productsList
-      case 'Redemption Revenue':
+      case 'Reedemption PayOut':
         return redemptionProductsList
       case 'Event Revenue':
         return eventsList
@@ -700,7 +759,7 @@ const HomePage = () => {
         return 'All Games'
       case 'Product Revenue':
         return 'All Products'
-      case 'Redemption Revenue':
+      case 'Reedemption PayOut':
         return 'All Redemption Products'
       case 'Event Revenue':
         return 'All Events'
@@ -771,7 +830,7 @@ const HomePage = () => {
       labels: {
         style: { colors: '#94A3B8', fontSize: '12px', fontWeight: 500 },
         formatter: (val: number) => {
-          const showRupee = selectedStat ? !['Game Revenue', 'Redemption Revenue', 'Ticketing Revenue'].includes(selectedStat.title) : true
+          const showRupee = selectedStat ? !['Game Revenue', 'Reedemption PayOut', 'Other Sales'].includes(selectedStat.title) : true
           return showRupee ? `₹${val.toLocaleString()}` : val.toLocaleString()
         }
       }
@@ -785,7 +844,7 @@ const HomePage = () => {
     tooltip: {
       y: {
         formatter: (val: number) => {
-          const showRupee = selectedStat ? !['Game Revenue', 'Redemption Revenue', 'Ticketing Revenue'].includes(selectedStat.title) : true
+          const showRupee = selectedStat ? !['Game Revenue', 'Reedemption PayOut', 'Other Sales'].includes(selectedStat.title) : true
           return showRupee ? `₹${val.toLocaleString()}` : val.toLocaleString()
         }
       }
@@ -1080,16 +1139,13 @@ const HomePage = () => {
         )}
         {stats ? (
           <RevenueSummary
-            totalRevenue={totalRevenue}
+            totalRevenue={summaryTotalRevenue}
             categories={[
-              { label: 'Game Revenue', amount: stats.gameRevenue, color: CATEGORY_COLORS['Game Revenue'].primary },
               { label: 'Product Revenue', amount: stats.cardRevenue, color: CATEGORY_COLORS['Product Revenue'].primary },
-              { label: 'Redemption Revenue', amount: stats.redemptionRevenue, color: CATEGORY_COLORS['Redemption Revenue'].primary },
               { label: 'Event Revenue', amount: stats.eventRevenue, color: CATEGORY_COLORS['Event Revenue'].primary },
               { label: 'F&B Revenue', amount: stats.fbRevenue, color: CATEGORY_COLORS['F&B Revenue'].primary },
               { label: 'Bounzing Revenue', amount: stats.trampolineRevenue, color: CATEGORY_COLORS['Bounzing Revenue'].primary },
-              { label: 'Bowling Revenue', amount: stats.bowlingRevenue, color: CATEGORY_COLORS['Bowling Revenue'].primary },
-              { label: 'Ticketing Revenue', amount: stats.ticket, color: CATEGORY_COLORS['Ticketing Revenue'].primary }
+              { label: 'Bowling Revenue', amount: stats.bowlingRevenue, color: CATEGORY_COLORS['Bowling Revenue'].primary }
             ]}
           />
         ) : (

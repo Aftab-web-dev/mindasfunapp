@@ -710,10 +710,10 @@
 
 ---
 
-### 50. Redemption Revenue Graph
+### 50. Reedemption PayOut Graph
 **Endpoint:** `MangementDashBoard/RedemptionRevenueGraph`  
 **Method:** GET  
-**Purpose:** Get redemption revenue data for graph  
+**Purpose:** Get reedemption payOut data for graph  
 **Request:**
 ```
 ?Product=1&Day=1

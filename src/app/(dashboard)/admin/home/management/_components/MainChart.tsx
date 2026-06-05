@@ -21,7 +21,7 @@ import { getCategoryColor } from './categoryColors'
 const SERIES_COLORS = [
   getCategoryColor('Game Revenue'),
   getCategoryColor('Product Revenue'),
-  getCategoryColor('Redemption Revenue'),
+  getCategoryColor('Reedemption PayOut'),
 ]
 
 const AppReactApexCharts = dynamic(() => import('@/libs/styles/AppReactApexCharts'))
@@ -189,7 +189,7 @@ const MainCart = ({
         setSeries([
           { name: 'Game Revenue', data: monthlyCategories.map(m => sums[m].game) },
           { name: 'Product Revenue', data: monthlyCategories.map(m => sums[m].product) },
-          { name: 'Redemption Revenue', data: monthlyCategories.map(m => sums[m].redemption) }
+          { name: 'Reedemption PayOut', data: monthlyCategories.map(m => sums[m].redemption) }
         ])
       } else {
         const combinedRaw = [...gameRaw, ...productRaw, ...redemptionRaw]
@@ -292,7 +292,7 @@ const MainCart = ({
         setSeries([
           { name: 'Game Revenue', data: flatten(game) },
           { name: 'Product Revenue', data: flatten(product) },
-          { name: 'Redemption Revenue', data: flatten(redemption) }
+          { name: 'Reedemption PayOut', data: flatten(redemption) }
         ])
       }
     }).catch(err => {
@@ -353,7 +353,7 @@ const MainCart = ({
       y: {
         formatter: (val: number, opts?: any) => {
           const seriesName = opts?.w?.config?.series?.[opts?.seriesIndex]?.name || ''
-          const showRupee = !['Game Revenue', 'Redemption Revenue', 'Ticketing Revenue'].includes(seriesName)
+          const showRupee = !['Game Revenue', 'Reedemption PayOut', 'Other Sales'].includes(seriesName)
           return showRupee ? `₹${val.toLocaleString()}` : val.toLocaleString()
         }
       }
