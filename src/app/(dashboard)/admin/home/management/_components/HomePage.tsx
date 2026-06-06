@@ -28,7 +28,8 @@ type TStats = {
   fbRevenue: number
   trampolineRevenue: number
   bowlingRevenue: number
-  ticket: number
+  otherSales: number
+  totalDiscount: number
   time: number
 }
 
@@ -50,7 +51,7 @@ const TITLE_TO_STATS_KEY: Record<string, keyof TStats> = {
   'F&B Revenue': 'fbRevenue',
   'Bounzing Revenue': 'trampolineRevenue',
   'Bowling Revenue': 'bowlingRevenue',
-  'Other Sales': 'ticket'
+  'Other Sales': 'otherSales'
 }
 
 const MONTHS_LIST = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -313,10 +314,34 @@ const HomePage = () => {
       if (next) {
         setStats(next)
       } else {
-        console.log('[DEBUG] widgetValues res is empty or undefined')
+        console.log('[DEBUG] widgetValues res is empty or undefined, setting to zero')
+        setStats({
+          gameRevenue: 0,
+          cardRevenue: 0,
+          redemptionRevenue: 0,
+          eventRevenue: 0,
+          fbRevenue: 0,
+          trampolineRevenue: 0,
+          bowlingRevenue: 0,
+          otherSales: 0,
+          totalDiscount: 0,
+          time: 0
+        })
       }
     }).catch(err => {
       console.error('[DEBUG] widgetValues err:', err)
+      setStats({
+        gameRevenue: 0,
+        cardRevenue: 0,
+        redemptionRevenue: 0,
+        eventRevenue: 0,
+        fbRevenue: 0,
+        trampolineRevenue: 0,
+        bowlingRevenue: 0,
+        otherSales: 0,
+        totalDiscount: 0,
+        time: 0
+      })
     })
   }, [range, fromDate, toDate, averagePeriod])
 
@@ -382,7 +407,7 @@ const HomePage = () => {
         }
       }
 
-      const totalAmount = stats ? Number(stats.ticket ?? 0) : 0
+      const totalAmount = stats ? Number(stats.otherSales ?? 0) : 0
       const cats = timeline.map(r => r.label)
       const vals = distributeData(totalAmount, timeline.length)
 
@@ -585,7 +610,7 @@ const HomePage = () => {
             r.fbRevenue ??
             r.trampolineRevenue ??
             r.bowlingRevenue ??
-            r.ticket ??
+            r.otherSales ??
             r.ticketingRevenue ??
             0
           )
@@ -667,7 +692,7 @@ const HomePage = () => {
         r.fbRevenue ??
         r.trampolineRevenue ??
         r.bowlingRevenue ??
-        r.ticket ??
+        r.otherSales ??
         r.ticketingRevenue ??
         0
       ))
@@ -691,22 +716,23 @@ const HomePage = () => {
     if (!stats) return []
 
     const categories = [
-      { title: 'Game Revenue', revenue: stats.gameRevenue, icon: 'tabler-coin-rupee' },
-      { title: 'Product Revenue', revenue: stats.cardRevenue, icon: 'tabler-cash' },
-      { title: 'Reedemption PayOut', revenue: stats.redemptionRevenue, icon: 'tabler-coin-rupee' },
-      { title: 'Event Revenue', revenue: stats.eventRevenue, icon: 'tabler-calendar-event' },
-      { title: 'F&B Revenue', revenue: stats.fbRevenue, icon: 'tabler-coffee' },
-      { title: 'Bounzing Revenue', revenue: stats.trampolineRevenue, icon: 'tabler-confetti' },
-      { title: 'Bowling Revenue', revenue: stats.bowlingRevenue, icon: 'tabler-ball-bowling' },
-      { title: 'Other Sales', revenue: stats.ticket, icon: 'tabler-cash' }
+      { title: 'Game Revenue', revenue: stats.gameRevenue ?? 0, icon: 'tabler-coin-rupee' },
+      { title: 'Product Revenue', revenue: stats.cardRevenue ?? 0, icon: 'tabler-cash' },
+      { title: 'Reedemption PayOut', revenue: stats.redemptionRevenue ?? 0, icon: 'tabler-coin-rupee' },
+      { title: 'Event Revenue', revenue: stats.eventRevenue ?? 0, icon: 'tabler-calendar-event' },
+      { title: 'F&B Revenue', revenue: stats.fbRevenue ?? 0, icon: 'tabler-coffee' },
+      { title: 'Bounzing Revenue', revenue: stats.trampolineRevenue ?? 0, icon: 'tabler-confetti' },
+      { title: 'Bowling Revenue', revenue: stats.bowlingRevenue ?? 0, icon: 'tabler-ball-bowling' },
+      { title: 'Other Sales', revenue: stats.otherSales ?? 0, icon: 'tabler-cash' }
     ]
 
     return categories.map(cat => {
       const isNoRupee = ['Game Revenue', 'Reedemption PayOut', 'Other Sales'].includes(cat.title)
+      const revVal = cat.revenue
       return {
         title: cat.title,
-        revenue: isNoRupee ? cat.revenue.toLocaleString() : `₹${cat.revenue.toLocaleString()}`,
-        amount: cat.revenue,
+        revenue: isNoRupee ? revVal.toLocaleString() : `₹${revVal.toLocaleString()}`,
+        amount: revVal,
         icon: cat.icon,
         datas: [],
         data1: [],
@@ -717,13 +743,13 @@ const HomePage = () => {
   }, [stats])
 
   const totalRevenue = stats
-    ? stats.gameRevenue + stats.cardRevenue + stats.redemptionRevenue +
-      stats.eventRevenue + stats.fbRevenue + stats.trampolineRevenue +
-      stats.bowlingRevenue + stats.ticket
+    ? (stats.gameRevenue ?? 0) + (stats.cardRevenue ?? 0) + (stats.redemptionRevenue ?? 0) +
+      (stats.eventRevenue ?? 0) + (stats.fbRevenue ?? 0) + (stats.trampolineRevenue ?? 0) +
+      (stats.bowlingRevenue ?? 0) + (stats.otherSales ?? 0)
     : 0
 
   const summaryTotalRevenue = stats
-    ? stats.cardRevenue + stats.eventRevenue + stats.fbRevenue + stats.trampolineRevenue + stats.bowlingRevenue
+    ? (stats.cardRevenue ?? 0) + (stats.eventRevenue ?? 0) + (stats.fbRevenue ?? 0) + (stats.trampolineRevenue ?? 0) + (stats.bowlingRevenue ?? 0) + (stats.totalDiscount ?? 0)
     : 0
 
   const getSelectedAnnualLabel = () => {
@@ -1180,11 +1206,12 @@ const HomePage = () => {
           <RevenueSummary
             totalRevenue={summaryTotalRevenue}
             categories={[
-              { label: 'Product Revenue', amount: stats.cardRevenue, color: CATEGORY_COLORS['Product Revenue'].primary },
-              { label: 'Event Revenue', amount: stats.eventRevenue, color: CATEGORY_COLORS['Event Revenue'].primary },
-              { label: 'F&B Revenue', amount: stats.fbRevenue, color: CATEGORY_COLORS['F&B Revenue'].primary },
-              { label: 'Bounzing Revenue', amount: stats.trampolineRevenue, color: CATEGORY_COLORS['Bounzing Revenue'].primary },
-              { label: 'Bowling Revenue', amount: stats.bowlingRevenue, color: CATEGORY_COLORS['Bowling Revenue'].primary }
+              { label: 'Product Revenue', amount: stats.cardRevenue ?? 0, color: CATEGORY_COLORS['Product Revenue'].primary },
+              { label: 'Event Revenue', amount: stats.eventRevenue ?? 0, color: CATEGORY_COLORS['Event Revenue'].primary },
+              { label: 'F&B Revenue', amount: stats.fbRevenue ?? 0, color: CATEGORY_COLORS['F&B Revenue'].primary },
+              { label: 'Bounzing Revenue', amount: stats.trampolineRevenue ?? 0, color: CATEGORY_COLORS['Bounzing Revenue'].primary },
+              { label: 'Bowling Revenue', amount: stats.bowlingRevenue ?? 0, color: CATEGORY_COLORS['Bowling Revenue'].primary },
+              { label: 'Total Discount', amount: stats.totalDiscount ?? 0, color: '#64748B' }
             ]}
           />
         ) : (
