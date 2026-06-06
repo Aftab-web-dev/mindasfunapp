@@ -86,6 +86,21 @@ const MainCart = ({
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
 
+  const getSelectedAnnualLabel = () => {
+    if (!fromDate || !toDate) return ''
+    const fromYear = fromDate.getFullYear()
+    const fromMonth = fromDate.getMonth()
+    const toYear = toDate.getFullYear()
+    const toMonth = toDate.getMonth()
+
+    if (fromMonth === 0 && toMonth === 11) {
+      return `${fromYear}`
+    } else if (fromMonth === 3 && toMonth === 2 && toYear === fromYear + 1) {
+      return `FY ${fromYear}-${toYear}`
+    }
+    return `${fromDate.toLocaleDateString()} → ${toDate.toLocaleDateString()}`
+  }
+
   // Reset filter when range switches to average
   useEffect(() => {
     if (range === 'average') {
@@ -426,9 +441,11 @@ const MainCart = ({
           <Typography noWrap sx={{ fontSize: { xs: '0.6875rem', sm: '0.75rem' }, color: '#94A3B8', fontWeight: 500 }}>
             {range === 'custom' && fromDate && toDate
               ? `${fromDate.toLocaleDateString()} → ${toDate.toLocaleDateString()}`
-              : range === 'average'
-                ? `${AVERAGE_PERIODS[averagePeriod].label} Average`
-                : RANGES[range].label}
+              : range === 'monthly' && fromDate
+                ? fromDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+                : range === 'average'
+                  ? `${AVERAGE_PERIODS[averagePeriod].label} Average`
+                  : RANGES[range].label}
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexShrink: 0 }}>

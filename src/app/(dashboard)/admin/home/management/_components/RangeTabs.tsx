@@ -1,7 +1,22 @@
 'use client'
 import React from 'react'
 
-import { Box, Chip, Tabs, Tab, Typography, useMediaQuery } from '@mui/material'
+import { Box, Chip, Tabs, Tab, Typography, useMediaQuery, FormControl, Select, MenuItem } from '@mui/material'
+
+const MONTH_NAMES = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December'
+]
 import { useTheme } from '@mui/material/styles'
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
 import { LocalizationProvider, DatePicker, MobileDatePicker } from '@mui/x-date-pickers'
@@ -42,6 +57,67 @@ const RangeTabs = ({
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
   const PickerComponent = isMobile ? MobileDatePicker : DatePicker
+
+  const currentMonth = fromDate ? fromDate.getMonth() : new Date().getMonth()
+  const currentYear = fromDate ? fromDate.getFullYear() : new Date().getFullYear()
+
+  const handleMonthChange = (monthIdx: number) => {
+    const from = new Date(currentYear, monthIdx, 1)
+    const to = new Date(currentYear, monthIdx + 1, 0)
+    onFromDateChange(from)
+    onToDateChange(to)
+  }
+
+  const handleYearChange = (yearVal: number) => {
+    const from = new Date(yearVal, currentMonth, 1)
+    const to = new Date(yearVal, currentMonth + 1, 0)
+    onFromDateChange(from)
+    onToDateChange(to)
+  }
+
+  const nowYear = new Date().getFullYear()
+  const YEARS = Array.from({ length: 5 }, (_, i) => nowYear - 2 + i) // [2024, 2025, 2026, 2027, 2028]
+
+  const getSelectedAnnualOption = () => {
+    if (!fromDate || !toDate) return ''
+    const fromYear = fromDate.getFullYear()
+    const fromMonth = fromDate.getMonth()
+    const toYear = toDate.getFullYear()
+    const toMonth = toDate.getMonth()
+
+    if (fromMonth === 0 && toMonth === 11) {
+      return String(fromYear)
+    } else if (fromMonth === 3 && toMonth === 2 && toYear === fromYear + 1) {
+      return `${fromYear}-${toYear}`
+    }
+    return ''
+  }
+
+  const handleAnnualChange = (val: string) => {
+    if (val.includes('-')) {
+      const [startYr, endYr] = val.split('-').map(Number)
+      const from = new Date(startYr, 3, 1)
+      const to = new Date(endYr, 2, 31)
+      onFromDateChange(from)
+      onToDateChange(to)
+    } else {
+      const yr = Number(val)
+      const from = new Date(yr, 0, 1)
+      const to = new Date(yr, 11, 31)
+      onFromDateChange(from)
+      onToDateChange(to)
+    }
+  }
+
+  const ANNUAL_OPTIONS = React.useMemo(() => {
+    const opts: { value: string; label: string }[] = []
+    for (let i = -2; i <= 1; i++) {
+      const yr = nowYear + i
+      opts.push({ value: String(yr), label: `Year ${yr}` })
+      opts.push({ value: `${yr}-${yr + 1}`, label: `FY ${yr}-${yr + 1}` })
+    }
+    return opts
+  }, [nowYear])
 
   const dateFieldSx = {
     minWidth: { xs: '100%', sm: 220 },
@@ -217,6 +293,146 @@ const RangeTabs = ({
                 }
               }}
             />
+          </Box>
+        )}
+
+        {range === 'monthly' && (
+          <Box
+            sx={{
+              mt: 1.5,
+              pt: 1.5,
+              borderTop: '1px dashed rgba(82, 63, 153, 0.15)',
+              display: 'flex',
+              flexDirection: { xs: 'column', sm: 'row' },
+              gap: 1.5,
+              alignItems: { xs: 'stretch', sm: 'center' },
+              justifyContent: 'center',
+              flexWrap: 'wrap',
+              px: { xs: 0.5, sm: 1 }
+            }}
+          >
+            <Typography
+              sx={{
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                color: '#94A3B8',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+                textAlign: { xs: 'center', sm: 'left' }
+              }}
+            >
+              Select Month
+            </Typography>
+            <Box
+              sx={{
+                display: 'flex',
+                gap: 1,
+                flexDirection: { xs: 'column', sm: 'row' },
+                width: { xs: '100%', sm: 'auto' },
+                alignItems: 'center'
+              }}
+            >
+              <FormControl size='small' sx={{ minWidth: { xs: '100%', sm: 155 } }}>
+                <Select
+                  value={currentMonth}
+                  onChange={(e) => handleMonthChange(Number(e.target.value))}
+                  sx={{
+                    borderRadius: '8px',
+                    fontSize: '0.8125rem',
+                    fontWeight: 600,
+                    height: 40,
+                    backgroundColor: '#FFFFFF',
+                    color: '#0F172A',
+                    '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,0,0,0.08)' },
+                    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(82,63,153,0.3)' },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#523F99' }
+                  }}
+                >
+                  {MONTH_NAMES.map((name, index) => (
+                    <MenuItem key={index} value={index}>
+                      {name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              <FormControl size='small' sx={{ minWidth: { xs: '100%', sm: 105 } }}>
+                <Select
+                  value={currentYear}
+                  onChange={(e) => handleYearChange(Number(e.target.value))}
+                  sx={{
+                    borderRadius: '8px',
+                    fontSize: '0.8125rem',
+                    fontWeight: 600,
+                    height: 40,
+                    backgroundColor: '#FFFFFF',
+                    color: '#0F172A',
+                    '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,0,0,0.08)' },
+                    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(82,63,153,0.3)' },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#523F99' }
+                  }}
+                >
+                  {YEARS.map((y) => (
+                    <MenuItem key={y} value={y}>
+                      {y}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
+          </Box>
+        )}
+
+        {range === 'annually' && (
+          <Box
+            sx={{
+              mt: 1.5,
+              pt: 1.5,
+              borderTop: '1px dashed rgba(82, 63, 153, 0.15)',
+              display: 'flex',
+              flexDirection: { xs: 'column', sm: 'row' },
+              gap: 1.5,
+              alignItems: { xs: 'stretch', sm: 'center' },
+              justifyContent: 'center',
+              flexWrap: 'wrap',
+              px: { xs: 0.5, sm: 1 }
+            }}
+          >
+            <Typography
+              sx={{
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                color: '#94A3B8',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+                textAlign: { xs: 'center', sm: 'left' }
+              }}
+            >
+              Select Year
+            </Typography>
+            <FormControl size='small' sx={{ minWidth: { xs: '100%', sm: 180 } }}>
+              <Select
+                value={getSelectedAnnualOption()}
+                onChange={(e) => handleAnnualChange(e.target.value)}
+                sx={{
+                  borderRadius: '8px',
+                  fontSize: '0.8125rem',
+                  fontWeight: 600,
+                  height: 40,
+                  backgroundColor: '#FFFFFF',
+                  color: '#0F172A',
+                  '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,0,0,0.08)' },
+                  '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(82,63,153,0.3)' },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#523F99' }
+                }}
+              >
+                {ANNUAL_OPTIONS.map((opt) => (
+                  <MenuItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
           </Box>
         )}
 

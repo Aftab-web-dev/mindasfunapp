@@ -24,7 +24,7 @@ export function resolveDay(
   toDate?: Date | null,
   averagePeriod?: AveragePeriod
 ): number {
-  if (range === 'custom' && fromDate && toDate) {
+  if ((range === 'custom' || range === 'monthly' || range === 'annually') && fromDate && toDate) {
     const ms = toDate.getTime() - fromDate.getTime()
     const days = Math.max(1, Math.ceil(ms / (1000 * 60 * 60 * 24)))
 
@@ -78,7 +78,7 @@ export function resolveDates(
   const to = new Date()
   let from = new Date()
 
-  if (range === 'custom' && fromDate && toDate) {
+  if ((range === 'custom' || range === 'monthly' || range === 'annually') && fromDate && toDate) {
     return {
       from: formatDate(fromDate),
       to: formatDate(toDate)

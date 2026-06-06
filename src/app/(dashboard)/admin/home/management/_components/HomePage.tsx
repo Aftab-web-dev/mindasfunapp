@@ -726,6 +726,21 @@ const HomePage = () => {
     ? stats.cardRevenue + stats.eventRevenue + stats.fbRevenue + stats.trampolineRevenue + stats.bowlingRevenue
     : 0
 
+  const getSelectedAnnualLabel = () => {
+    if (!fromDate || !toDate) return ''
+    const fromYear = fromDate.getFullYear()
+    const fromMonth = fromDate.getMonth()
+    const toYear = toDate.getFullYear()
+    const toMonth = toDate.getMonth()
+
+    if (fromMonth === 0 && toMonth === 11) {
+      return `${fromYear}`
+    } else if (fromMonth === 3 && toMonth === 2 && toYear === fromYear + 1) {
+      return `FY ${fromYear}-${toYear}`
+    }
+    return `${fromDate.toLocaleDateString()} → ${toDate.toLocaleDateString()}`
+  }
+
   const breakdownColor = selectedStat ? getCategoryColor(selectedStat.title) : '#523F99'
 
   const { from, to } = resolveDates(range, fromDate, toDate, averagePeriod)
@@ -890,6 +905,12 @@ const HomePage = () => {
               {range === 'custom' && fromDate && toDate
                 ? ` · ${fromDate.toLocaleDateString()} → ${toDate.toLocaleDateString()}`
                 : ''}
+              {range === 'monthly' && fromDate
+                ? ` · ${fromDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`
+                : ''}
+              {range === 'annually' && fromDate && toDate
+                ? ` · ${getSelectedAnnualLabel()}`
+                : ''}
               {range === 'average'
                 ? ` · ${AVERAGE_PERIODS[averagePeriod].label} average`
                 : ''}
@@ -925,7 +946,25 @@ const HomePage = () => {
         </Box>
         <RangeTabs
           range={range}
-          onRangeChange={setRange}
+          onRangeChange={(newRange) => {
+            setRange(newRange)
+            if (newRange === 'monthly') {
+              const now = new Date()
+              const from = new Date(now.getFullYear(), now.getMonth(), 1)
+              const to = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+              setFromDate(from)
+              setToDate(to)
+            } else if (newRange === 'annually') {
+              const now = new Date()
+              const from = new Date(now.getFullYear(), 0, 1)
+              const to = new Date(now.getFullYear(), 11, 31)
+              setFromDate(from)
+              setToDate(to)
+            } else {
+              setFromDate(null)
+              setToDate(null)
+            }
+          }}
           fromDate={fromDate}
           toDate={toDate}
           onFromDateChange={setFromDate}
