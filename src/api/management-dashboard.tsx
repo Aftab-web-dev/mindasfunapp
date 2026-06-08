@@ -45,6 +45,18 @@ export const managementDashboardApi = {
   },
   topProductRevenue: async function ({ from, to, branchId, topOff }: { from: string; to: string; branchId: number | string; topOff: number }) {
     return await axiosConfig.post(`MangementDashBoard/TopProductRevenue?from=${from}&to=${to}&BranchId=${branchId}&TopOff=${topOff}`)
+  },
+  topRedemptionRevenue: async function ({ from, to, branchId, topOff }: { from: string; to: string; branchId: number | string; topOff: number }) {
+    return await axiosConfig.post(`MangementDashBoard/TopRedemptionRevenue?from=${from}&to=${to}&BranchId=${branchId}&TopOff=${topOff}`)
+  },
+  topFandBRevenue: async function ({ from, to, branchId, topOff }: { from: string; to: string; branchId: number | string; topOff: number }) {
+    return await axiosConfig.post(`MangementDashBoard/TopFandBRevenue?from=${from}&to=${to}&BranchId=${branchId}&TopOff=${topOff}`)
+  },
+  topBounzingRevenue: async function ({ from, to, branchId, topOff }: { from: string; to: string; branchId: number | string; topOff: number }) {
+    return await axiosConfig.post(`MangementDashBoard/TopBounzingRevenue?from=${from}&to=${to}&BranchId=${branchId}&TopOff=${topOff}`)
+  },
+  topBowlingRevenue: async function ({ from, to, branchId, topOff }: { from: string; to: string; branchId: number | string; topOff: number }) {
+    return await axiosConfig.post(`MangementDashBoard/TopBowlingRevenue?from=${from}&to=${to}&BranchId=${branchId}&TopOff=${topOff}`)
   }
 }
 

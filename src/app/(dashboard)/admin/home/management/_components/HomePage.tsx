@@ -218,10 +218,17 @@ const HomePage = () => {
 
   // Fetch actual top games or products by revenue when selected
   useEffect(() => {
-    const isGame = selectedStat?.title === 'Game Revenue'
-    const isProduct = selectedStat?.title === 'Product Revenue'
+    const title = selectedStat?.title
+    const validTitles = [
+      'Game Revenue',
+      'Product Revenue',
+      'Reedemption PayOut',
+      'F&B Revenue',
+      'Bounzing Revenue',
+      'Bowling Revenue'
+    ]
 
-    if (!isGame && !isProduct) {
+    if (!title || !validTitles.includes(title)) {
       setTopChartData([])
 
       return
@@ -239,9 +246,26 @@ const HomePage = () => {
     const user = getUser()
     const branchId = user?.branchId ?? 1030
 
-    const apiCall = isGame
-      ? managementDashboardApi.topGameRevenue({ from, to, branchId, topOff: topLimit })
-      : managementDashboardApi.topProductRevenue({ from, to, branchId, topOff: topLimit })
+    let apiCall: Promise<any> | null = null
+    if (title === 'Game Revenue') {
+      apiCall = managementDashboardApi.topGameRevenue({ from, to, branchId, topOff: topLimit })
+    } else if (title === 'Product Revenue') {
+      apiCall = managementDashboardApi.topProductRevenue({ from, to, branchId, topOff: topLimit })
+    } else if (title === 'Reedemption PayOut') {
+      apiCall = managementDashboardApi.topRedemptionRevenue({ from, to, branchId, topOff: topLimit })
+    } else if (title === 'F&B Revenue') {
+      apiCall = managementDashboardApi.topFandBRevenue({ from, to, branchId, topOff: topLimit })
+    } else if (title === 'Bounzing Revenue') {
+      apiCall = managementDashboardApi.topBounzingRevenue({ from, to, branchId, topOff: topLimit })
+    } else if (title === 'Bowling Revenue') {
+      apiCall = managementDashboardApi.topBowlingRevenue({ from, to, branchId, topOff: topLimit })
+    }
+
+    if (!apiCall) {
+      setTopChartData([])
+      setTopChartLoading(false)
+      return
+    }
 
     apiCall
       .then(res => {
@@ -249,15 +273,46 @@ const HomePage = () => {
 
         if (Array.isArray(data)) {
           const mapped = data.map((item: any) => {
-            let label = isProduct
-              ? (item.product ?? item.productName ?? item.name ?? item.text ?? '')
-              : (item.gameName ?? item.game ?? item.name ?? item.text ?? '')
+            let label = item.gameName ?? item.game ?? item.productName ?? item.product ?? item.name ?? item.text ?? ''
 
-            if (!label && isGame && gamesList && gamesList.length > 0) {
-              const matched = gamesList.find(g => String(g.id) === String(item.id))
+            // Try to resolve using dropdown list if label is empty
+            if (!label) {
+              if (title === 'Game Revenue' && gamesList && gamesList.length > 0) {
+                const matched = gamesList.find(g => String(g.id) === String(item.id))
 
-              if (matched) {
-                label = matched.name
+                if (matched) {
+                  label = matched.name
+                }
+              } else if (title === 'Product Revenue' && productsList && productsList.length > 0) {
+                const matched = productsList.find(p => String(p.id) === String(item.id))
+
+                if (matched) {
+                  label = matched.name
+                }
+              } else if (title === 'Reedemption PayOut' && redemptionProductsList && redemptionProductsList.length > 0) {
+                const matched = redemptionProductsList.find(r => String(r.id) === String(item.id))
+
+                if (matched) {
+                  label = matched.name
+                }
+              } else if (title === 'F&B Revenue' && fbProductsList && fbProductsList.length > 0) {
+                const matched = fbProductsList.find(f => String(f.id) === String(item.id))
+
+                if (matched) {
+                  label = matched.name
+                }
+              } else if (title === 'Bounzing Revenue' && trampolineProductsList && trampolineProductsList.length > 0) {
+                const matched = trampolineProductsList.find(b => String(b.id) === String(item.id))
+
+                if (matched) {
+                  label = matched.name
+                }
+              } else if (title === 'Bowling Revenue' && bowlingProductsList && bowlingProductsList.length > 0) {
+                const matched = bowlingProductsList.find(b => String(b.id) === String(item.id))
+
+                if (matched) {
+                  label = matched.name
+                }
               }
             }
 
@@ -266,9 +321,17 @@ const HomePage = () => {
             return { label, val, id: item.id }
           })
 
+          const isProductType = [
+            'Product Revenue',
+            'Reedemption PayOut',
+            'F&B Revenue',
+            'Bounzing Revenue',
+            'Bowling Revenue'
+          ].includes(title)
+
           const filtered = mapped.filter((item: any) => {
             const hasLabel = item.label !== null && item.label !== undefined && String(item.label).trim() !== ''
-            const hasValidId = isProduct
+            const hasValidId = isProductType
               ? true
               : (item.id !== null && item.id !== undefined && item.id !== 0 && item.id !== '0' && item.id !== -1 && item.id !== '-1')
             const hasData = item.val > 0
@@ -287,13 +350,26 @@ const HomePage = () => {
         }
       })
       .catch(err => {
-        console.error(`Error fetching Top${isGame ? 'Game' : 'Product'}Revenue:`, err)
+        console.error(`Error fetching Top ${title} Revenue:`, err)
         setTopChartData([])
       })
       .finally(() => {
         setTopChartLoading(false)
       })
-  }, [selectedStat, range, fromDate, toDate, averagePeriod, gamesList, topLimit])
+  }, [
+    selectedStat,
+    range,
+    fromDate,
+    toDate,
+    averagePeriod,
+    gamesList,
+    productsList,
+    redemptionProductsList,
+    fbProductsList,
+    trampolineProductsList,
+    bowlingProductsList,
+    topLimit
+  ])
 
   // Reset filters when range or selected category changes
   useEffect(() => {
@@ -1229,7 +1305,14 @@ const HomePage = () => {
             minWidth: 0
           }}
         >
-          {selectedStat.title === 'Game Revenue' || selectedStat.title === 'Product Revenue' ? (
+          {[
+            'Game Revenue',
+            'Product Revenue',
+            'Reedemption PayOut',
+            'F&B Revenue',
+            'Bounzing Revenue',
+            'Bowling Revenue'
+          ].includes(selectedStat.title) ? (
             <TopGameChart
               title={selectedStat.title}
               data={topChartData}
